@@ -1,8 +1,8 @@
 // Construction/fusion des données de profil avion à partir de l'analyse
 // du fichier consignes. Règles :
-// - l'effectif du jour × shift visé est ajouté aux MEMBRES PRÉ-ENREGISTRÉS
-//   du profil (aucune équipe n'est créée : le leader monte ses équipes
-//   dans la page Équipes) ;
+// - l'effectif du jour × shift visé est ajouté aux MEMBRES DU JOUR
+//   (dayMembers, effaçables par le reset quotidien) ;
+// - les MEMBRES PERMANENTS (members) ne sont jamais touchés ;
 // - les équipes, tâches et affectations existantes sont conservées ;
 // - les consignes sont insérées sous forme de notes préfixées [C], la note
 //   du jour × shift visé étant remplacée à chaque ré-import.
@@ -28,15 +28,16 @@ export function buildProfileData(existing, aircraftInfo, scope) {
     teams: [],
     assignments: {},
     members: [],
+    dayMembers: [],
     prepTasks: [],
     notes: [],
     pockets: [],
   }
 
-  // Membres : union (existants + effectif du jour × shift visé)
+  // Membres du jour : union (existants + effectif du jour × shift visé)
   const shift = scope ? scope.shift : 'matin'
   const scopeMembers = shiftMembers(aircraftInfo.days, shift)
-  const members = [...new Set([...(data.members || []), ...scopeMembers])]
+  const dayMembers = [...new Set([...(data.dayMembers || []), ...scopeMembers])]
 
   // Notes consignes : seule la note du jour × shift visé est remplacée
   const NOTE_TITLE = scope
@@ -63,7 +64,8 @@ export function buildProfileData(existing, aircraftInfo, scope) {
     tasks: data.tasks || [],
     teams: data.teams || [],
     assignments: data.assignments || {},
-    members,
+    members: data.members || [],
+    dayMembers,
     prepTasks: data.prepTasks || [],
     notes: [...consigneNotes, ...keptNotes],
     pockets: data.pockets || [],

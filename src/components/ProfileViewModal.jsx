@@ -9,7 +9,7 @@ import {
   hexToRgb,
 } from '../utils/helpers'
 import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
-import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage } from 'lucide-react'
+import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw } from 'lucide-react'
 
 function StatBox({ label, value }) {
   return (
@@ -223,6 +223,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [purging, setPurging] = useState(false)
+  const [resetting, setResetting] = useState(false)
 
   useEffect(() => {
     if (!profile) return
@@ -271,6 +272,53 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
     setPurging(false)
   }
 
+  const handleResetWork = async () => {
+    if (!profile?.code) {
+      setError("Le code de ce profil n'est pas disponible (migration à exécuter ?).")
+      return
+    }
+    if (
+      !window.confirm(
+        "Réinitialiser le travail de ce profil ?\n\nTâches, équipes, affectations, préparation et membres assignés à l'avion du jour seront effacés.\nLes membres permanents et les consignes sont conservés. Action irréversible."
+      )
+    ) {
+      return
+    }
+    setResetting(true)
+    setError('')
+    try {
+      const fresh = await profileStore.adminGetProfileData(adminCode, profile.id)
+      const d = fresh?.profile?.data || data || {}
+      const cleared = {
+        tasks: [],
+        teams: [],
+        assignments: {},
+        members: d.members || [],
+        dayMembers: [],
+        prepTasks: [],
+        notes: d.notes || [],
+        pockets: [],
+      }
+      const saved = await profileStore.saveProfileData(
+        profile.code,
+        cleared,
+        fresh?.profile?.rev ?? 0,
+        false
+      )
+      if (saved?.error === 'conflict') {
+        setError('Le profil a été modifié entre-temps. Réessayez.')
+      } else if (saved?.error) {
+        setError('Échec de la réinitialisation.')
+      } else {
+        const again = await profileStore.adminGetProfileData(adminCode, profile.id)
+        if (again?.ok) setData(again.profile?.data || {})
+      }
+    } catch {
+      setError('Échec de la réinitialisation (hors ligne ?).')
+    }
+    setResetting(false)
+  }
+
   if (!profile) return null
 
   const assignedCount = Object.keys(data?.assignments || {}).filter(
@@ -314,6 +362,15 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                   title="Imprimer le récap au format PDF"
                 >
                   <Printer className="h-4 w-4" /> Imprimer
+                </button>
+                <button
+                  onClick={handleResetWork}
+                  disabled={resetting}
+                  className="bg-red-500/30 hover:bg-red-500/50 text-white px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-1.5 disabled:opacity-50"
+                  title="Efface le travail (tâches, équipes, affectations, préparation, membres du jour) — membres permanents et consignes conservés"
+                >
+                  <RotateCcw className="h-4 w-4" />{' '}
+                  {resetting ? 'Réinitialisation…' : 'Réinitialiser le travail'}
                 </button>
                 <button
                   onClick={handlePurge}

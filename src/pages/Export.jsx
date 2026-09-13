@@ -68,11 +68,13 @@ export default function Export() {
       <div className="bg-red-50 border border-red-200 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-red-700 mb-2">Zone danger</h2>
         <p className="text-sm text-red-600 mb-4">
-          Réinitialise toutes les données (tâches, équipes, affectations, préparation). La liste des membres est conservée. Cette action est irréversible.
+          Réinitialise les données de travail (tâches, équipes, affectations, préparation et
+          membres assignés à l'avion du jour). Les membres permanents et les consignes sont
+          conservés. Cette action est irréversible.
         </p>
         <button
           onClick={() => {
-            if (window.confirm('Êtes-vous sûr de vouloir supprimer toutes les données ? (la liste des membres sera conservée)')) {
+            if (window.confirm('Êtes-vous sûr de vouloir réinitialiser toutes les données de travail ? (membres permanents et consignes conservés)')) {
               resetData()
             }
           }}

@@ -47,6 +47,7 @@ const DEFAULT_EMPTY = {
   teams: [],
   assignments: {},
   members: [],
+  dayMembers: [],
   prepTasks: [],
   notes: [],
   pockets: [],
@@ -62,6 +63,7 @@ export function AppProvider({ children }) {
   const [teams, setTeams] = useState([])
   const [assignments, setAssignments] = useState({})
   const [members, setMembers] = useState([])
+  const [dayMembers, setDayMembers] = useState([])
   const [prepTasks, setPrepTasks] = useState([])
   const [pockets, setPockets] = useState([])
   const [notes, setNotes] = useState([])
@@ -95,6 +97,7 @@ export function AppProvider({ children }) {
       teams: toArray(data.teams),
       assignments: toObject(data.assignments),
       members: toArray(data.members),
+      dayMembers: toArray(data.dayMembers),
       prepTasks: toArray(data.prepTasks),
       pockets: toArray(data.pockets),
       notes: toArray(data.notes),
@@ -103,6 +106,7 @@ export function AppProvider({ children }) {
     setTeams(cleaned.teams)
     setAssignments(cleaned.assignments)
     setMembers(cleaned.members)
+    setDayMembers(cleaned.dayMembers)
     setPrepTasks(cleaned.prepTasks)
     setPockets(cleaned.pockets)
     setNotes(cleaned.notes)
@@ -129,8 +133,8 @@ export function AppProvider({ children }) {
   }, [])
 
   const totalPayload = useCallback(
-    () => ({ tasks, teams, assignments, members, prepTasks, notes, pockets }),
-    [tasks, teams, assignments, members, prepTasks, notes, pockets]
+    () => ({ tasks, teams, assignments, members, dayMembers, prepTasks, notes, pockets }),
+    [tasks, teams, assignments, members, dayMembers, prepTasks, notes, pockets]
   )
 
   const performSave = useCallback(
@@ -227,6 +231,7 @@ export function AppProvider({ children }) {
       setTeams([])
       setAssignments({})
       setMembers([])
+      setDayMembers([])
       setPrepTasks([])
       setPockets([])
       setNotes([])
@@ -450,6 +455,7 @@ export function AppProvider({ children }) {
     setTeams([])
     setAssignments({})
     setMembers([])
+    setDayMembers([])
     setPrepTasks([])
     setPockets([])
     setNotes([])
@@ -485,11 +491,21 @@ export function AppProvider({ children }) {
     setTasks,
     setAssignments,
   })
-  const { addTeam, updateTeam, removeTeam, addMember, addMembers, removeMember } = teamActions({
+  const { addTeam, updateTeam, removeTeam, addMember, addMembers, addDayMember, addDayMembers, removeMember } = teamActions({
     setTeams,
     setAssignments,
     setMembers,
+    setDayMembers,
   })
+  const clearDayMembers = useCallback(() => {
+    setTeams((ts) =>
+      ts.map((t) => ({
+        ...t,
+        members: t.members.filter((m) => !dayMembers.includes(m)),
+      }))
+    )
+    setDayMembers([])
+  }, [dayMembers])
   const { addPrepTasks, removePrepTask, removePrepTasksByBlock, updatePrepTask, clearPrepTasks } = prepActions({
     setPrepTasks,
     setPockets,
@@ -504,16 +520,18 @@ export function AppProvider({ children }) {
     setAssignments({})
     setPrepTasks([])
     setPockets([])
+    setDayMembers([])
   }, [])
 
 const value = {
-    tasks, teams, assignments, members, prepTasks, notes, pockets,
+    tasks, teams, assignments, members, dayMembers, prepTasks, notes, pockets,
     activeProfile, code, isAdmin,
     loading, error, saveState, resolveConflict,
     connectProfile, createProfile, requestProfile, disconnect, deleteProfile,
     changeAdminCode, updateOwnProfile,
     addTasks, addTeam, updateTeam, removeTeam, assignTask, unassignTask,
-    removeTask, removeTasksByBlock, updateTask, addMember, addMembers, removeMember, resetData,
+    removeTask, removeTasksByBlock, updateTask, addMember, addMembers, addDayMember, addDayMembers,
+    clearDayMembers, removeMember, resetData,
     addPrepTasks, removePrepTask, removePrepTasksByBlock, updatePrepTask, clearPrepTasks,
     addPocket, renamePocket, addTasksToPocket, removeTasksFromPocket, removePocket,
     addNote, updateNote, removeNote,

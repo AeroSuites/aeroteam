@@ -13,12 +13,13 @@ const aircraftInfo = {
 }
 
 describe('buildProfileData (jour × shift)', () => {
-  it('n’ajoute aucune équipe : les membres vont dans les pré-enregistrés', () => {
+  it('n’ajoute aucune équipe : l’effectif va dans les membres du jour, les permanents restent intacts', () => {
     const existing = {
       tasks: [{ id: 't1', description: 'tâche existante' }],
       teams: [{ id: 'leader-1', name: 'Équipe du leader', members: ['X (Y)'], color: '#111111', locked: false }],
       assignments: { t1: 'leader-1' },
       members: ['X (Y)'],
+      dayMembers: [],
       prepTasks: [],
       notes: [],
       pockets: [],
@@ -27,8 +28,10 @@ describe('buildProfileData (jour × shift)', () => {
     // Équipes intactes, aucune équipe Matin/Soir/Nuit créée
     expect(data.teams).toEqual(existing.teams)
     expect(data.teams.some((t) => t.name === 'Soir')).toBe(false)
-    // Membres : union des pré-enregistrés + effectif du shift
-    expect(data.members).toEqual(['X (Y)', 'DIAS (BRUNO)', 'AYAD (FARID)'])
+    // Membres permanents : inchangés
+    expect(data.members).toEqual(['X (Y)'])
+    // Membres du jour : effectif du shift
+    expect(data.dayMembers).toEqual(['DIAS (BRUNO)', 'AYAD (FARID)'])
     // Affectations et tâches conservées
     expect(data.assignments.t1).toBe('leader-1')
     expect(data.tasks).toHaveLength(1)
@@ -40,6 +43,7 @@ describe('buildProfileData (jour × shift)', () => {
       teams: [],
       assignments: {},
       members: [],
+      dayMembers: [],
       prepTasks: [],
       notes: [
         { id: 'n1', title: '[C] MERCREDI Soir', content: 'ancienne liste' },
