@@ -294,8 +294,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
         </h2>
         <p className="text-xs text-slate-400 mb-3">
           Inscriptions de votre effectif en attente de validation. Validez pour activer le compte
-          (la personne pourra alors se connecter), ou refusez pour supprimer la demande. Un email
-          vous est envoyé à chaque nouvelle demande.
+          (la personne pourra alors se connecter), ou refusez pour supprimer la demande.
         </p>
         {pendingMsg && <p className="text-sm text-red-600 mb-2">{pendingMsg}</p>}
         {pendingProfiles === null && <p className="text-sm text-slate-400">Chargement…</p>}

@@ -27,6 +27,11 @@ const FILTERS = [
   { value: '', label: 'Toutes' },
 ]
 
+// Notifications email : conservées dans le code mais désactivées pour
+// le moment (aucun service d'envoi accepté). Passer à true pour
+// réafficher la carte « Notifications email ».
+const EMAIL_NOTIFICATIONS_ENABLED = false
+
 const catLabel = (code) => CATEGORIES[code] || code || '—'
 
 const primeDay = (d) =>
@@ -136,7 +141,7 @@ export default function Primes() {
   }, [])
 
   useEffect(() => {
-    if (!activeProfile?.code) return
+    if (!EMAIL_NOTIFICATIONS_ENABLED || !activeProfile?.code) return
     profileStore
       .adminGetNotifyInfo(activeProfile.code)
       .then((res) => {
@@ -739,6 +744,7 @@ export default function Primes() {
         )}
       </div>
 
+      {EMAIL_NOTIFICATIONS_ENABLED && (
       <div className="bg-white rounded-xl shadow p-4 sm:p-6">
         <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-1">
           <Mail className="h-5 w-5 text-sky-500" /> Notifications email
@@ -814,6 +820,7 @@ export default function Primes() {
           </div>
         </details>
       </div>
+      )}
     </div>
   )
 }
