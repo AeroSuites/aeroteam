@@ -19,6 +19,7 @@ import {
   Pencil,
   RotateCcw,
   Clock,
+  Trash2,
 } from 'lucide-react'
 
 const SHIFT_COLORS = {
@@ -160,6 +161,26 @@ export default function ImportConsignes() {
     if (Array.isArray(ov)) return ov
     const block = sheet?.blocks.find((b) => b.immat === immat)
     return block?.shifts[selectedShift] || []
+  }
+
+  const unassignAircraft = async (p) => {
+    if (
+      !window.confirm(
+        `Retirer l'avion de ce profil ?\n\nLa carte « ${p.aircraft} » disparaîtra de cette liste, mais le profil et ses données (équipes, tâches, consignes) sont conservés.`
+      )
+    )
+      return
+    try {
+      const res = await profileStore.adminSetProfileAircraft(
+        activeProfile?.code,
+        p.code,
+        ''
+      )
+      if (res?.error) setError('Échec du retrait.')
+      else await loadCreatedProfiles()
+    } catch {
+      setError('Échec du retrait (hors ligne ?).')
+    }
   }
 
   const handleFile = (file) => {
@@ -446,12 +467,22 @@ export default function ImportConsignes() {
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {createdProfiles.map((p) => (
-                    <button
+                    <div
                       key={p.id}
                       onClick={() => setViewProfile(p)}
-                      className="bg-white border border-slate-200 hover:border-sky-400 hover:shadow-md rounded-xl p-4 text-left transition-all"
+                      className="relative bg-white border border-slate-200 hover:border-sky-400 hover:shadow-md rounded-xl p-4 text-left transition-all cursor-pointer"
                       title={`Voir le récap de ${p.name}`}
                     >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          unassignAircraft(p)
+                        }}
+                        className="absolute top-2 right-2 text-slate-400 hover:text-red-600"
+                        title={`Retirer l'avion « ${p.aircraft} » (la carte disparaît, le profil est conservé)`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                       <div className="flex items-center gap-2">
                         <Plane className="h-5 w-5 text-sky-500 shrink-0" />
                         <span className="font-mono font-bold text-sky-700 text-lg truncate">
@@ -465,7 +496,7 @@ export default function ImportConsignes() {
                           : ''}
                         {' '}· cliquer pour le récap
                       </p>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}
