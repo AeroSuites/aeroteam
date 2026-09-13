@@ -602,6 +602,11 @@ export default function Affectation() {
                                       {task.description}
                                     </p>
                                     <p className="text-xs text-slate-400">
+                                      {task.taskBarcode && (
+                                        <span className="font-mono font-bold text-slate-500">
+                                          TRFX {task.taskBarcode}  {' '}
+                                        </span>
+                                      )}
                                       {task.registration && `✈ ${task.registration}  `}
                                       {task.skills && `🔧 ${task.skills}  `}
                                     </p>
@@ -792,6 +797,11 @@ export default function Affectation() {
                                     <span className="font-mono font-bold text-slate-600 w-9 shrink-0">
                                       {t.seq || '—'}
                                     </span>
+                                    {t.taskBarcode && (
+                                      <span className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
+                                        {t.taskBarcode}
+                                      </span>
+                                    )}
                                     <span className="flex-1 min-w-0 truncate font-medium text-slate-800" title={t.description}>
                                       {t.description}
                                     </span>
