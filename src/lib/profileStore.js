@@ -351,8 +351,11 @@ export async function renameFolder(id, name) {
   return data
 }
 
-export async function deleteFolder(id) {
-  const { data, error } = await supabase.rpc('delete_folder', { p_id: id })
+export async function deleteFolder(id, adminCode) {
+  const { data, error } = await supabase.rpc('delete_folder', {
+    p_id: id,
+    p_admin_code: adminCode,
+  })
   if (error) throw error
   return data
 }

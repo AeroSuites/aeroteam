@@ -216,7 +216,7 @@ export default function Consignes() {
       if (!confirmedTwice) return
     }
     try {
-      await profileStore.deleteFolder(folder.id)
+      await profileStore.deleteFolder(folder.id, code)
       if (selectedDossierId === folder.id) setSelectedDossierId(null)
       setExpanded((prev) => prev.filter((f) => f !== folder.id))
       await loadFolders(false)
@@ -398,13 +398,15 @@ export default function Consignes() {
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
-                        <button
-                          onClick={() => removeFolder(wf)}
-                          className="text-slate-400 hover:text-red-600 p-1 shrink-0"
-                          title={`Supprimer « ${wf.name} »`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => removeFolder(wf)}
+                            className="text-slate-400 hover:text-red-600 p-1 shrink-0"
+                            title={`Supprimer « ${wf.name} » (administrateur uniquement)`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
@@ -446,13 +448,15 @@ export default function Consignes() {
                               >
                                 <Pencil className="h-4 w-4" />
                               </button>
-                              <button
-                                onClick={() => removeFolder(af)}
-                                className="text-slate-400 hover:text-red-600 p-1 shrink-0"
-                                title={`Supprimer « ${af.name} »`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                              {isAdmin && (
+                                <button
+                                  onClick={() => removeFolder(af)}
+                                  className="text-slate-400 hover:text-red-600 p-1 shrink-0"
+                                  title={`Supprimer « ${af.name} » (administrateur uniquement)`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
                             </>
                           )}
                         </div>
