@@ -389,6 +389,11 @@ export default function Dashboard() {
                                       className={`px-3 py-1.5 flex items-center gap-2 text-sm ${i > 0 ? 'border-t border-dashed border-slate-200' : ''}`}
                                     >
                                       <span className="w-10 shrink-0 font-bold text-slate-500">{task.seq || '—'}</span>
+                                      {task.taskBarcode && (
+                                        <span className="shrink-0 font-mono text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">
+                                          {task.taskBarcode}
+                                        </span>
+                                      )}
                                       <span className="flex-1 truncate text-slate-700" title={task.description}>
                                         {task.description}
                                       </span>
