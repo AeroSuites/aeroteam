@@ -177,7 +177,15 @@ export default function ImportConsignes() {
         ''
       )
       if (res?.error) setError('Échec du retrait.')
-      else await loadCreatedProfiles()
+      else {
+        await loadCreatedProfiles()
+        setResults((prev) => prev.filter((r) => r.summary || r.immat !== p.aircraft))
+        setAssignments((prev) => {
+          const next = { ...prev }
+          delete next[p.aircraft]
+          return next
+        })
+      }
     } catch {
       setError('Échec du retrait (hors ligne ?).')
     }
