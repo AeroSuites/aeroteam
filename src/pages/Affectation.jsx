@@ -604,7 +604,7 @@ export default function Affectation() {
                                     <p className="text-xs text-slate-400">
                                       {task.taskBarcode && (
                                         <span className="font-mono font-bold text-slate-500">
-                                          TRFX {task.taskBarcode}  {' '}
+                                          {task.taskBarcode}  {' '}
                                         </span>
                                       )}
                                       {task.registration && `✈ ${task.registration}  `}
