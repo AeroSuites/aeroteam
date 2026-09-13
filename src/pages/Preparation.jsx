@@ -788,10 +788,11 @@ export default function Preparation() {
                                           setNoteEditId(task.id)
                                           setNoteText(task.note || '')
                                         }}
-                                        className="text-slate-300 hover:text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded px-1.5 py-0.5 text-[10px] font-semibold"
                                         title="Ajouter / modifier la note"
                                       >
                                         <Pencil className="h-3.5 w-3.5" />
+                                        {task.note ? 'Note' : 'Ajouter une note'}
                                       </button>
                                     </span>
                                   )}
