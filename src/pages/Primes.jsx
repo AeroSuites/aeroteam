@@ -179,8 +179,8 @@ export default function Primes() {
         setNotifyMsg('Adresse enregistrée.')
         setNotifyEmail(res.email || notifyEmail)
       }
-    } catch {
-      setNotifyError("Échec de l'enregistrement (hors ligne ?).")
+    } catch (err) {
+      setNotifyError(`Échec de l'enregistrement : ${err?.message || 'hors ligne ?'}`)
     }
     setNotifyBusy(false)
   }
@@ -203,8 +203,8 @@ export default function Primes() {
         setNotifyPrivateKey('')
         await refreshNotifyInfo()
       }
-    } catch {
-      setNotifyError("Échec de l'enregistrement (hors ligne ?).")
+    } catch (err) {
+      setNotifyError(`Échec de l'enregistrement : ${err?.message || 'hors ligne ?'}`)
     }
     setNotifyBusy(false)
   }
@@ -222,8 +222,8 @@ export default function Primes() {
       else if (res?.error) setNotifyError("Échec de l'envoi du test.")
       else
         setNotifyMsg('Email de test envoyé — vérifiez votre boîte (et les indésirables).')
-    } catch {
-      setNotifyError("Échec de l'envoi du test (hors ligne ?).")
+    } catch (err) {
+      setNotifyError(`Échec de l'envoi du test : ${err?.message || 'hors ligne ?'}`)
     }
     setNotifyBusy(false)
   }
