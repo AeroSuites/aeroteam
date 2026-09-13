@@ -276,7 +276,7 @@ export default function Preparation() {
             [
               {
                 content: `${zone} (${zoneTasks.length})`,
-                colSpan: 4,
+                colSpan: 5,
                 styles: {
                   fillColor: [226, 232, 240],
                   textColor: [30, 41, 59],
@@ -291,12 +291,14 @@ export default function Preparation() {
             t.taskBarcode || '—',
             t.description || '',
             t.registration || '—',
+            t.note || '',
           ]),
           styles: { fontSize: 8, cellPadding: 1.2 },
           columnStyles: {
             0: { cellWidth: 12 },
             1: { cellWidth: 30 },
             3: { cellWidth: 26, halign: 'left' },
+            4: { cellWidth: 40, textColor: [87, 83, 78], fontStyle: 'italic' },
           },
         })
         y = doc.lastAutoTable.finalY + 5
