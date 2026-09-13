@@ -166,11 +166,51 @@ export default function ImportConsignes() {
   const unassignAircraft = async (p) => {
     if (
       !window.confirm(
-        `Retirer l'avion de ce profil ?\n\nLa carte « ${p.aircraft} » disparaîtra de cette liste, mais le profil et ses données (équipes, tâches, consignes) sont conservés.`
+        `Retirer l'avion de ce profil ?\n\nLa carte « ${p.aircraft} » disparaîtra, et les données de l'avion seront effacées du profil : consignes [C], membres assignés à l'avion du jour et équipes composées uniquement de ces membres.\nLes membres permanents et le reste du travail du leader sont conservés.`
       )
     )
       return
     try {
+      const fresh = await profileStore.adminGetProfileData(activeProfile?.code, p.id)
+      const d = fresh?.profile?.data || {}
+      const daySet = new Set(d.dayMembers || [])
+      const teams = (d.teams || [])
+        .map((t) => ({
+          ...t,
+          members: (t.members || []).filter((m) => !daySet.has(m)),
+        }))
+        .filter((t) => t.members.length > 0)
+      const teamIds = new Set(teams.map((t) => t.id))
+      const assignments = {}
+      Object.entries(d.assignments || {}).forEach(([k, v]) => {
+        if (teamIds.has(v)) assignments[k] = v
+      })
+      const cleared = {
+        tasks: d.tasks || [],
+        teams,
+        assignments,
+        members: d.members || [],
+        dayMembers: [],
+        prepTasks: d.prepTasks || [],
+        notes: (d.notes || []).filter(
+          (n) => !String(n.title || '').startsWith('[C] ')
+        ),
+        pockets: d.pockets || [],
+      }
+      const saved = await profileStore.saveProfileData(
+        p.code,
+        cleared,
+        fresh?.profile?.rev ?? 0,
+        false
+      )
+      if (saved?.error === 'conflict') {
+        setError('Le profil a été modifié entre-temps. Réessayez.')
+        return
+      }
+      if (saved?.error) {
+        setError('Échec du retrait.')
+        return
+      }
       const res = await profileStore.adminSetProfileAircraft(
         activeProfile?.code,
         p.code,
