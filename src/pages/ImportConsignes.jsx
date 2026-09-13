@@ -77,13 +77,13 @@ export default function ImportConsignes() {
     setHistory([])
   }
 
-  // Profils avion créés (persistés en base) : cartes permanentes
+  // Profils avion (persistés en base) : cartes permanentes de récap
   const loadCreatedProfiles = async () => {
     if (!activeProfile?.code) return
     try {
       const res = await profileStore.listProfiles(activeProfile.code)
       const aircraft = (res?.profiles || []).filter(
-        (p) => String(p.name || '').startsWith('Équipe ' ) && /^F-[\w-]+$/i.test(p.aircraft || '')
+        (p) => (p.aircraft || '').trim() !== ''
       )
       setCreatedProfiles(aircraft.sort((a, b) => (a.aircraft || '').localeCompare(b.aircraft || '')))
       setAllProfiles(res?.profiles || [])
@@ -422,11 +422,11 @@ export default function ImportConsignes() {
               </ul>
             </div>
           )}
-          {/* Profils avion créés — cartes permanentes */}
+          {/* Profils avion assignés — cartes permanentes de récap */}
           {(createdProfiles?.length > 0 || createdProfiles === null) && (
             <div className="bg-white rounded-xl shadow p-4 sm:p-6">
               <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
-                <Plane className="h-5 w-5 text-sky-500" /> Profils avion créés
+                <Plane className="h-5 w-5 text-sky-500" /> Avions assignés (récaps)
                 {createdProfiles && (
                   <span className="text-sm font-normal text-slate-400">
                     ({createdProfiles.length})
@@ -434,14 +434,14 @@ export default function ImportConsignes() {
                 )}
               </h2>
               <p className="text-xs text-slate-500 mb-3">
-                Cliquez sur une carte pour voir les équipes créées par le leader et la répartition
-                des tâches.
+                Cliquez sur une carte pour voir le récap du profil (équipes, tâches,
+                répartition) et l'exporter ou l'imprimer.
               </p>
               {createdProfiles === null ? (
                 <p className="text-sm text-slate-400">Chargement…</p>
               ) : createdProfiles.length === 0 ? (
                 <p className="text-sm text-slate-400 italic">
-                  Aucun profil avion créé pour le moment (lancez la création ci-dessous).
+                  Aucun avion assigné pour le moment (affectez les consignes ci-dessus).
                 </p>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
