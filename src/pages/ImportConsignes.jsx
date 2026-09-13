@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx'
 import {
   parseConsignesWorkbook,
 } from '../lib/consignesExcel'
-import { buildProfileData, aircraftProfileLabel } from '../lib/profileBuilder'
+import { buildProfileData } from '../lib/profileBuilder'
 import * as profileStore from '../lib/profileStore'
 import { useApp } from '../context/AppContext'
 import ProfileViewModal from '../components/ProfileViewModal'
@@ -45,6 +45,8 @@ export default function ImportConsignes() {
   const [editText, setEditText] = useState('')
   const [sessionInfo, setSessionInfo] = useState('')
   const [createdProfiles, setCreatedProfiles] = useState(null)
+  const [allProfiles, setAllProfiles] = useState(null)
+  const [assignments, setAssignments] = useState({})
   const [viewProfile, setViewProfile] = useState(null)
   const [history, setHistory] = useState([])
 
@@ -84,8 +86,10 @@ export default function ImportConsignes() {
         (p) => String(p.name || '').startsWith('Équipe ' ) && /^F-[\w-]+$/i.test(p.aircraft || '')
       )
       setCreatedProfiles(aircraft.sort((a, b) => (a.aircraft || '').localeCompare(b.aircraft || '')))
+      setAllProfiles(res?.profiles || [])
     } catch {
       setCreatedProfiles([])
+      setAllProfiles([])
     }
   }
 
@@ -103,6 +107,7 @@ export default function ImportConsignes() {
       setSelectedShift(st.selectedShift || 'matin')
       setOverrides(st.overrides || {})
       setResults(st.results || [])
+      setAssignments(st.assignments || {})
       if (st.savedAt) {
         setSessionInfo(
           `Session du ${new Date(st.savedAt).toLocaleString('fr-FR')} restaurée — fichier analysé conservé.`
@@ -128,12 +133,13 @@ export default function ImportConsignes() {
           selectedShift,
           overrides,
           results,
+          assignments,
         })
       )
     } catch {
       // stockage indisponible : non bloquant
     }
-  }, [report, fileName, selectedDay, selectedShift, overrides, results])
+  }, [report, fileName, selectedDay, selectedShift, overrides, results, assignments])
 
   const clearSession = () => {
     localStorage.removeItem(STATE_KEY)
@@ -228,55 +234,57 @@ export default function ImportConsignes() {
   const selectClass =
     'border border-slate-300 rounded-md px-3 py-2 text-sm bg-white'
 
-  const runCreation = async () => {
-    if (!eligible.length || !activeProfile?.code || !sheet) return
+  const applyAssignments = async () => {
+    const assigned = Object.entries(assignments).filter(([, c]) => c)
+    if (!assigned.length || !activeProfile?.code || !sheet) return
     setRunning(true)
     setResults([])
     const out = []
-    const created = []
-    const updated = []
+    const okCodes = []
 
-    for (const immat of eligible) {
+    for (const [immat, profileCode] of assigned) {
       const aircraftInfo = aircraftInfoForScope(immat)
       try {
-        const lookup = await profileStore.getProfile(immat)
-        let rev = lookup?.rev ?? 0
-        let createdNow = false
+        const lookup = await profileStore.getProfile(profileCode)
         if (!lookup) {
-          const res = await profileStore.adminCreateProfile(
-            activeProfile.code,
-            immat,
-            aircraftProfileLabel(immat),
-            immat
-          )
-          if (res?.error === 'code_exists') {
-            const again = await profileStore.getProfile(immat)
-            rev = again?.rev ?? 0
-          } else if (res?.error) {
-            out.push({ immat, ok: false, error: res.error })
-            continue
-          } else {
-            createdNow = true
-          }
+          out.push({ immat, ok: false, error: 'profil introuvable' })
+          continue
         }
-
-        const current = createdNow ? {} : lookup?.data || {}
         const scope = { day: selectedDay, shift: selectedShift }
-        const merged = buildProfileData(current, aircraftInfo, scope)
-        let saved = await profileStore.saveProfileData(immat, merged, rev, false)
+        const merged = buildProfileData(lookup?.data || {}, aircraftInfo, scope)
+        let saved = await profileStore.saveProfileData(
+          profileCode,
+          merged,
+          lookup?.rev ?? 0,
+          false
+        )
         if (saved?.error === 'conflict') {
-          const fresh = await profileStore.getProfile(immat)
+          const fresh = await profileStore.getProfile(profileCode)
           const merged2 = buildProfileData(fresh?.data || {}, aircraftInfo, scope)
-          saved = await profileStore.saveProfileData(immat, merged2, fresh?.rev ?? 0, false)
-          rev = fresh?.rev ?? 0
+          saved = await profileStore.saveProfileData(
+            profileCode,
+            merged2,
+            fresh?.rev ?? 0,
+            false
+          )
         }
         if (saved?.error) {
           out.push({ immat, ok: false, error: saved.error })
           continue
         }
-        if (createdNow) created.push(immat)
-        else updated.push(immat)
-        out.push({ immat, ok: true, created: createdNow })
+        if (!lookup.aircraft) {
+          try {
+            await profileStore.adminSetProfileAircraft(
+              activeProfile.code,
+              profileCode,
+              immat
+            )
+          } catch {
+            // l'avion du profil sera réglé manuellement
+          }
+        }
+        okCodes.push(immat)
+        out.push({ immat, ok: true, profile: lookup.name })
       } catch (err) {
         out.push({ immat, ok: false, error: err?.message || 'erreur réseau' })
       }
@@ -286,7 +294,7 @@ export default function ImportConsignes() {
     setResults([
       ...out,
       {
-        summary: `Terminé : ${created.length} profil(s) créé(s), ${updated.length} mis à jour, ${
+        summary: `Terminé : ${okCodes.length} affectation(s), ${
           out.filter((r) => !r.ok).length
         } échec(s) — ${selectedDay} ${selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)}.`,
       },
@@ -297,8 +305,8 @@ export default function ImportConsignes() {
       date: new Date().toLocaleString('fr-FR'),
       day: selectedDay,
       shift: selectedShift,
-      created,
-      updated,
+      assigned: okCodes,
+      updated: [],
       failed: out.filter((r) => !r.ok).length,
       fileName,
       aircrafts: eligible,
@@ -401,8 +409,12 @@ export default function ImportConsignes() {
                     <span className="font-semibold">
                       {h.day} {h.shift.charAt(0).toUpperCase() + h.shift.slice(1)}
                     </span>
-                    <span className="text-green-700">{h.created.length} créé(s)</span>
-                    <span className="text-sky-700">{h.updated.length} mis à jour</span>
+                    <span className="text-green-700">
+                      {(h.assigned?.length ?? h.created?.length ?? 0)} affecté(s)
+                    </span>
+                    {(h.updated?.length ?? 0) > 0 && (
+                      <span className="text-sky-700">{h.updated.length} mis à jour</span>
+                    )}
                     {h.failed > 0 && <span className="text-red-600">{h.failed} échec(s)</span>}
                     <span className="text-slate-400 truncate">{h.fileName}</span>
                   </li>
@@ -460,21 +472,21 @@ export default function ImportConsignes() {
             </div>
           )}
 
-          {/* Phase 2 — création des profils */}
+          {/* Phase 2 — affectation des consignes aux profils existants */}
           {report && (
             <div className="bg-white rounded-xl shadow p-4 sm:p-6">
               <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
-                <Rocket className="h-5 w-5 text-sky-500" /> Création des profils avion
+                <Rocket className="h-5 w-5 text-sky-500" /> Affectation des consignes
               </h2>
               <p className="text-xs text-slate-500 mb-4">
-                Crée ou met à jour les profils des avions ayant des consignes{' '}
+                Choisissez pour chaque avion le <strong>profil existant</strong> qui recevra
+                l'effectif et la consigne du jour{' '}
                 <strong>
                   {selectedDay} — {selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)}
                 </strong>
-                . L'effectif de ce jour × shift est ajouté aux <strong>membres pré-enregistrés</strong>{' '}
-                du profil (aucune équipe n'est créée : le leader monte ses équipes dans la page
-                Équipes), et la consigne du jour est insérée dans le Bloc-notes (note [C] remplacée
-                si déjà présente). Tâches, équipes et affectations existantes sont conservées.
+                . Aucun profil n'est créé automatiquement : la note [C] est insérée dans le
+                Bloc-notes du profil choisi et son effectif est complété. Si le profil n'a pas
+                encore d'avion, l'immatriculation lui est affectée.
               </p>
               {skippedBydayshift.length > 0 && (
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
@@ -482,16 +494,51 @@ export default function ImportConsignes() {
                   ce jour : {skippedBydayshift.join(', ')}
                 </p>
               )}
+              <div className="space-y-1 mb-4">
+                {eligible.map((immat) => (
+                  <div
+                    key={immat}
+                    className="flex flex-wrap items-center gap-2 py-1.5 border-b border-slate-50"
+                  >
+                    <span className="font-mono font-bold text-sky-700 w-24 shrink-0">
+                      {immat}
+                    </span>
+                    <span className="text-xs text-slate-400 w-28 shrink-0">
+                      {effectiveTasks(immat).length} consigne(s)
+                    </span>
+                    <select
+                      value={assignments[immat] || ''}
+                      onChange={(e) =>
+                        setAssignments((prev) => ({ ...prev, [immat]: e.target.value }))
+                      }
+                      className={`${selectClass} flex-1 min-w-[200px]`}
+                    >
+                      <option value="">— Choisir un profil existant —</option>
+                      {(allProfiles || []).map((p) => (
+                        <option key={p.id} value={p.code}>
+                          {p.name}
+                          {p.aircraft ? ` (${p.aircraft})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+                {allProfiles && allProfiles.length === 0 && (
+                  <p className="text-xs text-slate-400 italic">
+                    Aucun profil disponible — créez d'abord les profils dans Administration.
+                  </p>
+                )}
+              </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
-                  onClick={runCreation}
-                  disabled={running || eligible.length === 0}
+                  onClick={applyAssignments}
+                  disabled={running || Object.values(assignments).filter(Boolean).length === 0}
                   className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   {running
-                    ? 'Création en cours…'
-                    : `Créer / mettre à jour les ${eligible.length} profils (${selectedDay} ${selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)})`}
+                    ? 'Application en cours…'
+                    : `Appliquer à ${Object.values(assignments).filter(Boolean).length} avion(s) (${selectedDay} ${selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)})`}
                 </button>
                 {running && <span className="text-sm text-slate-500">ne fermez pas l'onglet</span>}
               </div>
@@ -510,7 +557,8 @@ export default function ImportConsignes() {
                         <>
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           <span className="font-mono font-bold">{r.immat}</span>
-                          {r.created ? ' — profil créé et chargé' : ' — profil mis à jour'}
+                          {' — consignes affectées à '}
+                          <span className="font-semibold">{r.profile}</span>
                         </>
                       ) : (
                         <>

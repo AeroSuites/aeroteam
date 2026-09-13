@@ -251,6 +251,12 @@ export function AppProvider({ children }) {
           setIsAdmin(false)
           return
         }
+        if (profile?.pending) {
+          setError('Votre compte est en attente de validation par un administrateur. Réessayez plus tard.')
+          setLoaded(false)
+          setIsAdmin(false)
+          return
+        }
         if (!profile) {
           // Le code n'existe pas (profil supprimé sur le cloud) : on déconnecte
           localStorage.removeItem(ACTIVE_CODE_KEY)
@@ -349,6 +355,7 @@ export function AppProvider({ children }) {
     if (!c) return { ok: false, error: 'Veuillez saisir un code.' }
     const exists = await profileStore.profileExists(c)
     if (exists?.locked) return { ok: false, error: 'Trop de tentatives de connexion : réessayez dans 15 minutes.' }
+    if (exists?.pending) return { ok: false, error: 'Ce compte est en attente de validation par un administrateur.' }
     if (!exists?.ok) return { ok: false, error: 'Aucun profil ne correspond à ce code.' }
     localStorage.setItem(ACTIVE_CODE_KEY, c)
     localStorage.setItem(ACTIVE_AT_KEY, String(Date.now()))
@@ -385,6 +392,30 @@ export function AppProvider({ children }) {
     },
     []
   )
+
+  const requestProfile = useCallback(async (profileCode, name, managerId) => {
+    try {
+      const res = await profileStore.requestProfile(
+        String(profileCode || '').trim(),
+        String(name || '').trim(),
+        managerId || null
+      )
+      if (res?.error === 'code_exists')
+        return { ok: false, error: 'Ce code est déjà utilisé. Choisissez-en un autre.' }
+      if (res?.error === 'code_reserve')
+        return { ok: false, error: 'Ce code est réservé. Choisissez-en un autre.' }
+      if (res?.error === 'code_too_short')
+        return { ok: false, error: 'Le code doit contenir au moins 8 caractères.' }
+      if (res?.error === 'nom_requis')
+        return { ok: false, error: 'Le nom est obligatoire.' }
+      if (res?.error === 'manager_requis')
+        return { ok: false, error: 'Sélectionnez votre manager dans la liste.' }
+      if (res?.ok) return { ok: true }
+      return { ok: false, error: "Échec de l'envoi de la demande : " + (res?.error || 'erreur') }
+    } catch (err) {
+      return { ok: false, error: "Échec de l'envoi de la demande : " + (err.message || 'erreur réseau') }
+    }
+  }, [])
 
   const changeAdminCode = useCallback(async (oldCode, newCode) => {
     try {
@@ -479,7 +510,7 @@ const value = {
     tasks, teams, assignments, members, prepTasks, notes, pockets,
     activeProfile, code, isAdmin,
     loading, error, saveState, resolveConflict,
-    connectProfile, createProfile, disconnect, deleteProfile,
+    connectProfile, createProfile, requestProfile, disconnect, deleteProfile,
     changeAdminCode, updateOwnProfile,
     addTasks, addTeam, updateTeam, removeTeam, assignTask, unassignTask,
     removeTask, removeTasksByBlock, updateTask, addMember, addMembers, removeMember, resetData,

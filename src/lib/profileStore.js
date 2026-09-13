@@ -23,6 +23,7 @@ export async function getProfile(code) {
   const { data, error } = await supabase.rpc('get_profile', { p_code: code })
   if (error) throw error
   if (data?.error === 'locked') return { locked: true }
+  if (data?.error === 'pending') return { pending: true }
   if (data?.error === 'not_found') return null
   return data
 }
@@ -82,6 +83,52 @@ export async function adminCreateProfile(adminCode, code, name, aircraft) {
     p_code: code,
     p_name: name,
     p_aircraft: aircraft,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function adminSetProfileAircraft(adminCode, profileCode, aircraft) {
+  const { data, error } = await supabase.rpc('admin_set_profile_aircraft', {
+    p_admin_code: adminCode,
+    p_profile_code: profileCode,
+    p_aircraft: aircraft,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function requestProfile(code, name, managerId) {
+  const { data, error } = await supabase.rpc('request_profile', {
+    p_code: code,
+    p_name: name,
+    p_manager_id: managerId,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function adminListPendingProfiles(adminCode) {
+  const { data, error } = await supabase.rpc('admin_list_pending_profiles', {
+    p_admin_code: adminCode,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function adminValidateProfile(adminCode, profileCode) {
+  const { data, error } = await supabase.rpc('admin_validate_profile', {
+    p_admin_code: adminCode,
+    p_profile_code: profileCode,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function adminRefuseProfile(adminCode, profileCode) {
+  const { data, error } = await supabase.rpc('admin_refuse_profile', {
+    p_admin_code: adminCode,
+    p_profile_code: profileCode,
   })
   if (error) throw error
   return data

@@ -1,13 +1,31 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { Plane, LogIn, KeyRound } from 'lucide-react'
+import * as profileStore from '../lib/profileStore'
+import { Plane, LogIn, KeyRound, UserPlus } from 'lucide-react'
 
 export default function ProfileSelector() {
-  const { connectProfile, error } = useApp()
+  const { connectProfile, requestProfile, error } = useApp()
 
+  const [mode, setMode] = useState('login')
   const [code, setCode] = useState('')
   const [connecting, setConnecting] = useState(false)
   const [connectError, setConnectError] = useState('')
+
+  const [regName, setRegName] = useState('')
+  const [regCode, setRegCode] = useState('')
+  const [regCode2, setRegCode2] = useState('')
+  const [managers, setManagers] = useState(null)
+  const [managerId, setManagerId] = useState('')
+  const [regBusy, setRegBusy] = useState(false)
+  const [regError, setRegError] = useState('')
+  const [regOk, setRegOk] = useState(false)
+
+  useEffect(() => {
+    profileStore
+      .listManagers()
+      .then((res) => setManagers(res?.ok ? res.managers || [] : []))
+      .catch(() => setManagers([]))
+  }, [])
 
   const handleConnect = async () => {
     setConnecting(true)
@@ -15,6 +33,39 @@ export default function ProfileSelector() {
     const res = await connectProfile(code)
     if (!res.ok) setConnectError(res.error)
     setConnecting(false)
+  }
+
+  const handleRegister = async () => {
+    setRegError('')
+    setRegOk(false)
+    if (!regName.trim()) {
+      setRegError('Le nom est obligatoire.')
+      return
+    }
+    if (!managerId) {
+      setRegError('Sélectionnez votre manager dans la liste.')
+      return
+    }
+    if (!regCode || regCode.length < 8) {
+      setRegError('Le code doit contenir au moins 8 caractères.')
+      return
+    }
+    if (regCode !== regCode2) {
+      setRegError('Les deux codes ne correspondent pas.')
+      return
+    }
+    setRegBusy(true)
+    const res = await requestProfile(regCode, regName, managerId)
+    setRegBusy(false)
+    if (!res.ok) {
+      setRegError(res.error)
+      return
+    }
+    setRegOk(true)
+    setRegName('')
+    setRegCode('')
+    setRegCode2('')
+    setManagerId('')
   }
 
   return (
@@ -25,33 +76,130 @@ export default function ProfileSelector() {
           <Plane className="h-8 w-8 text-sky-500" />
           <h1 className="text-2xl font-bold text-slate-900">AeroTeam</h1>
         </div>
-        <p className="text-slate-500 mb-6">
-          Entrez votre <strong className="text-slate-700">code personnel</strong> pour retrouver votre profil et vos données, sur n'importe quel appareil.
-        </p>
 
-        <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-          <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-            <KeyRound className="h-4 w-4 text-sky-500" /> Se connecter à mon profil
-          </h2>
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
-            type="password"
-            placeholder="Votre code personnel"
-            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
-            autoFocus
-          />
-          {connectError && <p className="text-sm text-red-600">{connectError}</p>}
-          {!connectError && error && <p className="text-sm text-red-600">{error}</p>}
-          <button
-            onClick={handleConnect}
-            disabled={connecting || !code.trim()}
-            className="w-full bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold flex items-center justify-center gap-2"
-          >
-            <LogIn className="h-4 w-4" /> {connecting ? 'Connexion…' : 'Se connecter'}
-          </button>
-        </div>
+        {mode === 'login' ? (
+          <>
+            <p className="text-slate-500 mb-6">
+              Entrez votre <strong className="text-slate-700">code personnel</strong> pour
+              retrouver votre profil et vos données, sur n'importe quel appareil.
+            </p>
+
+            <div className="border border-slate-200 rounded-xl p-4 space-y-3">
+              <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+                <KeyRound className="h-4 w-4 text-sky-500" /> Se connecter à mon profil
+              </h2>
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
+                type="password"
+                placeholder="Votre code personnel"
+                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
+                autoFocus
+              />
+              {connectError && <p className="text-sm text-red-600">{connectError}</p>}
+              {!connectError && error && <p className="text-sm text-red-600">{error}</p>}
+              <button
+                onClick={handleConnect}
+                disabled={connecting || !code.trim()}
+                className="w-full bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold flex items-center justify-center gap-2"
+              >
+                <LogIn className="h-4 w-4" /> {connecting ? 'Connexion…' : 'Se connecter'}
+              </button>
+            </div>
+
+            <p className="text-center text-sm text-slate-500 mt-4">
+              Pas encore de compte ?{' '}
+              <button
+                onClick={() => {
+                  setMode('register')
+                  setConnectError('')
+                }}
+                className="text-sky-600 hover:underline font-semibold"
+              >
+                Créer mon compte
+              </button>
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-slate-500 mb-6">
+              Créez votre profil : <strong className="text-slate-700">nom + code personnel</strong>
+              . Un administrateur devra valider votre demande avant votre première connexion.
+            </p>
+
+            <div className="border border-slate-200 rounded-xl p-4 space-y-3">
+              <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-sky-500" /> Demande de création de profil
+              </h2>
+              <input
+                value={regName}
+                onChange={(e) => setRegName(e.target.value)}
+                placeholder="Nom complet (ex : AYAD (FARID))"
+                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
+                autoFocus
+              />
+              <select
+                value={managerId}
+                onChange={(e) => setManagerId(e.target.value)}
+                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
+              >
+                <option value="">
+                  {managers === null ? 'Chargement des managers…' : '— Choisir mon manager —'}
+                </option>
+                {(managers || []).map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+              {managers && managers.length === 0 && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                  Aucun manager disponible pour le moment. Contactez votre responsable avant de
+                  créer un compte.
+                </p>
+              )}
+              <input
+                value={regCode}
+                onChange={(e) => setRegCode(e.target.value)}
+                type="password"
+                placeholder="Code personnel (8 caractères minimum)"
+                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
+              />
+              <input
+                value={regCode2}
+                onChange={(e) => setRegCode2(e.target.value)}
+                type="password"
+                placeholder="Confirmer le code"
+                onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
+                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
+              />
+              {regOk && (
+                <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
+                  Demande envoyée ! Votre manager doit valider votre compte — vous pourrez vous
+                  connecter une fois validé.
+                </p>
+              )}
+              {regError && <p className="text-sm text-red-600">{regError}</p>}
+              <button
+                onClick={handleRegister}
+                disabled={regBusy || !managers || managers.length === 0}
+                className="w-full bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold flex items-center justify-center gap-2"
+              >
+                <UserPlus className="h-4 w-4" /> {regBusy ? 'Envoi…' : 'Envoyer ma demande'}
+              </button>
+            </div>
+
+            <p className="text-center text-sm text-slate-500 mt-4">
+              <button
+                onClick={() => setMode('login')}
+                className="text-sky-600 hover:underline font-semibold"
+              >
+                J'ai déjà un compte — me connecter
+              </button>
+            </p>
+          </>
+        )}
       </div>
     </div>
   )

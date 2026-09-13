@@ -99,6 +99,11 @@ export default function Admin() {
 
   const [viewProfile, setViewProfile] = useState(null)
 
+  const [pendingProfiles, setPendingProfiles] = useState(null)
+  const [pendingBusy, setPendingBusy] = useState(null)
+  const [pendingMsg, setPendingMsg] = useState('')
+  const [profilesTick, setProfilesTick] = useState(0)
+
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
   const [editAircraft, setEditAircraft] = useState('')
@@ -173,7 +178,49 @@ setEditError(res.error || 'Échec de la mise à jour.')
     return () => {
       cancelled = true
     }
-  }, [activeProfile?.code]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeProfile?.code, profilesTick]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!activeProfile?.code) return
+    profileStore
+      .adminListPendingProfiles(activeProfile.code)
+      .then((res) => {
+        if (res?.error) setPendingMsg('Impossible de charger les demandes.')
+        else setPendingProfiles(res.pending || [])
+      })
+      .catch(() => setPendingMsg('Impossible de charger les demandes.'))
+  }, [activeProfile?.code, profilesTick])
+
+  const handleValidatePending = async (profileCode) => {
+    setPendingBusy(profileCode)
+    setPendingMsg('')
+    try {
+      const res = await profileStore.adminValidateProfile(activeProfile?.code, profileCode)
+      if (res?.error) setPendingMsg('Échec de la validation.')
+      else {
+        setPendingProfiles((prev) => (prev || []).filter((p) => p.code !== profileCode))
+        setProfilesTick((t) => t + 1)
+      }
+    } catch {
+      setPendingMsg('Échec de la validation.')
+    }
+    setPendingBusy(null)
+  }
+
+  const handleRefusePending = async (profileCode) => {
+    if (!window.confirm('Refuser et supprimer cette demande ? Le profil ne sera pas créé.'))
+      return
+    setPendingBusy(profileCode)
+    setPendingMsg('')
+    try {
+      const res = await profileStore.adminRefuseProfile(activeProfile?.code, profileCode)
+      if (res?.error) setPendingMsg('Échec du refus.')
+      else setPendingProfiles((prev) => (prev || []).filter((p) => p.code !== profileCode))
+    } catch {
+      setPendingMsg('Échec du refus.')
+    }
+    setPendingBusy(null)
+  }
 
   const handleDeleteProfile = async (profile) => {
     if (!activeProfile?.code) return
@@ -233,7 +280,63 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Administration</h1>
-<p className="text-slate-600 mt-1">Création des profils (réservé à l'administrateur)</p>
+        <p className="text-slate-600 mt-1">Création des profils (réservé à l'administrateur)</p>
+      </div>
+
+      <div className="bg-white rounded-xl shadow p-4 sm:p-6 max-w-xl border-l-4 border-l-amber-400">
+        <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-1">
+          <UserCog className="h-5 w-5 text-amber-500" /> Demandes d'accès
+          {pendingProfiles && pendingProfiles.length > 0 && (
+            <span className="text-xs font-bold bg-amber-100 text-amber-800 rounded-full px-2 py-0.5">
+              {pendingProfiles.length}
+            </span>
+          )}
+        </h2>
+        <p className="text-xs text-slate-400 mb-3">
+          Inscriptions de votre effectif en attente de validation. Validez pour activer le compte
+          (la personne pourra alors se connecter), ou refusez pour supprimer la demande. Un email
+          vous est envoyé à chaque nouvelle demande.
+        </p>
+        {pendingMsg && <p className="text-sm text-red-600 mb-2">{pendingMsg}</p>}
+        {pendingProfiles === null && <p className="text-sm text-slate-400">Chargement…</p>}
+        {pendingProfiles && pendingProfiles.length === 0 && (
+          <p className="text-sm text-slate-400 italic">Aucune demande en attente.</p>
+        )}
+        {pendingProfiles && pendingProfiles.length > 0 && (
+          <ul className="divide-y divide-slate-100">
+            {pendingProfiles.map((p) => (
+              <li
+                key={p.id}
+                className="py-2 flex flex-wrap items-center justify-between gap-2"
+              >
+                <div>
+                  <span className="font-medium text-slate-800">{p.name}</span>
+                  <span className="block text-[11px] text-slate-400">
+                    {p.created_at
+                      ? `demandé le ${new Date(p.created_at).toLocaleDateString('fr-FR')}`
+                      : ''}
+                  </span>
+                </div>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => handleValidatePending(p.code)}
+                    disabled={pendingBusy === p.code}
+                    className="flex items-center gap-1 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 rounded-full px-3 py-1 disabled:opacity-50"
+                  >
+                    <Check className="h-3.5 w-3.5" /> Valider
+                  </button>
+                  <button
+                    onClick={() => handleRefusePending(p.code)}
+                    disabled={pendingBusy === p.code}
+                    className="flex items-center gap-1 text-xs font-semibold text-red-600 border border-red-300 hover:bg-red-50 rounded-full px-3 py-1 disabled:opacity-50"
+                  >
+                    <X className="h-3.5 w-3.5" /> Refuser
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow p-4 sm:p-6 max-w-xl">
