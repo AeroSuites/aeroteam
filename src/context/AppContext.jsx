@@ -521,6 +521,7 @@ export function AppProvider({ children }) {
     setPrepTasks([])
     setPockets([])
     setDayMembers([])
+    setNotes([])
   }, [])
 
 const value = {

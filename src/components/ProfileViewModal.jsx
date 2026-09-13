@@ -222,6 +222,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [msg, setMsg] = useState('')
   const [purging, setPurging] = useState(false)
   const [resetting, setResetting] = useState(false)
 
@@ -231,6 +232,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
     // eslint-disable-next-line react/set-state-in-effect -- réinitialisation à l'ouverture du modal
     setData(null)
     setError('')
+    setMsg('')
     setLoading(true)
     profileStore
       .adminGetProfileData(adminCode, profile.id)
@@ -279,13 +281,14 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
     }
     if (
       !window.confirm(
-        "Réinitialiser le travail de ce profil ?\n\nTâches, équipes, affectations, préparation et membres assignés à l'avion du jour seront effacés.\nLes membres permanents et les consignes sont conservés. Action irréversible."
+        "Réinitialiser le travail de ce profil ?\n\nTâches, équipes, affectations, préparation, consignes et membres assignés à l'avion du jour seront effacés.\nSeuls les membres permanents sont conservés. Action irréversible."
       )
     ) {
       return
     }
     setResetting(true)
     setError('')
+    setMsg('')
     try {
       const fresh = await profileStore.adminGetProfileData(adminCode, profile.id)
       const d = fresh?.profile?.data || data || {}
@@ -296,7 +299,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
         members: d.members || [],
         dayMembers: [],
         prepTasks: [],
-        notes: d.notes || [],
+        notes: [],
         pockets: [],
       }
       const saved = await profileStore.saveProfileData(
@@ -311,7 +314,10 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
         setError('Échec de la réinitialisation.')
       } else {
         const again = await profileStore.adminGetProfileData(adminCode, profile.id)
-        if (again?.ok) setData(again.profile?.data || {})
+        if (again?.ok) {
+          setData(again.profile?.data || {})
+          setMsg('Réinitialisation effectuée (membres permanents conservés).')
+        }
       }
     } catch {
       setError('Échec de la réinitialisation (hors ligne ?).')
@@ -391,6 +397,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
         <div className="p-5 space-y-4 overflow-y-auto">
           {loading && <p className="text-sm text-slate-400">Chargement…</p>}
           {error && <p className="text-sm text-red-600">{error}</p>}
+          {msg && <p className="text-sm text-emerald-700">{msg}</p>}
 
           {data && (
             <>
