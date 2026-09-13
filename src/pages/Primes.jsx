@@ -77,10 +77,11 @@ export default function Primes() {
   const [assignValue, setAssignValue] = useState('')
 
   const [notifyEmail, setNotifyEmail] = useState('')
-  const [notifyFrom, setNotifyFrom] = useState('')
-  const [notifyFromName, setNotifyFromName] = useState('')
+  const [notifyServiceId, setNotifyServiceId] = useState('')
+  const [notifyTemplateId, setNotifyTemplateId] = useState('')
+  const [notifyPublicKey, setNotifyPublicKey] = useState('')
+  const [notifyPrivateKey, setNotifyPrivateKey] = useState('')
   const [notifyConfigured, setNotifyConfigured] = useState(false)
-  const [notifyKey, setNotifyKey] = useState('')
   const [notifyMsg, setNotifyMsg] = useState('')
   const [notifyError, setNotifyError] = useState('')
   const [notifyBusy, setNotifyBusy] = useState(false)
@@ -143,8 +144,9 @@ export default function Primes() {
       .then((res) => {
         if (res?.ok) {
           setNotifyEmail(res.email || '')
-          setNotifyFrom(res.from_email || '')
-          setNotifyFromName(res.from_name || '')
+          setNotifyServiceId(res.service_id || '')
+          setNotifyTemplateId(res.template_id || '')
+          setNotifyPublicKey(res.public_key || '')
           setNotifyConfigured(res.configured === true)
         }
       })
@@ -155,8 +157,9 @@ export default function Primes() {
     try {
       const res = await profileStore.adminGetNotifyInfo(activeProfile?.code)
       if (res?.ok) {
-        setNotifyFrom(res.from_email || '')
-        setNotifyFromName(res.from_name || '')
+        setNotifyServiceId(res.service_id || '')
+        setNotifyTemplateId(res.template_id || '')
+        setNotifyPublicKey(res.public_key || '')
         setNotifyConfigured(res.configured === true)
       }
     } catch {
@@ -189,15 +192,15 @@ export default function Primes() {
     try {
       const res = await profileStore.adminSetNotifyConfig(
         activeProfile?.code,
-        notifyKey,
-        notifyFrom,
-        notifyFromName
+        notifyServiceId,
+        notifyTemplateId,
+        notifyPublicKey,
+        notifyPrivateKey
       )
-      if (res?.error === 'email_invalide') setNotifyError('Adresse expéditrice invalide.')
-      else if (res?.error) setNotifyError("Échec de l'enregistrement.")
+      if (res?.error) setNotifyError("Échec de l'enregistrement.")
       else {
         setNotifyMsg('Configuration enregistrée.')
-        setNotifyKey('')
+        setNotifyPrivateKey('')
         await refreshNotifyInfo()
       }
     } catch {
@@ -787,27 +790,33 @@ export default function Primes() {
 
         <details className="mt-4">
           <summary className="cursor-pointer text-xs font-medium text-slate-500">
-            Configuration de l'envoi (Brevo) — à remplir une seule fois
+            Configuration de l'envoi (EmailJS, gratuit) — à remplir une seule fois
           </summary>
           <div className="grid gap-2 mt-3 max-w-2xl">
             <input
-              type="password"
-              value={notifyKey}
-              onChange={(e) => setNotifyKey(e.target.value)}
-              placeholder="Clé API Brevo (xkeysib-…)"
+              value={notifyServiceId}
+              onChange={(e) => setNotifyServiceId(e.target.value)}
+              placeholder="Service ID (ex : service_xxxxxxx)"
               className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
             />
             <input
-              value={notifyFrom}
-              onChange={(e) => setNotifyFrom(e.target.value)}
-              placeholder="Adresse expéditrice dédiée (ex : primes@votredomaine.fr)"
-              className="border border-slate-300 rounded-md px-3 py-2 text-sm"
+              value={notifyTemplateId}
+              onChange={(e) => setNotifyTemplateId(e.target.value)}
+              placeholder="Template ID (ex : template_xxxxxxx)"
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
             />
             <input
-              value={notifyFromName}
-              onChange={(e) => setNotifyFromName(e.target.value)}
-              placeholder="Nom affiché de l'expéditeur (ex : AeroSuite Primes)"
-              className="border border-slate-300 rounded-md px-3 py-2 text-sm"
+              value={notifyPublicKey}
+              onChange={(e) => setNotifyPublicKey(e.target.value)}
+              placeholder="Clé publique (user_id, ex : XxxXXXXxxxxXxx)"
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
+            />
+            <input
+              type="password"
+              value={notifyPrivateKey}
+              onChange={(e) => setNotifyPrivateKey(e.target.value)}
+              placeholder="Clé privée (secret, ex : xxx-xxxxx-xxxxx)"
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
             />
             <button
               onClick={saveNotifyConfig}
@@ -817,8 +826,8 @@ export default function Primes() {
               Enregistrer la configuration
             </button>
             <p className="text-[11px] text-slate-400">
-              La clé n'est enregistrée que si le champ est rempli (elle n'est jamais réaffichée).
-              L'adresse expéditrice doit être vérifiée au préalable dans votre compte Brevo.
+              Un champ vide ne remplace pas la valeur enregistrée. La clé privée n'est jamais
+              réaffichée. Expéditeur = votre adresse Gmail dédiée (service EmailJS).
             </p>
           </div>
         </details>
