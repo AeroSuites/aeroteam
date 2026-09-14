@@ -431,3 +431,20 @@ export async function deleteProfile(code) {
   if (error) throw error
   return !!data
 }
+
+export async function listProfilesPublic() {
+  const { data, error } = await supabase.rpc('list_profiles_public')
+  if (error) throw error
+  return data
+}
+
+export async function pocketTransferTo(fromCode, toId, pocket, prepTasks) {
+  const { data, error } = await supabase.rpc('pocket_transfer_to', {
+    p_from_code: fromCode,
+    p_to_id: toId,
+    p_pocket: pocket,
+    p_prep_tasks: prepTasks,
+  })
+  if (error) throw error
+  return data
+}

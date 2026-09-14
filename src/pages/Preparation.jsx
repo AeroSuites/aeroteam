@@ -45,8 +45,6 @@ export default function Preparation() {
     addTasksToPocket,
     removeTasksFromPocket,
     removePocket,
-    isAdmin,
-    code,
     activeProfile,
   } = useApp()
 
@@ -70,19 +68,19 @@ export default function Preparation() {
   const [transferError, setTransferError] = useState('')
 
   useEffect(() => {
-    if (!isAdmin || !code) return
+    if (!activeProfile?.id) return
     profileStore
-      .listProfiles(code)
+      .listProfilesPublic()
       .then((res) => {
-        const list = (res?.profiles || []).filter((p) => p.id !== activeProfile?.id)
+        const list = (res?.profiles || []).filter((p) => p.id !== activeProfile.id)
         setTransferProfiles(list)
       })
       .catch(() => setTransferProfiles([]))
-  }, [isAdmin, code, activeProfile])
+  }, [activeProfile])
 
   const transferPocket = async (p) => {
-    const target = transferProfiles.find((tp) => tp.code === transferTargetCode)
-    if (!target) {
+    const target = transferProfiles.find((tp) => tp.id === transferTargetCode)
+    if (!target || !activeProfile?.code) {
       setTransferError('Choisissez un profil destinataire.')
       return
     }
@@ -92,30 +90,15 @@ export default function Preparation() {
     try {
       const taskIds = new Set(p.taskIds || [])
       const movedTasks = prepTasks.filter((t) => taskIds.has(t.id))
-      const tgtRes = await profileStore.adminGetProfileData(code, target.id)
-      if (!tgtRes?.ok) {
-        setTransferError('Profil destinataire introuvable.')
-        setTransferring(false)
-        return
-      }
-      const tgt = tgtRes.profile?.data || {}
-      const tgtData = {
-        ...tgt,
-        pockets: [
-          ...(tgt.pockets || []),
-          { id: p.id, name: p.name, taskIds: [...taskIds] },
-        ],
-        prepTasks: [...(tgt.prepTasks || []), ...movedTasks],
-      }
-      const saved = await profileStore.saveProfileData(
-        target.code,
-        tgtData,
-        tgtRes.profile?.rev ?? 0,
-        false
+      const res = await profileStore.pocketTransferTo(
+        activeProfile.code,
+        target.id,
+        { id: p.id, name: p.name, taskIds: [...taskIds] },
+        movedTasks
       )
-      if (saved?.error === 'conflict') {
-        setTransferError('Le profil destinataire a été modifié entre-temps. Réessayez.')
-      } else if (saved?.error) {
+      if (res?.error === 'cible_invalide') {
+        setTransferError('Profil destinataire invalide.')
+      } else if (res?.error) {
         setTransferError('Échec du transfert.')
       } else {
         removePocket(p.id)
@@ -669,58 +652,56 @@ export default function Preparation() {
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
-                    {isAdmin && (
-                      <div className="border-t border-slate-100 pt-2">
-                        {transferPocketId === p.id ? (
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <select
-                              value={transferTargetCode}
-                              onChange={(e) => setTransferTargetCode(e.target.value)}
-                              className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white flex-1 min-w-[140px]"
-                            >
-                              <option value="">— Profil destinataire —</option>
-                              {transferProfiles.map((pp) => (
-                                <option key={pp.id} value={pp.code}>
-                                  {pp.name}
-                                  {pp.aircraft ? ` (${pp.aircraft})` : ''}
-                                </option>
-                              ))}
-                            </select>
-                            <button
-                              onClick={() => transferPocket(p)}
-                              disabled={transferring || !transferTargetCode}
-                              className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-full px-3 py-1 disabled:opacity-50"
-                            >
-                              {transferring ? 'Transfert…' : 'Transférer'}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setTransferPocketId(null)
-                                setTransferTargetCode('')
-                              }}
-                              className="text-slate-400 hover:text-slate-700 p-1"
-                              title="Annuler"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : (
+                    <div className="border-t border-slate-100 pt-2">
+                      {transferPocketId === p.id ? (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <select
+                            value={transferTargetCode}
+                            onChange={(e) => setTransferTargetCode(e.target.value)}
+                            className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white flex-1 min-w-[140px]"
+                          >
+                            <option value="">— Profil destinataire —</option>
+                            {transferProfiles.map((pp) => (
+                              <option key={pp.id} value={pp.id}>
+                                {pp.name}
+                                {pp.aircraft ? ` (${pp.aircraft})` : ''}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => transferPocket(p)}
+                            disabled={transferring || !transferTargetCode}
+                            className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-full px-3 py-1 disabled:opacity-50"
+                          >
+                            {transferring ? 'Transfert…' : 'Transférer'}
+                          </button>
                           <button
                             onClick={() => {
-                              setTransferPocketId(p.id)
+                              setTransferPocketId(null)
                               setTransferTargetCode('')
-                              setTransferMsg('')
-                              setTransferError('')
                             }}
-                            disabled={transferProfiles.length === 0}
-                            className="w-full text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1 disabled:opacity-50"
-                            title="Transférer cette pochette (avec ses lignes) à un autre profil — passation de consigne"
+                            className="text-slate-400 hover:text-slate-700 p-1"
+                            title="Annuler"
                           >
-                            Transférer à un autre profil
+                            <X className="h-4 w-4" />
                           </button>
-                        )}
-                      </div>
-                    )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setTransferPocketId(p.id)
+                            setTransferTargetCode('')
+                            setTransferMsg('')
+                            setTransferError('')
+                          }}
+                          disabled={transferProfiles.length === 0}
+                          className="w-full text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1 disabled:opacity-50"
+                          title="Transférer cette pochette (avec ses lignes) à un autre profil — passation de consigne"
+                        >
+                          Transférer à un autre profil
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )
               })}
