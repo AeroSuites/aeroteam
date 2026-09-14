@@ -30,7 +30,7 @@ const FILTERS = [
 // Notifications email : conservées dans le code mais désactivées pour
 // le moment (aucun service d'envoi accepté). Passer à true pour
 // réafficher la carte « Notifications email ».
-const EMAIL_NOTIFICATIONS_ENABLED = false
+const EMAIL_NOTIFICATIONS_ENABLED = true
 
 const catLabel = (code) => CATEGORIES[code] || code || '—'
 
@@ -82,8 +82,10 @@ export default function Primes() {
   const [assignValue, setAssignValue] = useState('')
 
   const [notifyEmail, setNotifyEmail] = useState('')
-  const [notifyApiKey, setNotifyApiKey] = useState('')
-  const [notifyFrom, setNotifyFrom] = useState('')
+  const [notifyServiceId, setNotifyServiceId] = useState('')
+  const [notifyTemplateId, setNotifyTemplateId] = useState('')
+  const [notifyPublicKey, setNotifyPublicKey] = useState('')
+  const [notifyPrivateKey, setNotifyPrivateKey] = useState('')
   const [notifyConfigured, setNotifyConfigured] = useState(false)
   const [notifyMsg, setNotifyMsg] = useState('')
   const [notifyError, setNotifyError] = useState('')
@@ -147,7 +149,9 @@ export default function Primes() {
       .then((res) => {
         if (res?.ok) {
           setNotifyEmail(res.email || '')
-          setNotifyFrom(res.from_email || '')
+          setNotifyServiceId(res.service_id || '')
+          setNotifyTemplateId(res.template_id || '')
+          setNotifyPublicKey(res.public_key || '')
           setNotifyConfigured(res.configured === true)
         }
       })
@@ -158,7 +162,9 @@ export default function Primes() {
     try {
       const res = await profileStore.adminGetNotifyInfo(activeProfile?.code)
       if (res?.ok) {
-        setNotifyFrom(res.from_email || '')
+        setNotifyServiceId(res.service_id || '')
+        setNotifyTemplateId(res.template_id || '')
+        setNotifyPublicKey(res.public_key || '')
         setNotifyConfigured(res.configured === true)
       }
     } catch {
@@ -191,14 +197,15 @@ export default function Primes() {
     try {
       const res = await profileStore.adminSetNotifyConfig(
         activeProfile?.code,
-        notifyApiKey,
-        notifyFrom
+        notifyServiceId,
+        notifyTemplateId,
+        notifyPublicKey,
+        notifyPrivateKey
       )
-      if (res?.error === 'email_invalide') setNotifyError('Adresse expéditrice invalide.')
-      else if (res?.error) setNotifyError("Échec de l'enregistrement.")
+      if (res?.error) setNotifyError("Échec de l'enregistrement.")
       else {
         setNotifyMsg('Configuration enregistrée.')
-        setNotifyApiKey('')
+        setNotifyPrivateKey('')
         await refreshNotifyInfo()
       }
     } catch (err) {
@@ -789,21 +796,33 @@ export default function Primes() {
 
         <details className="mt-4">
           <summary className="cursor-pointer text-xs font-medium text-slate-500">
-            Configuration de l'envoi (SMTP2GO, gratuit) — à remplir une seule fois
+            Configuration de l'envoi (EmailJS, gratuit) — à remplir une seule fois
           </summary>
           <div className="grid gap-2 mt-3 max-w-2xl">
             <input
-              type="password"
-              value={notifyApiKey}
-              onChange={(e) => setNotifyApiKey(e.target.value)}
-              placeholder="Clé API SMTP2GO (api-…)"
+              value={notifyServiceId}
+              onChange={(e) => setNotifyServiceId(e.target.value)}
+              placeholder="Service ID (ex : service_xxxxxxx)"
               className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
             />
             <input
-              value={notifyFrom}
-              onChange={(e) => setNotifyFrom(e.target.value)}
-              placeholder="Adresse expéditrice vérifiée (ex : vous@proton.me)"
-              className="border border-slate-300 rounded-md px-3 py-2 text-sm"
+              value={notifyTemplateId}
+              onChange={(e) => setNotifyTemplateId(e.target.value)}
+              placeholder="Template ID (ex : template_xxxxxxx)"
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
+            />
+            <input
+              value={notifyPublicKey}
+              onChange={(e) => setNotifyPublicKey(e.target.value)}
+              placeholder="Clé publique (user_id)"
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
+            />
+            <input
+              type="password"
+              value={notifyPrivateKey}
+              onChange={(e) => setNotifyPrivateKey(e.target.value)}
+              placeholder="Clé privée (secret)"
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
             />
             <button
               onClick={saveNotifyConfig}
@@ -813,9 +832,8 @@ export default function Primes() {
               Enregistrer la configuration
             </button>
             <p className="text-[11px] text-slate-400">
-              Un champ vide ne remplace pas la valeur enregistrée. La clé n'est jamais
-              réaffichée. L'adresse expéditrice doit être vérifiée dans SMTP2GO (lien reçu
-              par mail).
+              Un champ vide ne remplace pas la valeur enregistrée. La clé privée n'est jamais
+              réaffichée. Expéditeur = votre adresse Gmail dédiée (service EmailJS).
             </p>
           </div>
         </details>

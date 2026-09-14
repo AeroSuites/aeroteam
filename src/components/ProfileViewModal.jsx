@@ -9,7 +9,7 @@ import {
   hexToRgb,
 } from '../utils/helpers'
 import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
-import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw } from 'lucide-react'
+import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw, FolderKanban } from 'lucide-react'
 
 function StatBox({ label, value }) {
   return (
@@ -227,6 +227,76 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
   const [msg, setMsg] = useState('')
   const [purging, setPurging] = useState(false)
   const [resetting, setResetting] = useState(false)
+  const [transferFor, setTransferFor] = useState(null)
+  const [transferTargetCode, setTransferTargetCode] = useState('')
+  const [transferring, setTransferring] = useState(false)
+  const [transferMsg, setTransferMsg] = useState('')
+  const [transferError, setTransferError] = useState('')
+  const [otherProfiles, setOtherProfiles] = useState([])
+
+  useEffect(() => {
+    if (!profile || !adminCode) return
+    profileStore
+      .listProfiles(adminCode)
+      .then((res) => {
+        const list = (res?.profiles || []).filter((p) => p.id !== profile.id)
+        setOtherProfiles(list)
+      })
+      .catch(() => setOtherProfiles([]))
+  }, [profile, adminCode])
+
+  const transferPocket = async (pocket) => {
+    const target = otherProfiles.find((p) => p.code === transferTargetCode)
+    if (!target) {
+      setTransferError('Choisissez un profil destinataire.')
+      return
+    }
+    setTransferring(true)
+    setTransferError('')
+    setTransferMsg('')
+    try {
+      const [srcRes, tgtRes] = await Promise.all([
+        profileStore.adminGetProfileData(adminCode, profile.id),
+        profileStore.adminGetProfileData(adminCode, target.id),
+      ])
+      const src = srcRes?.profile?.data || {}
+      const tgt = tgtRes?.profile?.data || {}
+      const pocketObj = (src.pockets || []).find((p) => p.id === pocket.id)
+      const taskIds = new Set(pocketObj?.taskIds || [])
+      const movedTasks = (src.prepTasks || []).filter((t) => taskIds.has(t.id))
+      const srcData = {
+        ...src,
+        pockets: (src.pockets || []).filter((p) => p.id !== pocket.id),
+        prepTasks: (src.prepTasks || []).filter((t) => !taskIds.has(t.id)),
+      }
+      const tgtData = {
+        ...tgt,
+        pockets: [
+          ...(tgt.pockets || []),
+          { ...(pocketObj || { name: pocket.name }), taskIds: [...taskIds] },
+        ],
+        prepTasks: [...(tgt.prepTasks || []), ...movedTasks],
+      }
+      const [savedSrc, savedTgt] = await Promise.all([
+        profileStore.saveProfileData(profile.code, srcData, srcRes?.profile?.rev ?? 0, false),
+        profileStore.saveProfileData(target.code, tgtData, tgtRes?.profile?.rev ?? 0, false),
+      ])
+      if (savedSrc?.error === 'conflict' || savedTgt?.error === 'conflict') {
+        setTransferError('Un des profils a été modifié entre-temps. Réessayez.')
+      } else if (savedSrc?.error || savedTgt?.error) {
+        setTransferError('Échec du transfert.')
+      } else {
+        const again = await profileStore.adminGetProfileData(adminCode, profile.id)
+        if (again?.ok) setData(again.profile?.data || {})
+        setTransferMsg(`Pochette « ${pocket.name} » transférée à « ${target.name} ».`)
+        setTransferFor(null)
+        setTransferTargetCode('')
+      }
+    } catch {
+      setTransferError('Échec du transfert (hors ligne ?).')
+    }
+    setTransferring(false)
+  }
 
   useEffect(() => {
     if (!profile) return
@@ -438,6 +508,89 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                       </div>
                     ))}
                 </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                  <FolderKanban className="h-4 w-4 text-emerald-500" /> Pochettes (
+                  {(data.pockets || []).length})
+                </h3>
+                {transferMsg && <p className="text-sm text-emerald-700 mb-2">{transferMsg}</p>}
+                {transferError && <p className="text-sm text-red-600 mb-2">{transferError}</p>}
+                {(data.pockets || []).length === 0 ? (
+                  <p className="text-sm text-slate-400 italic">
+                    Aucune pochette virtuelle (créées dans Préparation vac suivante).
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {(data.pockets || []).map((p) => {
+                      const count = (p.taskIds || []).length
+                      return (
+                        <li
+                          key={p.id}
+                          className="flex flex-wrap items-center justify-between gap-2 border border-slate-200 rounded-lg px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <span className="font-medium text-sm">{p.name}</span>
+                            <span className="ml-2 text-xs text-slate-400">{count} ligne(s)</span>
+                          </div>
+                          {transferFor === p.id ? (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <select
+                                value={transferTargetCode}
+                                onChange={(e) => setTransferTargetCode(e.target.value)}
+                                className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white"
+                              >
+                                <option value="">— Profil destinataire —</option>
+                                {otherProfiles.map((pp) => (
+                                  <option key={pp.id} value={pp.code}>
+                                    {pp.name}
+                                    {pp.aircraft ? ` (${pp.aircraft})` : ''}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => transferPocket(p)}
+                                disabled={transferring || !transferTargetCode}
+                                className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-full px-3 py-1 disabled:opacity-50"
+                              >
+                                {transferring ? 'Transfert…' : 'Transférer'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setTransferFor(null)
+                                  setTransferTargetCode('')
+                                }}
+                                className="text-slate-400 hover:text-slate-700 p-1"
+                                title="Annuler"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setTransferFor(p.id)
+                                setTransferTargetCode('')
+                                setTransferMsg('')
+                                setTransferError('')
+                              }}
+                              disabled={otherProfiles.length === 0}
+                              className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1 disabled:opacity-50"
+                              title={
+                                otherProfiles.length === 0
+                                  ? 'Aucun autre profil disponible'
+                                  : 'Transférer cette pochette à un autre profil (passation de consigne)'
+                              }
+                            >
+                              Transférer à un autre profil
+                            </button>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
               </div>
 
               <div>

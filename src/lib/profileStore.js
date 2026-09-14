@@ -276,11 +276,19 @@ export async function adminSetMyEmail(adminCode, email) {
   return data
 }
 
-export async function adminSetNotifyConfig(adminCode, apiKey, fromEmail) {
+export async function adminSetNotifyConfig(
+  adminCode,
+  serviceId,
+  templateId,
+  publicKey,
+  privateKey
+) {
   const { data, error } = await supabase.rpc('admin_set_notify_config', {
     p_admin_code: adminCode,
-    p_api_key: apiKey,
-    p_from: fromEmail,
+    p_service_id: serviceId,
+    p_template_id: templateId,
+    p_public_key: publicKey,
+    p_private_key: privateKey,
   })
   if (error) throw error
   return data

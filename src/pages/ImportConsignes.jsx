@@ -4,6 +4,13 @@ import {
   parseConsignesWorkbook,
 } from '../lib/consignesExcel'
 import { buildProfileData } from '../lib/profileBuilder'
+import {
+  detectColumns,
+  parseExcelRows,
+  dedupeAndMerge,
+  getCategoryColor,
+  getCategoryLabel,
+} from '../utils/helpers'
 import * as profileStore from '../lib/profileStore'
 import { useApp } from '../context/AppContext'
 import ProfileViewModal from '../components/ProfileViewModal'
@@ -50,6 +57,16 @@ export default function ImportConsignes() {
   const [assignments, setAssignments] = useState({})
   const [viewProfile, setViewProfile] = useState(null)
   const [history, setHistory] = useState([])
+
+  const [chargeTab, setChargeTab] = useState('consignes')
+  const [chargeFileName, setChargeFileName] = useState('')
+  const [chargePreview, setChargePreview] = useState([])
+  const [chargeStats, setChargeStats] = useState(null)
+  const [chargeProfileCode, setChargeProfileCode] = useState('')
+  const [chargeBusy, setChargeBusy] = useState(false)
+  const [chargeMsg, setChargeMsg] = useState('')
+  const [chargeError, setChargeError] = useState('')
+  const chargeFileInputRef = useRef(null)
 
   useEffect(() => {
     try {
@@ -232,6 +249,70 @@ export default function ImportConsignes() {
     }
   }
 
+  const handleChargeFile = (file) => {
+    setChargeError('')
+    setChargeMsg('')
+    setChargeFileName(file.name)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result)
+        const workbook = XLSX.read(data, { type: 'array' })
+        const sheet = workbook.Sheets[workbook.SheetNames[0]]
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 })
+        if (!rows || rows.length < 2) {
+          setChargeError('Le fichier est vide ou ne contient pas assez de lignes.')
+          return
+        }
+        const detected = detectColumns(rows[0])
+        if (detected.description === undefined) {
+          setChargeError('Colonne "Task_Name" introuvable. Vérifiez le format du fichier.')
+          return
+        }
+        const parsed = parseExcelRows(rows.slice(1), detected)
+        setChargePreview(parsed)
+        setChargeStats({
+          totalLines: rows.length - 1,
+          kept: parsed.length,
+          filteredOut: rows.length - 1 - parsed.length,
+        })
+      } catch (err) {
+        setChargeError(`Erreur lors de la lecture du fichier : ${err.message}`)
+      }
+    }
+    reader.readAsArrayBuffer(file)
+  }
+
+  const sendCharge = async () => {
+    if (!chargePreview.length || !chargeProfileCode || !activeProfile?.code) return
+    setChargeBusy(true)
+    setChargeError('')
+    setChargeMsg('')
+    try {
+      const fresh = await profileStore.getProfile(chargeProfileCode)
+      if (!fresh) {
+        setChargeError('Profil introuvable.')
+        setChargeBusy(false)
+        return
+      }
+      const mergedTasks = dedupeAndMerge(fresh?.data?.tasks || [], chargePreview)
+      const updated = { ...(fresh.data || {}), tasks: mergedTasks }
+      const saved = await profileStore.saveProfileData(
+        chargeProfileCode,
+        updated,
+        fresh?.rev ?? 0,
+        false
+      )
+      if (saved?.error === 'conflict')
+        setChargeError('Le profil a été modifié entre-temps. Réessayez.')
+      else if (saved?.error) setChargeError("Échec de l'envoi de la charge.")
+      else setChargeMsg(`${chargePreview.length} tâche(s) ajoutée(s) au profil.`)
+    } catch {
+      setChargeError("Échec de l'envoi (hors ligne ?).")
+    }
+    setChargeBusy(false)
+  }
+
   const handleFile = (file) => {
     setError('')
     setFileName(file.name)
@@ -392,6 +473,31 @@ export default function ImportConsignes() {
         </p>
       </div>
 
+      <div className="inline-flex p-1 rounded-lg bg-slate-100 w-fit">
+        <button
+          onClick={() => setChargeTab('consignes')}
+          className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+            chargeTab === 'consignes'
+              ? 'bg-white text-slate-900 shadow'
+              : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Consignes
+        </button>
+        <button
+          onClick={() => setChargeTab('charge')}
+          className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+            chargeTab === 'charge'
+              ? 'bg-white text-slate-900 shadow'
+              : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Charge (Victory)
+        </button>
+      </div>
+
+      {chargeTab === 'consignes' ? (
+        <>
       {sessionInfo && (
         <div className="flex flex-wrap items-center justify-between gap-2 bg-sky-50 border border-sky-200 text-sky-800 px-4 py-3 rounded-lg text-sm">
           <span>💾 {sessionInfo}</span>
@@ -898,6 +1004,168 @@ export default function ImportConsignes() {
             </div>
           )}
         </>
+      )}
+
+        </>
+      ) : (
+        <div className="space-y-6">
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
+            <h3 className="font-semibold text-sky-800 mb-2">Filtres d'import actifs (comme Import Victory)</h3>
+            <div className="text-sm text-sky-700 space-y-1">
+              <p>• <strong>Skills</strong> : toutes les lignes dont un des skills commence par CABB (ex. B1B2/CABB1B2)</p>
+              <p>• <strong>MTX Status</strong> : uniquement ACTV, PAUSE et IN WORK</p>
+              <p>• <strong>Task Type</strong> : tous les blocs (JIC, Found Fault, MPC, ADHOC, EO)</p>
+            </div>
+          </div>
+
+          {chargeError && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <AlertTriangle className="h-5 w-5" /> {chargeError}
+            </div>
+          )}
+
+          <div
+            className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-white hover:border-sky-400 transition-colors cursor-pointer"
+            onClick={() => chargeFileInputRef.current.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault()
+              const file = e.dataTransfer.files[0]
+              if (file) handleChargeFile(file)
+            }}
+          >
+            <input
+              ref={chargeFileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files[0]) handleChargeFile(e.target.files[0])
+                e.target.value = ''
+              }}
+            />
+            <Upload className="h-10 w-10 mx-auto text-slate-400" />
+            <p className="mt-3 font-medium text-slate-700">
+              Déposez ici le Workpackage Report : les tâches filtrées seront envoyées au profil choisi.
+            </p>
+            <p className="text-sm text-slate-500 mt-1">Formats : .xlsx, .xls, .csv</p>
+            {chargeFileName && (
+              <p className="mt-3 inline-flex items-center gap-2 bg-sky-50 text-sky-700 px-3 py-1 rounded-full text-sm">
+                <FileSpreadsheet className="h-4 w-4" /> {chargeFileName}
+              </p>
+            )}
+          </div>
+
+          {chargeStats && (
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="bg-white rounded-xl shadow p-4 text-center">
+                <div className="text-2xl font-bold text-slate-900">{chargeStats.totalLines}</div>
+                <div className="text-sm text-slate-500">Lignes totales</div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">{chargeStats.kept}</div>
+                <div className="text-sm text-slate-500">Après filtres</div>
+              </div>
+              <div className="bg-white rounded-xl shadow p-4 text-center">
+                <div className="text-2xl font-bold text-slate-400">{chargeStats.filteredOut}</div>
+                <div className="text-sm text-slate-500">Exclues</div>
+              </div>
+            </div>
+          )}
+
+          {chargePreview.length > 0 && (
+            <div className="bg-white rounded-xl shadow overflow-hidden">
+              <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b">
+                <h2 className="text-xl font-semibold">
+                  Aperçu — {chargePreview.length} tâches après filtres
+                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={chargeProfileCode}
+                    onChange={(e) => setChargeProfileCode(e.target.value)}
+                    className="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white"
+                  >
+                    <option value="">— Choisir le profil destinataire —</option>
+                    {(allProfiles || []).map((p) => (
+                      <option key={p.id} value={p.code}>
+                        {p.name}
+                        {p.aircraft ? ` (${p.aircraft})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={sendCharge}
+                    disabled={chargeBusy || !chargeProfileCode}
+                    className="bg-sky-600 text-white px-4 py-1.5 rounded-md hover:bg-sky-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    {chargeBusy ? 'Envoi…' : 'Envoyer la charge au profil'}
+                  </button>
+                </div>
+              </div>
+              {chargeMsg && (
+                <div className="bg-green-50 border-b border-green-200 text-green-700 px-6 py-3 flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5" /> {chargeMsg}
+                </div>
+              )}
+              <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                <table className="w-full text-sm min-w-[720px]">
+                  <thead className="sticky top-0 bg-slate-50">
+                    <tr className="text-left">
+                      <th className="px-4 py-2 border-b">N°</th>
+                      <th className="px-4 py-2 border-b">Tâche</th>
+                      <th className="px-4 py-2 border-b">Skills</th>
+                      <th className="px-4 py-2 border-b">Status</th>
+                      <th className="px-4 py-2 border-b">Bloc</th>
+                      <th className="px-4 py-2 border-b">Zone</th>
+                      <th className="px-4 py-2 border-b">Heures</th>
+                      <th className="px-4 py-2 border-b">Appareil</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {chargePreview.map((task, idx) => {
+                      const color = getCategoryColor(task.taskType)
+                      return (
+                        <tr key={idx} style={{ backgroundColor: `${color}12` }} className="border-b hover:bg-slate-50">
+                          <td className="px-4 py-2 text-slate-500">{task.seq}</td>
+                          <td className="px-4 py-2 font-medium max-w-xs truncate" title={task.description}>
+                            {task.description}
+                          </td>
+                          <td className="px-4 py-2">
+                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-700">
+                              {task.skills}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                task.mtxStatus === 'ACTV'
+                                  ? 'bg-green-100 text-green-700'
+                                  : task.mtxStatus === 'PAUSE'
+                                    ? 'bg-amber-100 text-amber-700'
+                                    : 'bg-slate-100 text-slate-700'
+                              }`}
+                            >
+                              {task.mtxStatus}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2">
+                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: color }}>
+                              {getCategoryLabel(task.taskType)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2 max-w-[150px] truncate" title={task.workArea}>{task.workArea}</td>
+                          <td className="px-4 py-2">{task.scheduledHours || '—'}</td>
+                          <td className="px-4 py-2">{task.registration || '—'}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {viewProfile && (
