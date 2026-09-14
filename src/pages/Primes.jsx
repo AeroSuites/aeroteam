@@ -428,27 +428,15 @@ export default function Primes() {
     const synth = agentStats.map((a) => [
       a.nom || a.identifiant,
       a.identifiant,
-      a.pending,
       a.valid.V034,
       a.valid.V035,
-      a.valid.V034 + a.valid.V035,
-      a.refused,
       a.total,
     ])
     const wsSynth = XLSX.utils.aoa_to_sheet([
-      [
-        'Agent',
-        'Identifiant',
-        'En attente',
-        'Toilette T1 (V034)',
-        'Toilette T2 (V035)',
-        'Total validées',
-        'Refusées',
-        'Total déclarées',
-      ],
+      ['Agent', 'Identifiant', 'Toilette T1 (V034)', 'Toilette T2 (V035)', 'Total déclarées'],
       ...synth,
     ])
-    wsSynth['!cols'] = [22, 16, 11, 17, 17, 13, 10, 14].map((wch) => ({ wch }))
+    wsSynth['!cols'] = [22, 16, 17, 17, 14].map((wch) => ({ wch }))
 
     // Feuille 2 : détail complet
     const rows = sorted.map((d) => [
