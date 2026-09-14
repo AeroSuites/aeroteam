@@ -403,6 +403,14 @@ export default function Dashboard() {
                                       <span className="flex-1 truncate text-slate-700" title={task.description}>
                                         {task.description}
                                       </span>
+                                      {task.note && (
+                                        <span
+                                          className="shrink-0 max-w-[160px] truncate text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 rounded px-1.5 py-0.5"
+                                          title={task.note}
+                                        >
+                                          {task.note}
+                                        </span>
+                                      )}
                                       {task.taskType && (
                                         <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${getCategoryColor(task.taskType)}22`, color: getCategoryColor(task.taskType) }}>
                                           {getCategoryLabel(task.taskType)}

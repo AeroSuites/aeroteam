@@ -630,6 +630,15 @@ export default function Affectation() {
                                     </p>
                                   </div>
 
+                                  {task.note && noteEditId !== task.id && (
+                                    <span
+                                      className="inline-flex items-center max-w-[180px] truncate shrink-0 bg-amber-50 text-amber-800 border border-amber-200 rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                                      title={task.note}
+                                    >
+                                      {task.note}
+                                    </span>
+                                  )}
+
                                   {noteEditId === task.id ? (
                                     <div className="flex items-center gap-1 shrink-0">
                                       <input
@@ -833,6 +842,14 @@ export default function Affectation() {
                                     <span className="flex-1 min-w-0 truncate font-medium text-slate-800" title={t.description}>
                                       {t.description}
                                     </span>
+                                    {t.note && noteEditId !== t.id && (
+                                      <span
+                                        className="inline-flex items-center max-w-[160px] truncate shrink-0 bg-amber-50 text-amber-800 border border-amber-200 rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                                        title={t.note}
+                                      >
+                                        {t.note}
+                                      </span>
+                                    )}
                                     {noteEditId === t.id ? (
                                       <div className="flex items-center gap-1 shrink-0">
                                         <input
