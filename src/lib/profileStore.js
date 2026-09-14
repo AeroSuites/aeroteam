@@ -151,6 +151,16 @@ export async function adminListAdmins(adminCode) {
   return data
 }
 
+export async function adminSetAdminListable(adminCode, targetId, listable) {
+  const { data, error } = await supabase.rpc('admin_set_admin_listable', {
+    p_admin_code: adminCode,
+    p_target_id: targetId,
+    p_listable: listable,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function adminAddAdmin(adminCode, newCode, newName) {
   const { data, error } = await supabase.rpc('admin_add_admin', {
     p_admin_code: adminCode,

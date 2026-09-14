@@ -13,6 +13,8 @@ import {
   Check,
   X,
   UserCog,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
 export default function Admin() {
@@ -70,6 +72,25 @@ export default function Admin() {
       } else setAdminMsg('Échec de l’ajout.')
     } catch {
       setAdminMsg('Échec de l’ajout (hors ligne ?).')
+    }
+    setAdminBusy(false)
+  }
+
+  const handleToggleListable = async (entry) => {
+    setAdminBusy(true)
+    setAdminMsg('')
+    try {
+      const res = await profileStore.adminSetAdminListable(
+        activeProfile?.code,
+        entry.id,
+        !entry.listable
+      )
+      if (res?.error === 'dernier_visible')
+        setAdminMsg("Impossible de masquer le dernier manager visible à l'inscription.")
+      else if (res?.error) setAdminMsg('Échec de la modification.')
+      else loadAdmins()
+    } catch {
+      setAdminMsg('Échec de la modification (hors ligne ?).')
     }
     setAdminBusy(false)
   }
@@ -522,27 +543,60 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
           </h2>
           <p className="text-xs text-slate-500 mb-3">
             Un administrateur est un profil dont le code est inscrit ici (vérifié côté serveur, le
-            code n'est jamais affiché). Le dernier administrateur ne peut pas être retiré.
+            code n'est jamais affiché). Le dernier administrateur ne peut pas être retiré. Le
+            bouton <strong>Inscription / Masqué</strong> choisit les administrateurs proposés comme
+            managers lors des inscriptions (AeroTeam et AeroPrimes).
           </p>
           {admins.length > 0 && (
             <ul className="divide-y divide-slate-100 border border-slate-200 rounded-lg mb-3">
-              {admins.map((a) => (
-                <li key={a.name} className="flex items-center justify-between gap-2 px-3 py-2">
-                  <span className="text-sm font-medium text-slate-800">{a.name}</span>
-                  <button
-                    onClick={() => handleRemoveAdmin(a.name)}
-                    disabled={adminBusy || admins.length <= 1}
-                    className="text-slate-400 hover:text-red-600 disabled:opacity-40"
-                    title={
-                      admins.length <= 1
-                        ? 'Impossible de retirer le dernier administrateur'
-                        : `Retirer « ${a.name} »`
-                    }
+              {admins.map((a) => {
+                const entry = typeof a === 'string' ? { name: a, id: null, listable: true } : a
+                return (
+                  <li
+                    key={entry.id || entry.name}
+                    className="flex items-center justify-between gap-2 px-3 py-2"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </li>
-              ))}
+                    <span className="text-sm font-medium text-slate-800">{entry.name}</span>
+                    <div className="flex items-center gap-1.5">
+                      {entry.id && (
+                        <button
+                          onClick={() => handleToggleListable(entry)}
+                          disabled={adminBusy}
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold border disabled:opacity-50 ${
+                            entry.listable
+                              ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                              : 'border-slate-300 text-slate-500 hover:bg-slate-50'
+                          }`}
+                          title={
+                            entry.listable
+                              ? "Visible dans la liste des managers à l'inscription — cliquer pour masquer"
+                              : "Masqué à l'inscription — cliquer pour rendre visible"
+                          }
+                        >
+                          {entry.listable ? (
+                            <Eye className="h-3.5 w-3.5" />
+                          ) : (
+                            <EyeOff className="h-3.5 w-3.5" />
+                          )}
+                          {entry.listable ? 'Inscription' : 'Masqué'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleRemoveAdmin(entry.name)}
+                        disabled={adminBusy || admins.length <= 1}
+                        className="text-slate-400 hover:text-red-600 disabled:opacity-40"
+                        title={
+                          admins.length <= 1
+                            ? 'Impossible de retirer le dernier administrateur'
+                            : `Retirer « ${entry.name} »`
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           )}
           <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
