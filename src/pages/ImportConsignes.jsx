@@ -183,7 +183,8 @@ export default function ImportConsignes() {
       const teamIds = new Set(teams.map((t) => t.id))
       const assignments = {}
       Object.entries(d.assignments || {}).forEach(([k, v]) => {
-        if (teamIds.has(v)) assignments[k] = v
+        const kept = (Array.isArray(v) ? v : [v]).filter((tid) => teamIds.has(tid))
+        if (kept.length) assignments[k] = kept
       })
       const cleared = {
         tasks: d.tasks || [],

@@ -12,9 +12,14 @@ export function teamActions({ setTeams, setAssignments, setMembers, setDayMember
   const removeTeam = (id) => {
     setTeams((prev) => prev.filter((t) => t.id !== id))
     setAssignments((prev) => {
-      const next = { ...prev }
-      Object.keys(next).forEach((k) => {
-        if (next[k] === id) delete next[k]
+      const next = {}
+      Object.keys(prev).forEach((k) => {
+        const cur = Array.isArray(prev[k])
+          ? prev[k].filter((tid) => tid !== id)
+          : prev[k] === id
+            ? []
+            : [prev[k]]
+        if (cur.length > 0) next[k] = cur
       })
       return next
     })

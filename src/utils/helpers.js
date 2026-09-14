@@ -87,6 +87,23 @@ export function currentWeekLabel(date = new Date()) {
   return `Semaine ${week}`
 }
 
+// Affectations multi-équipes : assignments[taskId] = [teamId, ...]
+export function assignmentTeams(assignments, taskId) {
+  const v = assignments?.[taskId]
+  if (Array.isArray(v)) return v
+  return v ? [v] : []
+}
+
+export function isAssignedTo(assignments, taskId, teamId) {
+  return assignmentTeams(assignments, taskId).includes(teamId)
+}
+
+export function assignedTaskCount(assignments) {
+  return Object.values(assignments || {}).filter((v) =>
+    Array.isArray(v) ? v.length > 0 : !!v
+  ).length
+}
+
 // Filtres configurables pour l'import
 export const IMPORT_FILTERS = {
   // Colonne Skills (F) : garder toute ligne dont AU MOINS UN des skills

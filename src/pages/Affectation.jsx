@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getCategoryColor, getZoneColor, getCategoryLabel } from '../utils/helpers'
+import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, Pencil, Check, X } from 'lucide-react'
 
@@ -63,7 +63,7 @@ export default function Affectation() {
   // Sous-blocs (zones) par bloc avec leur nombre de tâches sans équipe
   const allBlockZones = {}
   tasks.forEach((t) => {
-    if (assignments[t.id]) return
+    if (assignmentTeams(assignments, t.id).length) return
     const block = t.taskType || 'AUTRE'
     const zone = t.workArea || 'Autre'
     if (!allBlockZones[block]) allBlockZones[block] = {}
@@ -73,7 +73,7 @@ export default function Affectation() {
   const autoScopeTasks = useMemo(
     () =>
       tasks.filter((t) => {
-        if (assignments[t.id]) return false
+        if (assignmentTeams(assignments, t.id).length) return false
         const block = t.taskType || 'AUTRE'
         if (!autoSelectedBlocks.includes(block)) return false
         const zone = t.workArea || 'Autre'
@@ -109,7 +109,9 @@ export default function Affectation() {
     const applied = {}
     const load = {}
     autoTeams.forEach((t) => {
-      load[t.id] = Object.values(assignments).filter((id) => id === t.id).length
+      load[t.id] = Object.values(assignments).filter((ids) =>
+        Array.isArray(ids) ? ids.includes(t.id) : ids === t.id
+      ).length
     })
 
     const idealPerTeam = unassigned.length / autoTeams.length
@@ -144,9 +146,10 @@ export default function Affectation() {
     const allIds = new Set([...Object.keys(snapshot), ...Object.keys(assignments)])
     allIds.forEach((id) => {
       const prevTeam = snapshot[id]
-      if (prevTeam !== assignments[id]) {
-        if (prevTeam) assignTask(id, prevTeam)
-        else unassignTask(id)
+      if (prevTeam) {
+        if (!isAssignedTo(assignments, id, prevTeam)) assignTask(id, prevTeam)
+      } else {
+        assignmentTeams(assignments, id).forEach((tid) => unassignTask(id, tid))
       }
     })
     setLastAutoAssignments(null)
@@ -209,9 +212,9 @@ export default function Affectation() {
     assignTask(taskId, teamId)
   }
 
-  const manualUnassign = (taskId) => {
+  const manualUnassign = (taskId, teamId) => {
     setLastAutoAssignments(null)
-    unassignTask(taskId)
+    unassignTask(taskId, teamId)
   }
 
   const handleDrop = (teamId) => {
@@ -222,13 +225,15 @@ export default function Affectation() {
   }
 
   const assignedCount = (teamId) =>
-    Object.values(assignments).filter((id) => id === teamId).length
+    Object.values(assignments).filter((ids) =>
+      Array.isArray(ids) ? ids.includes(teamId) : ids === teamId
+    ).length
 
   // Répartition blocs/zones affectés à une équipe (+ tâches individuelles)
   const teamBlocks = (teamId) => {
     const groups = {}
     tasks.forEach((t) => {
-      if (assignments[t.id] === teamId && t.taskType) {
+      if (isAssignedTo(assignments, t.id, teamId) && t.taskType) {
         const zone = t.workArea || 'Autre'
         const key = `${t.taskType} / ${zone}`
         if (!groups[key]) groups[key] = { count: 0, tasks: [] }
@@ -244,14 +249,19 @@ export default function Affectation() {
 
   // Affecter tout un bloc à une équipe
   const assignWholeBlock = (block, teamId) => {
-    const unassigned = tasks.filter((t) => t.taskType === block && !assignments[t.id])
+    const unassigned = tasks.filter(
+      (t) => t.taskType === block && assignmentTeams(assignments, t.id).length === 0
+    )
     unassigned.forEach((t) => manualAssign(t.id, teamId))
   }
 
   // Affecter toutes les tâches d'un bloc ET d'une zone à une équipe
   const assignWholeZone = (block, zone, teamId) => {
     const unassigned = tasks.filter(
-      (t) => t.taskType === block && (t.workArea || 'Autre') === zone && !assignments[t.id]
+      (t) =>
+        t.taskType === block &&
+        (t.workArea || 'Autre') === zone &&
+        assignmentTeams(assignments, t.id).length === 0
     )
     unassigned.forEach((t) => manualAssign(t.id, teamId))
   }
@@ -327,7 +337,9 @@ export default function Affectation() {
                 const active = autoSelectedBlocks.includes(block)
                 const color = getCategoryColor(block)
                 const count = tasks.filter(
-                  (t) => (t.taskType || 'AUTRE') === block && !assignments[t.id]
+                  (t) =>
+                    (t.taskType || 'AUTRE') === block &&
+                    assignmentTeams(assignments, t.id).length === 0
                 ).length
                 return (
                   <button
@@ -472,7 +484,9 @@ export default function Affectation() {
           {visibleBlocksList.map((block) => {
             const blockTasks = groupedByBlock[block] || []
             const blockColor = getCategoryColor(block)
-            const unassignedInBlock = blockTasks.filter((t) => !assignments[t.id])
+            const unassignedInBlock = blockTasks.filter(
+              (t) => assignmentTeams(assignments, t.id).length === 0
+            )
             const blockExpanded = expandedBlocks.includes(block)
             return (
               <div key={block} className="bg-white rounded-xl shadow overflow-hidden">
@@ -533,7 +547,9 @@ export default function Affectation() {
                     .sort((a, b) => b[1].length - a[1].length)
                     .map(([zone, zoneTasks]) => {
                       const zoneColor = getZoneColor(zone, zones)
-                      const unassignedInZone = zoneTasks.filter((t) => !assignments[t.id])
+                      const unassignedInZone = zoneTasks.filter(
+                        (t) => assignmentTeams(assignments, t.id).length === 0
+                      )
                       const zoneKey = `${block}::${zone}`
                       const zoneExpanded = expandedZones.includes(zoneKey)
                       return (
@@ -584,8 +600,10 @@ export default function Affectation() {
                           {zoneExpanded && (
                           <ul className="divide-y divide-slate-100">
                             {zoneTasks.map((task) => {
-                              const assigned = assignments[task.id]
-                              const assignedTeam = teams.find((t) => t.id === assigned)
+                              const assignedTeams = assignmentTeams(assignments, task.id)
+                                .map((tid) => teams.find((tm) => tm.id === tid))
+                                .filter(Boolean)
+                              const assigned = assignedTeams.length > 0
                               return (
                                 <li
                                   key={task.id}
@@ -652,36 +670,46 @@ export default function Affectation() {
                                   )}
 
                                   {assigned ? (
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      <span
-                                        className="px-2 py-0.5 rounded-full text-xs font-semibold text-white"
-                                        style={{ backgroundColor: assignedTeam?.color }}
-                                      >
-                                        {assignedTeam?.name}
-                                      </span>
-                                      <select
-                                        value={assigned}
-                                        onChange={(e) => {
-                                          const v = e.target.value
-                                          if (v && v !== assigned) manualAssign(task.id, v)
-                                        }}
-                                        className="border border-slate-300 rounded-md px-2 py-1 text-xs shrink-0"
-                                        title="Changer d'équipe"
-                                      >
-                                        <option value={assigned}>Changer d'équipe…</option>
-                                        {teams
-                                          .filter((t) => t.id !== assigned)
-                                          .map((t) => (
-                                            <option key={t.id} value={t.id}>{t.name}</option>
-                                          ))}
-                                      </select>
-                                      <button
-                                        onClick={() => manualUnassign(task.id)}
-                                        className="flex items-center gap-1 text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-50 rounded-md px-2 py-1"
-                                        title="Retirer cette tâche de l'équipe (elle redevient non assignée)"
-                                      >
-                                        <Undo2 className="h-3.5 w-3.5" /> Retirer
-                                      </button>
+                                    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                                      {assignedTeams.map((teamChip) => (
+                                        <span
+                                          key={teamChip.id}
+                                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white"
+                                          style={{ backgroundColor: teamChip.color }}
+                                        >
+                                          {teamChip.name}
+                                          <button
+                                            onClick={() => manualUnassign(task.id, teamChip.id)}
+                                            className="text-white/70 hover:text-white"
+                                            title={`Retirer de ${teamChip.name}`}
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </button>
+                                        </span>
+                                      ))}
+                                      {teams.some(
+                                        (tm) => !assignedTeams.some((c) => c.id === tm.id)
+                                      ) && (
+                                        <select
+                                          defaultValue=""
+                                          onChange={(e) => {
+                                            if (e.target.value) manualAssign(task.id, e.target.value)
+                                          }}
+                                          className="border border-slate-300 rounded-md px-2 py-1 text-xs shrink-0"
+                                          title="Ajouter une autre équipe"
+                                        >
+                                          <option value="">+ équipe</option>
+                                          {teams
+                                            .filter(
+                                              (tm) => !assignedTeams.some((c) => c.id === tm.id)
+                                            )
+                                            .map((tm) => (
+                                              <option key={tm.id} value={tm.id}>
+                                                {tm.name}
+                                              </option>
+                                            ))}
+                                        </select>
+                                      )}
                                     </div>
                                   ) : (
                                     <select
@@ -844,7 +872,7 @@ export default function Affectation() {
                                       </button>
                                     )}
                                     <button
-                                      onClick={() => manualUnassign(t.id)}
+                                      onClick={() => manualUnassign(t.id, team.id)}
                                       className="text-slate-400 hover:text-red-600 shrink-0"
                                       title="Retirer de l'équipe (la tâche redevient non affectée)"
                                     >

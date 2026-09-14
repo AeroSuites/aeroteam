@@ -92,10 +92,16 @@ export function AppProvider({ children }) {
     const toObject = (v) =>
       v && typeof v === 'object' && !Array.isArray(v) ? v : {}
     const data = profile.data || DEFAULT_EMPTY
+    const rawAssignments = toObject(data.assignments)
+    const normalizedAssignments = {}
+    Object.keys(rawAssignments).forEach((k) => {
+      const v = rawAssignments[k]
+      normalizedAssignments[k] = Array.isArray(v) ? v : v ? [v] : []
+    })
     const cleaned = {
       tasks: toArray(data.tasks),
       teams: toArray(data.teams),
-      assignments: toObject(data.assignments),
+      assignments: normalizedAssignments,
       members: toArray(data.members),
       dayMembers: toArray(data.dayMembers),
       prepTasks: toArray(data.prepTasks),

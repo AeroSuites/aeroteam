@@ -6,13 +6,24 @@ export function taskActions({ tasks, setTasks, setAssignments }) {
   }
 
   const assignTask = (taskId, teamId) => {
-    setAssignments((prev) => ({ ...prev, [taskId]: teamId }))
+    setAssignments((prev) => {
+      const cur = Array.isArray(prev[taskId])
+        ? prev[taskId]
+        : prev[taskId]
+          ? [prev[taskId]]
+          : []
+      return { ...prev, [taskId]: cur.includes(teamId) ? cur : [...cur, teamId] }
+    })
   }
 
-  const unassignTask = (taskId) => {
+  const unassignTask = (taskId, teamId) => {
     setAssignments((prev) => {
+      const cur = (Array.isArray(prev[taskId]) ? prev[taskId] : []).filter(
+        (id) => id !== teamId
+      )
       const next = { ...prev }
-      delete next[taskId]
+      if (cur.length > 0) next[taskId] = cur
+      else delete next[taskId]
       return next
     })
   }

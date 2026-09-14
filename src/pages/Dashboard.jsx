@@ -10,6 +10,9 @@ import {
   getFirstName,
   getCategoryLabel,
   hexToRgb,
+  isAssignedTo,
+  assignmentTeams,
+  assignedTaskCount,
 } from '../utils/helpers'
 import {
   ClipboardList,
@@ -79,13 +82,13 @@ export default function Dashboard() {
 
   const selectedTeam = teams.find((t) => t.id === selectedTeamId) || null
   const selectedTeamTasks = selectedTeam
-    ? tasks.filter((t) => assignments[t.id] === selectedTeam.id)
+    ? tasks.filter((t) => isAssignedTo(assignments, t.id, selectedTeam.id))
     : []
 
   // Tâches structurées comme le PDF : bloc -> sous-tâche (zone) -> lignes
-  const teamStructured = useMemo(() => {
+  const buildTeamStructured = (tasksList) => {
     const blocks = {}
-    selectedTeamTasks.forEach((t) => {
+    tasksList.forEach((t) => {
       const b = t.taskType || 'AUTRE'
       if (!blocks[b]) blocks[b] = {}
       const z = t.workArea || 'Autre'
@@ -98,7 +101,8 @@ export default function Dashboard() {
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([zone, tasks]) => ({ zone, tasks })),
     }))
-  }, [selectedTeamTasks]) // eslint-disable-line react-hooks/exhaustive-deps
+  }
+  const teamStructured = buildTeamStructured(selectedTeamTasks)
 
   const buildTeamPdf = () => {
     const doc = new jsPDF()
@@ -211,7 +215,7 @@ export default function Dashboard() {
 
   const stats = useMemo(() => {
     const total = tasks.length
-    const assigned = Object.keys(assignments).filter((id) => assignments[id]).length
+    const assigned = assignedTaskCount(assignments)
     const unassigned = total - assigned
     const totalMembers = teams.reduce((acc, t) => acc + t.members.length, 0)
     const avgPerTeam = teams.length ? (assigned / teams.length).toFixed(1) : '0'
@@ -241,7 +245,9 @@ export default function Dashboard() {
     () =>
       teams.map((team) => {
         const teamTaskIds = Object.entries(assignments)
-          .filter(([, id]) => id === team.id)
+          .filter(([, ids]) =>
+            Array.isArray(ids) ? ids.includes(team.id) : ids === team.id
+          )
           .map(([taskId]) => taskId)
         const teamTasks = tasks.filter((t) => teamTaskIds.includes(t.id))
         const byBlock = {}
@@ -270,7 +276,7 @@ export default function Dashboard() {
   )
 
   const allUnassigned = useMemo(
-    () => tasks.filter((t) => !assignments[t.id]),
+    () => tasks.filter((t) => assignmentTeams(assignments, t.id).length === 0),
     [tasks, assignments]
   )
 

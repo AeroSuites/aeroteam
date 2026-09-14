@@ -68,8 +68,10 @@ function buildRecapPdf(profile, data) {
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 10
   const contentWidth = pageWidth - margin * 2
-  const assignedCount = Object.keys(data?.assignments || {}).filter(
-    (id) => data.assignments[id]
+  const assignedCount = Object.keys(data?.assignments || {}).filter((id) =>
+    Array.isArray(data.assignments[id])
+      ? data.assignments[id].length > 0
+      : data.assignments[id]
   ).length
   const notes = (data?.notes || []).filter((n) =>
     String(n.title || '').startsWith('[C] ')
@@ -327,8 +329,10 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
 
   if (!profile) return null
 
-  const assignedCount = Object.keys(data?.assignments || {}).filter(
-    (id) => data.assignments[id]
+  const assignedCount = Object.keys(data?.assignments || {}).filter((id) =>
+    Array.isArray(data.assignments[id])
+      ? data.assignments[id].length > 0
+      : data.assignments[id]
   ).length
 
   return (

@@ -1,8 +1,9 @@
 import * as XLSX from 'xlsx'
+import { assignmentTeams, isAssignedTo } from './helpers'
 
 export function exportToExcel({ tasks, teams, assignments }) {
   const wsData = [
-    ['N°', 'Tâche', 'Zone', 'Bloc', 'Skills', 'Heures prévues', 'Statut', 'Appareil', 'Équipe', 'Membres'],
+    ['N°', 'Tâche', 'Zone', 'Bloc', 'Skills', 'Heures prévues', 'Statut', 'Appareil', 'Équipe(s)', 'Membres'],
   ]
 
   const sorted = [...tasks].sort((a, b) => {
@@ -15,8 +16,10 @@ export function exportToExcel({ tasks, teams, assignments }) {
   })
 
   sorted.forEach((task) => {
-    const teamId = assignments[task.id]
-    const team = teams.find((t) => t.id === teamId)
+    const teamsIds = assignmentTeams(assignments, task.id)
+    const taskTeams = teamsIds
+      .map((id) => teams.find((t) => t.id === id))
+      .filter(Boolean)
     wsData.push([
       task.seq ?? '',
       task.description ?? '',
@@ -26,13 +29,13 @@ export function exportToExcel({ tasks, teams, assignments }) {
       task.scheduledHours ?? '',
       task.mtxStatus ?? '',
       task.registration ?? '',
-      team?.name ?? 'Non assignée',
-      team?.members?.join(', ') ?? '',
+      taskTeams.map((tm) => tm.name).join(', ') || 'Non assignée',
+      [...new Set(taskTeams.flatMap((tm) => tm.members || []))].join(', '),
     ])
   })
 
   const ws = XLSX.utils.aoa_to_sheet(wsData)
-  const colWidths = [6, 55, 22, 10, 18, 12, 10, 12, 20, 40]
+  const colWidths = [6, 55, 22, 10, 18, 12, 10, 12, 26, 40]
   ws['!cols'] = colWidths.map((wch) => ({ wch }))
 
   const wb = XLSX.utils.book_new()
@@ -57,14 +60,16 @@ export function exportTeamsJSON({ teams, assignments, tasks }) {
           mtxStatus: t.mtxStatus,
           scheduledHours: t.scheduledHours,
           registration: t.registration,
-          team: teams.find((tm) => assignments[t.id] === tm.id)?.name || 'Non assignée',
+          teams: assignmentTeams(assignments, t.id)
+            .map((id) => teams.find((tm) => tm.id === id)?.name)
+            .filter(Boolean),
         })),
     })),
     teams: teams.map((team) => ({
       name: team.name,
       members: team.members,
       tasks: tasks
-        .filter((t) => assignments[t.id] === team.id)
+        .filter((t) => isAssignedTo(assignments, t.id, team.id))
         .map((t) => ({
           seq: t.seq,
           description: t.description,
@@ -76,7 +81,7 @@ export function exportTeamsJSON({ teams, assignments, tasks }) {
         })),
     })),
     unassigned: tasks
-      .filter((t) => !assignments[t.id])
+      .filter((t) => assignmentTeams(assignments, t.id).length === 0)
       .map((t) => ({
         seq: t.seq,
         description: t.description,

@@ -1,10 +1,11 @@
 import { useApp } from '../context/AppContext'
 import { exportToExcel, exportTeamsJSON } from '../utils/export'
+import { assignedTaskCount } from '../utils/helpers'
 import { FileSpreadsheet, FileJson, Trash2, Download } from 'lucide-react'
 
 export default function Export() {
   const { tasks, teams, assignments, resetData } = useApp()
-  const assigned = tasks.filter((t) => assignments[t.id]).length
+  const assigned = assignedTaskCount(assignments)
   const unassigned = tasks.length - assigned
 
   return (

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getZoneColor, getCategoryColor, getCategoryLabel } from '../utils/helpers'
+import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import { Search, Trash2, ChevronDown, ChevronRight, Pencil, Check, X, CheckCircle2, RotateCcw } from 'lucide-react'
 
@@ -171,7 +171,7 @@ export default function Taches() {
         .map(([zone, zoneTasks]) => {
           const zoneColor = getZoneColor(zone, zones)
           const assignedTeams = teams.filter((t) =>
-            zoneTasks.some((task) => assignments[task.id] === t.id)
+            zoneTasks.some((task) => isAssignedTo(assignments, task.id, t.id))
           )
           const memberNames = [...new Set(assignedTeams.flatMap((t) => t.members))]
           const expanded = expandedZones.includes(zone)
@@ -226,8 +226,10 @@ export default function Taches() {
                   </thead>
                   <tbody>
                     {zoneTasks.map((task) => {
-                      const teamId = assignments[task.id]
-                      const team = teams.find((t) => t.id === teamId)
+                      const teamIds = assignmentTeams(assignments, task.id)
+                      const taskTeams = teamIds
+                        .map((id) => teams.find((tm) => tm.id === id))
+                        .filter(Boolean)
                       return (
                         <tr key={task.id} className="border-b hover:bg-slate-50">
                           <td className="px-4 py-2 font-bold text-slate-500">{task.seq || '-'}</td>
@@ -328,10 +330,18 @@ export default function Taches() {
                             )}
                           </td>
                           <td className="px-4 py-2">
-                            {team ? (
-                              <span className="inline-flex items-center gap-1 bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full text-xs font-semibold">
-                                {team.name}
-                              </span>
+                            {taskTeams.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {taskTeams.map((tm) => (
+                                  <span
+                                    key={tm.id}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white"
+                                    style={{ backgroundColor: tm.color }}
+                                  >
+                                    {tm.name}
+                                  </span>
+                                ))}
+                              </div>
                             ) : (
                               <span className="text-slate-400 text-xs">Non assignée</span>
                             )}
