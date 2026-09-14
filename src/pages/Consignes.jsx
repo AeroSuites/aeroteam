@@ -37,6 +37,23 @@ const PALETTE = [
   '#64748b',
 ]
 
+// Numéro de semaine d'un nom de dossier (tolérant : « Semaine 38 », « S38 », « 38 »…)
+function parseWeekNumber(name) {
+  const s = String(name || '')
+  const m = s.match(/(?:semaine|sem\.?|s)\s*\.?\s*[n°]*\s*(\d{1,2})\b/i)
+  if (m) return parseInt(m[1], 10) || 0
+  const nums = s.match(/\d{1,2}/g) || []
+  for (const n of nums) {
+    const v = parseInt(n, 10)
+    if (v >= 1 && v <= 53) return v
+  }
+  return 0
+}
+
+function currentWeekNumNow() {
+  return parseWeekNumber(currentWeekLabel())
+}
+
 export default function Consignes() {
   const { activeProfile, code, isAdmin } = useApp()
   const [folders, setFolders] = useState(null)
@@ -46,10 +63,19 @@ export default function Consignes() {
   const [messagesError, setMessagesError] = useState('')
   const [expanded, setExpanded] = useState([])
 
-  const currentWeekNum = useMemo(
-    () => parseInt((String(currentWeekLabel()).match(/\d+/) || [0])[0], 10) || 0,
-    []
-  )
+  const [currentWeekNum, setCurrentWeekNum] = useState(currentWeekNumNow)
+
+  useEffect(() => {
+    const update = () => setCurrentWeekNum(currentWeekNumNow())
+    const timer = setInterval(update, 60 * 60 * 1000)
+    window.addEventListener('focus', update)
+    document.addEventListener('visibilitychange', update)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('focus', update)
+      document.removeEventListener('visibilitychange', update)
+    }
+  }, [])
 
   const [folderModal, setFolderModal] = useState(null)
   const [folderName, setFolderName] = useState('')
@@ -135,7 +161,7 @@ export default function Consignes() {
     const weeks = (byParent.root || [])
       .map((wf) => ({
         folder: wf,
-        weekNum: parseInt((String(wf.name || '').match(/\d+/) || [0])[0], 10) || 0,
+        weekNum: parseWeekNumber(wf.name),
         children: (byParent[wf.id] || []).sort((a, b) => a.name.localeCompare(b.name)),
       }))
       .sort((a, b) => b.weekNum - a.weekNum)
@@ -348,7 +374,7 @@ export default function Consignes() {
                   <div
                     className={`flex items-center gap-2 px-3 py-2.5 text-sm border-b border-slate-100 transition-colors ${
                       isCurrent
-                        ? 'bg-amber-50 ring-1 ring-inset ring-amber-200'
+                        ? 'bg-amber-100 ring-2 ring-inset ring-amber-400'
                         : weekOpen
                         ? 'bg-slate-100'
                         : 'hover:bg-slate-50'
