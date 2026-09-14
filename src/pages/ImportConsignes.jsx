@@ -27,6 +27,8 @@ import {
   RotateCcw,
   Clock,
   Trash2,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
 
 const SHIFT_COLORS = {
