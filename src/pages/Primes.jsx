@@ -20,13 +20,6 @@ const CATEGORIES = {
   V035: 'Toilette T2 (V035)',
 }
 
-const FILTERS = [
-  { value: 'soumise', label: 'À valider' },
-  { value: 'validee', label: 'Validées' },
-  { value: 'refusee', label: 'Refusées' },
-  { value: '', label: 'Toutes' },
-]
-
 // Notifications email : conservées dans le code mais désactivées pour
 // le moment (aucun service d'envoi accepté). Passer à true pour
 // réafficher la carte « Notifications email ».
@@ -69,7 +62,7 @@ export default function Primes() {
   const { activeProfile } = useApp()
 
   const [declarations, setDeclarations] = useState(null)
-  const [filter, setFilter] = useState('soumise')
+  const [detailAgent, setDetailAgent] = useState(null)
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState(null)
   const [pickingId, setPickingId] = useState(null)
@@ -94,7 +87,7 @@ export default function Primes() {
   const loadPrimes = async () => {
     if (!activeProfile?.code) return
     try {
-      const res = await profileStore.adminListDeclarations(activeProfile.code, filter)
+      const res = await profileStore.adminListDeclarations(activeProfile.code, '')
       if (res?.error) setError('Impossible de charger les demandes.')
       else setDeclarations(res.declarations || [])
     } catch {
@@ -116,13 +109,13 @@ export default function Primes() {
   useEffect(() => {
     if (!activeProfile?.code) return
     profileStore
-      .adminListDeclarations(activeProfile.code, filter)
+      .adminListDeclarations(activeProfile.code, '')
       .then((res) => {
         if (res?.error) setError('Impossible de charger les demandes.')
         else setDeclarations(res.declarations || [])
       })
       .catch(() => setError('Impossible de charger les demandes.'))
-  }, [activeProfile, filter])
+  }, [activeProfile])
 
   useEffect(() => {
     if (!activeProfile?.code) return
@@ -346,11 +339,57 @@ export default function Primes() {
     return list.sort((a, b) => primeDay(b).localeCompare(primeDay(a)))
   }, [declarations])
 
-  const groups = useMemo(() => {
+  // Synthèse : 1 agent = 1 ligne (compteurs cumulés)
+  const agentStats = useMemo(() => {
+    const by = {}
+    ;(declarations || []).forEach((d) => {
+      const key = d.agent_identifiant || d.agent_nom || '—'
+      if (!by[key]) {
+        by[key] = {
+          identifiant: key,
+          nom: d.agent_nom || '',
+          pending: 0,
+          refused: 0,
+          total: 0,
+          valid: { V034: 0, V035: 0 },
+        }
+      }
+      const a = by[key]
+      a.total += 1
+      if (d.statut === 'soumise') a.pending += 1
+      else if (d.statut === 'refusee') a.refused += 1
+      else if (
+        d.statut === 'validee' &&
+        (d.categorie === 'V034' || d.categorie === 'V035')
+      ) {
+        a.valid[d.categorie] += 1
+      }
+    })
+    return Object.values(by).sort((a, b) =>
+      (a.nom || a.identifiant).localeCompare(b.nom || b.identifiant)
+    )
+  }, [declarations])
+
+  const detailItems = useMemo(() => {
+    if (!detailAgent) return []
+    return (declarations || []).filter(
+      (d) => (d.agent_identifiant || d.agent_nom || '—') === detailAgent
+    )
+  }, [detailAgent, declarations])
+
+  const detailPending = useMemo(
+    () => [...detailItems.filter((d) => d.statut === 'soumise')].sort((a, b) => primeDay(a).localeCompare(primeDay(b))),
+    [detailItems]
+  )
+
+  const detailGroups = useMemo(() => {
+    const list = [...detailItems.filter((d) => d.statut !== 'soumise')].sort((a, b) =>
+      primeDay(b).localeCompare(primeDay(a))
+    )
     const out = []
     let month = null
     let day = null
-    for (const d of sorted) {
+    for (const d of list) {
       const pd = primeDay(d)
       const mKey = pd.slice(0, 7)
       if (mKey !== month) {
@@ -365,9 +404,38 @@ export default function Primes() {
       out.push({ type: 'row', key: d.id, data: d })
     }
     return out
-  }, [sorted])
+  }, [detailItems])
+
+  const detailInfo = agentStats.find((a) => a.identifiant === detailAgent) || null
 
   const exportExcel = () => {
+    // Feuille 1 : synthèse (1 agent = 1 ligne)
+    const synth = agentStats.map((a) => [
+      a.nom || a.identifiant,
+      a.identifiant,
+      a.pending,
+      a.valid.V034,
+      a.valid.V035,
+      a.valid.V034 + a.valid.V035,
+      a.refused,
+      a.total,
+    ])
+    const wsSynth = XLSX.utils.aoa_to_sheet([
+      [
+        'Agent',
+        'Identifiant',
+        'En attente',
+        'Toilette T1 (V034)',
+        'Toilette T2 (V035)',
+        'Total validées',
+        'Refusées',
+        'Total déclarées',
+      ],
+      ...synth,
+    ])
+    wsSynth['!cols'] = [22, 16, 11, 17, 17, 13, 10, 14].map((wch) => ({ wch }))
+
+    // Feuille 2 : détail complet
     const rows = sorted.map((d) => [
       d.created_at ? new Date(d.created_at).toLocaleDateString('fr-FR') : '',
       d.agent_nom || '',
@@ -381,15 +449,7 @@ export default function Primes() {
       d.motif_refus || '',
       d.decided_at ? new Date(d.decided_at).toLocaleDateString('fr-FR') : '',
     ])
-    const perAgent = {}
-    sorted.forEach((d) => {
-      if (d.statut !== 'validee') return
-      const key = d.agent_nom || d.agent_identifiant || '—'
-      if (!perAgent[key]) perAgent[key] = { V034: 0, V035: 0 }
-      if (perAgent[key][d.categorie] !== undefined) perAgent[key][d.categorie] += 1
-    })
-    const counts = Object.entries(perAgent).map(([agent, c]) => [agent, c.V034, c.V035])
-    const wsData = [
+    const wsDetail = XLSX.utils.aoa_to_sheet([
       [
         'Date envoi',
         'Agent',
@@ -404,18 +464,15 @@ export default function Primes() {
         'Décidé le',
       ],
       ...rows,
-      [],
-      ['Compteurs validés par agent', 'Toilette T1 (V034)', 'Toilette T2 (V035)'],
-      ...counts,
-    ]
-    const ws = XLSX.utils.aoa_to_sheet(wsData)
-    ws['!cols'] = [12, 22, 14, 14, 12, 18, 45, 20, 10, 26, 12].map((wch) => ({ wch }))
+    ])
+    wsDetail['!cols'] = [12, 22, 14, 14, 12, 18, 45, 20, 10, 26, 12].map((wch) => ({
+      wch,
+    }))
+
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Primes')
-    XLSX.writeFile(
-      wb,
-      `primes-${filter || 'toutes'}-${new Date().toISOString().slice(0, 10)}.xlsx`
-    )
+    XLSX.utils.book_append_sheet(wb, wsSynth, 'Synthèse')
+    XLSX.utils.book_append_sheet(wb, wsDetail, 'Détail')
+    XLSX.writeFile(wb, `primes-${new Date().toISOString().slice(0, 10)}.xlsx`)
   }
 
   return (
@@ -440,22 +497,6 @@ export default function Primes() {
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {FILTERS.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                filter === f.value
-                  ? 'bg-slate-900 text-white border-slate-900'
-                  : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
         {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
         {declarations === null && <p className="text-sm text-slate-400">Chargement…</p>}
         {declarations && declarations.length === 0 && (
@@ -463,137 +504,61 @@ export default function Primes() {
         )}
         {declarations && declarations.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
+            <table className="w-full text-sm min-w-[760px]">
               <thead>
                 <tr className="text-left bg-slate-50">
                   <th className="px-3 py-2 font-semibold text-slate-700">Agent</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Avion</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Élément</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Description</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Intervention</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Catégorie</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Statut</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Décision</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700 text-center">En attente</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700 text-center">
+                    Toilette T1 (V034)
+                  </th>
+                  <th className="px-3 py-2 font-semibold text-slate-700 text-center">
+                    Toilette T2 (V035)
+                  </th>
+                  <th className="px-3 py-2 font-semibold text-slate-700 text-center">Refusées</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700 text-center">Total</th>
+                  <th className="px-3 py-2"></th>
                 </tr>
               </thead>
               <tbody>
-                {groups.map((g) => {
-                  if (g.type === 'month')
-                    return (
-                      <tr key={g.key} className="bg-slate-100">
-                        <td
-                          colSpan={8}
-                          className="px-3 py-1.5 font-bold text-slate-700 text-[13px] uppercase tracking-wide"
-                        >
-                          {g.label}
-                        </td>
-                      </tr>
-                    )
-                  if (g.type === 'day')
-                    return (
-                      <tr key={g.key} className="bg-slate-50">
-                        <td colSpan={8} className="px-3 py-1 font-semibold text-slate-500 text-xs">
-                          {g.label}
-                        </td>
-                      </tr>
-                    )
-                  const d = g.data
-                  return (
-                    <tr key={g.key} className="border-b hover:bg-slate-50 align-top">
+                {agentStats.map((a) => (
+                  <tr key={a.identifiant} className="border-b hover:bg-slate-50">
                       <td className="px-3 py-2">
-                        <span className="font-medium">{d.agent_nom || '—'}</span>
-                        <span className="block text-[11px] text-slate-400">
-                          {d.agent_identifiant}
-                        </span>
+                        <span className="font-medium">{a.nom || '—'}</span>
+                        <span className="block text-[11px] text-slate-400">{a.identifiant}</span>
                       </td>
-                      <td className="px-3 py-2 font-mono font-bold text-sky-700">
-                        {d.avion || '—'}
-                      </td>
-                      <td className="px-3 py-2">{d.element || '—'}</td>
-                      <td className="px-3 py-2 max-w-[240px]">
-                        <span className="truncate block" title={d.description}>
-                          {d.description}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-slate-500">
-                        {d.date_intervention
-                          ? new Date(`${d.date_intervention}T12:00:00`).toLocaleDateString('fr-FR')
-                          : '—'}
-                      </td>
-                      <td className="px-3 py-2">
-                        {d.statut === 'validee' && d.categorie ? (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                            {catLabel(d.categorie)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-xs font-bold ${statutBadge(
-                            d.statut
-                          )}`}
-                        >
-                          {d.statut === 'validee'
-                            ? 'Validée'
-                            : d.statut === 'refusee'
-                            ? 'Refusée'
-                            : 'Soumise'}
-                        </span>
-                        {d.statut === 'refusee' && d.motif_refus && (
-                          <span
-                            className="block text-[11px] text-red-600 mt-0.5"
-                            title={d.motif_refus}
+                      <td className="px-3 py-2 text-center">
+                        {a.pending > 0 ? (
+                          <button
+                            onClick={() => setDetailAgent(a.identifiant)}
+                            className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 hover:bg-amber-200"
+                            title="Voir et valider les primes en attente"
                           >
-                            {d.motif_refus}
-                          </span>
+                            {a.pending} à valider
+                          </button>
+                        ) : (
+                          <span className="text-slate-300">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        {d.statut === 'soumise' &&
-                          (pickingId === d.id ? (
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {Object.entries(CATEGORIES).map(([code, label]) => (
-                                <button
-                                  key={code}
-                                  onClick={() => handleValidate(d.id, code)}
-                                  disabled={busyId === d.id}
-                                  className="rounded-full px-2.5 py-1 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                              <button
-                                onClick={() => setPickingId(null)}
-                                className="rounded-full p-1 text-slate-400 hover:text-slate-700"
-                                title="Annuler"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex flex-wrap gap-1.5">
-                              <button
-                                onClick={() => setPickingId(d.id)}
-                                disabled={busyId === d.id}
-                                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-                              >
-                                <Check className="h-3.5 w-3.5" /> Valider
-                              </button>
-                              <button
-                                onClick={() => handleRefuse(d.id)}
-                                disabled={busyId === d.id}
-                                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                              >
-                                <X className="h-3.5 w-3.5" /> Refuser
-                              </button>
-                            </div>
-                          ))}
+                      <td className="px-3 py-2 text-center font-semibold text-emerald-700">
+                        {a.valid.V034 || '—'}
                       </td>
-                    </tr>
-                  )
-                })}
+                      <td className="px-3 py-2 text-center font-semibold text-emerald-700">
+                        {a.valid.V035 || '—'}
+                      </td>
+                      <td className="px-3 py-2 text-center text-red-600">{a.refused || '—'}</td>
+                      <td className="px-3 py-2 text-center font-semibold">{a.total}</td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          onClick={() => setDetailAgent(a.identifiant)}
+                          className="text-sky-600 hover:underline text-xs font-semibold"
+                          title="Voir l'historique complet et valider"
+                        >
+                          Détail
+                        </button>
+                      </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -838,6 +803,202 @@ export default function Primes() {
           </div>
         </details>
       </div>
+      )}
+
+      {detailAgent && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setDetailAgent(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[92vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b flex items-center justify-between gap-2 bg-slate-900 text-white rounded-t-xl">
+              <h2 className="font-bold truncate">
+                {detailInfo?.nom || detailAgent}
+                <span className="text-slate-400 font-normal text-sm"> · {detailAgent}</span>
+              </h2>
+              <div className="flex items-center gap-3 shrink-0 text-xs">
+                <span className="bg-amber-500/20 text-amber-200 border border-amber-400/40 rounded-full px-2.5 py-1 font-bold">
+                  {detailInfo?.pending || 0} en attente
+                </span>
+                <span className="text-emerald-300 font-bold">
+                  T1 : {detailInfo?.valid.V034 || 0} · T2 : {detailInfo?.valid.V035 || 0}
+                </span>
+                <button
+                  onClick={() => setDetailAgent(null)}
+                  className="text-slate-400 hover:text-white p-1"
+                  title="Fermer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-5">
+              {detailPending.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-amber-700 mb-2">
+                    À valider ({detailPending.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {detailPending.map((d) => (
+                      <div
+                        key={d.id}
+                        className="border border-amber-200 bg-amber-50/40 rounded-lg p-3"
+                      >
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                          <span className="font-mono font-bold text-sky-700">
+                            {d.avion || '—'}
+                          </span>
+                          <span className="text-slate-600">{d.element || '—'}</span>
+                          <span className="text-xs text-slate-400">
+                            {d.date_intervention
+                              ? new Date(`${d.date_intervention}T12:00:00`).toLocaleDateString(
+                                  'fr-FR'
+                                )
+                              : new Date(d.created_at).toLocaleDateString('fr-FR')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-1">{d.description}</p>
+                        <div className="mt-2">
+                          {pickingId === d.id ? (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {Object.entries(CATEGORIES).map(([code, label]) => (
+                                <button
+                                  key={code}
+                                  onClick={() => handleValidate(d.id, code)}
+                                  disabled={busyId === d.id}
+                                  className="rounded-full px-2.5 py-1 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                              <button
+                                onClick={() => setPickingId(null)}
+                                className="rounded-full p-1 text-slate-400 hover:text-slate-700"
+                                title="Annuler"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap gap-1.5">
+                              <button
+                                onClick={() => setPickingId(d.id)}
+                                disabled={busyId === d.id}
+                                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                              >
+                                <Check className="h-3.5 w-3.5" /> Valider
+                              </button>
+                              <button
+                                onClick={() => handleRefuse(d.id)}
+                                disabled={busyId === d.id}
+                                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                              >
+                                <X className="h-3.5 w-3.5" /> Refuser
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h3 className="font-semibold text-slate-700 mb-2">Historique</h3>
+                {detailGroups.length === 0 && (
+                  <p className="text-sm text-slate-400 italic">Aucun historique pour le moment.</p>
+                )}
+                {detailGroups.length > 0 && (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left bg-slate-50">
+                        <th className="px-3 py-2 font-semibold text-slate-700">Avion</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700">Élément</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700">Description</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700">Catégorie</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700">Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailGroups.map((g) => {
+                        if (g.type === 'month')
+                          return (
+                            <tr key={g.key} className="bg-slate-100">
+                              <td
+                                colSpan={5}
+                                className="px-3 py-1.5 font-bold text-slate-700 text-[13px] uppercase tracking-wide"
+                              >
+                                {g.label}
+                              </td>
+                            </tr>
+                          )
+                        if (g.type === 'day')
+                          return (
+                            <tr key={g.key} className="bg-slate-50">
+                              <td
+                                colSpan={5}
+                                className="px-3 py-1 font-semibold text-slate-500 text-xs"
+                              >
+                                {g.label}
+                              </td>
+                            </tr>
+                          )
+                        const d = g.data
+                        return (
+                          <tr key={g.key} className="border-b hover:bg-slate-50 align-top">
+                            <td className="px-3 py-2 font-mono font-bold text-sky-700">
+                              {d.avion || '—'}
+                            </td>
+                            <td className="px-3 py-2">{d.element || '—'}</td>
+                            <td className="px-3 py-2 max-w-[240px]">
+                              <span className="truncate block" title={d.description}>
+                                {d.description}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2">
+                              {d.statut === 'validee' && d.categorie ? (
+                                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                                  {catLabel(d.categorie)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-xs font-bold ${statutBadge(
+                                  d.statut
+                                )}`}
+                              >
+                                {d.statut === 'validee'
+                                  ? 'Validée'
+                                  : d.statut === 'refusee'
+                                  ? 'Refusée'
+                                  : 'Soumise'}
+                              </span>
+                              {d.statut === 'refusee' && d.motif_refus && (
+                                <span
+                                  className="block text-[11px] text-red-600 mt-0.5"
+                                  title={d.motif_refus}
+                                >
+                                  {d.motif_refus}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
