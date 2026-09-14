@@ -37,6 +37,159 @@ const SHIFT_COLORS = {
   nuit: '#3b82f6',
 }
 
+function groupTasksTree(list) {
+  const blocks = {}
+  list.forEach((t) => {
+    const b = t.taskType || 'AUTRE'
+    const z = t.workArea || 'Autre'
+    if (!blocks[b]) blocks[b] = {}
+    if (!blocks[b][z]) blocks[b][z] = []
+    blocks[b][z].push(t)
+  })
+  return Object.entries(blocks)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([block, zones]) => ({
+      block,
+      zones: Object.entries(zones)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([zone, tasks]) => ({
+          zone,
+          tasks: [...tasks].sort((x, y) => Number(x.seq) - Number(y.seq)),
+        })),
+    }))
+}
+
+function ChargeTree({
+  tree,
+  selected,
+  onToggleTask,
+  onToggleTasks,
+  expandedBlocks,
+  setExpandedBlocks,
+  expandedZones,
+  setExpandedZones,
+  idPrefix,
+}) {
+  return tree.map(({ block, zones }) => {
+    const blockTasks = zones.flatMap((z) => z.tasks)
+    const blockSelected = blockTasks.filter((t) => selected[t.id]).length
+    const blockOpen = expandedBlocks.includes(block)
+    const color = getCategoryColor(block)
+    return (
+      <div key={`${idPrefix}-${block}`} className="border-b border-slate-100">
+        <div
+          className="flex items-center gap-2 px-3 py-2"
+          style={{ backgroundColor: `${color}14`, borderLeft: `4px solid ${color}` }}
+        >
+          <input
+            type="checkbox"
+            checked={blockSelected === blockTasks.length && blockTasks.length > 0}
+            ref={(el) => {
+              if (el)
+                el.indeterminate = blockSelected > 0 && blockSelected < blockTasks.length
+            }}
+            onChange={() => onToggleTasks(blockTasks)}
+            className="h-4 w-4 accent-sky-600 shrink-0"
+          />
+          <button
+            onClick={() =>
+              setExpandedBlocks((prev) =>
+                prev.includes(block) ? prev.filter((b) => b !== block) : [...prev, block]
+              )
+            }
+            className="flex items-center gap-2 flex-1 min-w-0 text-left"
+          >
+            {blockOpen ? (
+              <ChevronDown className="h-4 w-4 text-slate-500 shrink-0" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-slate-500 shrink-0" />
+            )}
+            <span className="font-semibold text-sm" style={{ color }}>
+              {getCategoryLabel(block)}
+            </span>
+            <span className="text-xs text-slate-500">
+              ({blockSelected}/{blockTasks.length})
+            </span>
+          </button>
+        </div>
+        {blockOpen &&
+          zones.map(({ zone, tasks }) => {
+            const zoneKey = `${idPrefix}::${block}::${zone}`
+            const zoneOpen = expandedZones.includes(zoneKey)
+            const zoneSelected = tasks.filter((t) => selected[t.id]).length
+            return (
+              <div key={zoneKey}>
+                <div className="flex items-center gap-2 pl-8 pr-3 py-1.5 bg-slate-50 border-t border-slate-100">
+                  <input
+                    type="checkbox"
+                    checked={zoneSelected === tasks.length && tasks.length > 0}
+                    ref={(el) => {
+                      if (el)
+                        el.indeterminate = zoneSelected > 0 && zoneSelected < tasks.length
+                    }}
+                    onChange={() => onToggleTasks(tasks)}
+                    className="h-4 w-4 accent-sky-600 shrink-0"
+                  />
+                  <button
+                    onClick={() =>
+                      setExpandedZones((prev) =>
+                        prev.includes(zoneKey)
+                          ? prev.filter((k) => k !== zoneKey)
+                          : [...prev, zoneKey]
+                      )
+                    }
+                    className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                  >
+                    {zoneOpen ? (
+                      <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    )}
+                    <span className="text-xs font-semibold text-slate-700">📍 {zone}</span>
+                    <span className="text-[11px] text-slate-400">
+                      ({zoneSelected}/{tasks.length})
+                    </span>
+                  </button>
+                </div>
+                {zoneOpen &&
+                  tasks.map((task) => (
+                    <label
+                      key={task.id}
+                      className="flex items-center gap-2 pl-14 pr-3 py-1.5 text-sm hover:bg-slate-50 cursor-pointer border-t border-dashed border-slate-100"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!!selected[task.id]}
+                        onChange={() => onToggleTask(task.id)}
+                        className="h-4 w-4 accent-sky-600 shrink-0"
+                      />
+                      <span className="w-10 shrink-0 font-bold text-slate-500">
+                        {task.seq || '—'}
+                      </span>
+                      {task.taskBarcode && (
+                        <span className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
+                          {task.taskBarcode}
+                        </span>
+                      )}
+                      <span className="flex-1 min-w-0 truncate text-slate-700" title={task.description}>
+                        {task.description}
+                      </span>
+                      <span className="shrink-0 text-xs text-slate-400">
+                        {task.scheduledHours || ''}
+                      </span>
+                      <span className="shrink-0 text-xs text-slate-400">
+                        {task.registration || ''}
+                      </span>
+                    </label>
+                  ))}
+              </div>
+            )
+          })}
+      </div>
+    )
+  })
+}
+
 const STATE_KEY = 'import-consignes-session-v1'
 const HISTORY_KEY = 'import-consignes-history'
 
@@ -71,6 +224,9 @@ export default function ImportConsignes() {
   const [chargeSelected, setChargeSelected] = useState({})
   const [chargeExpandedBlocks, setChargeExpandedBlocks] = useState([])
   const [chargeExpandedZones, setChargeExpandedZones] = useState([])
+  const [chargeAircraft, setChargeAircraft] = useState('')
+  const [chargeTargetTasks, setChargeTargetTasks] = useState(null)
+  const [chargeRemoveSel, setChargeRemoveSel] = useState({})
   const chargeFileInputRef = useRef(null)
 
   useEffect(() => {
@@ -279,6 +435,7 @@ export default function ImportConsignes() {
         setChargeSelected(Object.fromEntries(parsed.map((t) => [t.id, true])))
         setChargeExpandedBlocks([])
         setChargeExpandedZones([])
+        setChargeAircraft('')
         setChargeStats({
           totalLines: rows.length - 1,
           kept: parsed.length,
@@ -315,34 +472,100 @@ export default function ImportConsignes() {
       if (saved?.error === 'conflict')
         setChargeError('Le profil a été modifié entre-temps. Réessayez.')
       else if (saved?.error) setChargeError("Échec de l'envoi de la charge.")
-      else setChargeMsg(`${selectedTasks.length} tâche(s) ajoutée(s) au profil.`)
+      else {
+        if (chargeAircraft) {
+          try {
+            await profileStore.adminSetProfileAircraft(
+              activeProfile.code,
+              chargeProfileCode,
+              chargeAircraft
+            )
+          } catch {
+            // l'avion pourra être associé manuellement
+          }
+        }
+        setChargeMsg(`${selectedTasks.length} tâche(s) ajoutée(s) au profil.`)
+        await loadCreatedProfiles()
+        const again = await profileStore.getProfile(chargeProfileCode)
+        if (again) setChargeTargetTasks({ tasks: again?.data?.tasks || [] })
+        setChargeRemoveSel({})
+      }
     } catch {
       setChargeError("Échec de l'envoi (hors ligne ?).")
     }
     setChargeBusy(false)
   }
 
-  const chargeTree = useMemo(() => {
-    const blocks = {}
-    chargePreview.forEach((t) => {
-      const b = t.taskType || 'AUTRE'
-      const z = t.workArea || 'Autre'
-      if (!blocks[b]) blocks[b] = {}
-      if (!blocks[b][z]) blocks[b][z] = []
-      blocks[b][z].push(t)
-    })
-    return Object.entries(blocks)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([block, zones]) => ({
-        block,
-        zones: Object.entries(zones)
-          .sort((a, b) => a[0].localeCompare(b[0]))
-          .map(([zone, tasks]) => ({
-            zone,
-            tasks: [...tasks].sort((x, y) => Number(x.seq) - Number(y.seq)),
-          })),
-      }))
-  }, [chargePreview])
+  const chargeTree = useMemo(() => groupTasksTree(chargePreview), [chargePreview])
+
+  const chargeRegistrations = useMemo(
+    () =>
+      [
+        ...new Set(
+          chargePreview
+            .filter((t) => chargeSelected[t.id])
+            .map((t) => t.registration)
+            .filter(Boolean)
+        ),
+      ].sort(),
+    [chargePreview, chargeSelected]
+  )
+
+  useEffect(() => {
+    if (!chargeProfileCode) return
+    let cancelled = false
+    profileStore
+      .getProfile(chargeProfileCode)
+      .then((fresh) => {
+        if (cancelled || !fresh) return
+        setChargeTargetTasks({ tasks: fresh?.data?.tasks || [] })
+        setChargeRemoveSel({})
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [chargeProfileCode])
+
+  const removeChargeTasks = async () => {
+    const removeIds = new Set(
+      Object.keys(chargeRemoveSel).filter((id) => chargeRemoveSel[id])
+    )
+    if (!removeIds.size || !chargeProfileCode) return
+    setChargeBusy(true)
+    setChargeError('')
+    setChargeMsg('')
+    try {
+      const fresh = await profileStore.getProfile(chargeProfileCode)
+      if (!fresh) {
+        setChargeError('Profil introuvable.')
+        setChargeBusy(false)
+        return
+      }
+      const data = fresh.data || {}
+      const keptTasks = (data.tasks || []).filter((t) => !removeIds.has(t.id))
+      const assignments = { ...(data.assignments || {}) }
+      removeIds.forEach((id) => delete assignments[id])
+      const updated = { ...data, tasks: keptTasks, assignments }
+      const saved = await profileStore.saveProfileData(
+        chargeProfileCode,
+        updated,
+        fresh?.rev ?? 0,
+        false
+      )
+      if (saved?.error === 'conflict')
+        setChargeError('Le profil a été modifié entre-temps. Réessayez.')
+      else if (saved?.error) setChargeError('Échec du retrait.')
+      else {
+        setChargeMsg(`${removeIds.size} tâche(s) retirée(s) du profil.`)
+        setChargeTargetTasks({ tasks: keptTasks })
+        setChargeRemoveSel({})
+      }
+    } catch {
+      setChargeError('Échec du retrait (hors ligne ?).')
+    }
+    setChargeBusy(false)
+  }
 
   const chargeSelectedCount = chargePreview.filter((t) => chargeSelected[t.id]).length
 
@@ -1160,6 +1383,19 @@ export default function ImportConsignes() {
                       </option>
                     ))}
                   </select>
+                  <select
+                    value={chargeAircraft}
+                    onChange={(e) => setChargeAircraft(e.target.value)}
+                    className="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white"
+                    title="Avion associé au profil : la carte apparaîtra dans « Avions assignés »"
+                  >
+                    <option value="">— Avion associé (optionnel) —</option>
+                    {chargeRegistrations.map((immat) => (
+                      <option key={immat} value={immat}>
+                        {immat}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     onClick={sendCharge}
                     disabled={chargeBusy || !chargeProfileCode}
@@ -1303,6 +1539,70 @@ export default function ImportConsignes() {
                     </div>
                   )
                 })}
+              </div>
+            </div>
+          )}
+
+          {chargeProfileCode && chargeTargetTasks && chargeTargetTasks.tasks.length > 0 && (
+            <div className="bg-white rounded-xl shadow overflow-hidden">
+              <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b">
+                <div>
+                  <h2 className="text-lg font-semibold">
+                    Retirer des lignes de ce profil —{' '}
+                    {Object.values(chargeRemoveSel).filter(Boolean).length} /{' '}
+                    {chargeTargetTasks.tasks.length} sélectionnée(s)
+                  </h2>
+                  <div className="flex gap-1.5 mt-1">
+                    <button
+                      onClick={() =>
+                        setChargeRemoveSel(
+                          Object.fromEntries(chargeTargetTasks.tasks.map((t) => [t.id, true]))
+                        )
+                      }
+                      className="text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-50 rounded-full px-2.5 py-0.5"
+                    >
+                      Tout cocher
+                    </button>
+                    <button
+                      onClick={() => setChargeRemoveSel({})}
+                      className="text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 rounded-full px-2.5 py-0.5"
+                    >
+                      Tout décocher
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={removeChargeTasks}
+                  disabled={chargeBusy || !Object.values(chargeRemoveSel).some(Boolean)}
+                  className="bg-red-600 text-white px-4 py-1.5 rounded-md hover:bg-red-700 disabled:opacity-50 text-sm font-semibold"
+                  title="Retirer définitivement les lignes cochées de la charge du profil"
+                >
+                  {chargeBusy ? 'Retrait…' : 'Retirer la sélection'}
+                </button>
+              </div>
+              <div className="max-h-[420px] overflow-y-auto">
+                <ChargeTree
+                  tree={groupTasksTree(chargeTargetTasks.tasks)}
+                  selected={chargeRemoveSel}
+                  onToggleTask={(id) =>
+                    setChargeRemoveSel((prev) => ({ ...prev, [id]: !prev[id] }))
+                  }
+                  onToggleTasks={(list) =>
+                    setChargeRemoveSel((prev) => {
+                      const allOn = list.every((t) => prev[t.id])
+                      const next = { ...prev }
+                      list.forEach((t) => {
+                        next[t.id] = !allOn
+                      })
+                      return next
+                    })
+                  }
+                  expandedBlocks={chargeExpandedBlocks}
+                  setExpandedBlocks={setChargeExpandedBlocks}
+                  expandedZones={chargeExpandedZones}
+                  setExpandedZones={setChargeExpandedZones}
+                  idPrefix="retrait"
+                />
               </div>
             </div>
           )}
