@@ -90,12 +90,14 @@ export default function Preparation() {
     setTransferMsg('')
     try {
       const taskIds = new Set(p.taskIds || [])
-      const movedTasks = prepTasks.filter((t) => taskIds.has(t.id))
+      const copiedTasks = prepTasks
+        .filter((t) => taskIds.has(t.id))
+        .map((t) => ({ ...t, id: makeId('prep') }))
       const res = await profileStore.pocketTransferTo(
         activeProfile.code,
         target.id,
-        { id: makeId('pocket'), name: p.name, taskIds: [...taskIds] },
-        movedTasks.map((t) => ({ ...t, id: makeId('prep') }))
+        { id: makeId('pocket'), name: p.name, taskIds: copiedTasks.map((t) => t.id) },
+        copiedTasks
       )
       if (res?.error === 'cible_invalide') {
         setTransferError('Profil destinataire invalide.')
