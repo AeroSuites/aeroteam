@@ -29,6 +29,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
+  ClipboardList,
 } from 'lucide-react'
 
 const SHIFT_COLORS = {
@@ -743,26 +744,50 @@ export default function ImportConsignes() {
         </p>
       </div>
 
-      <div className="inline-flex p-1 rounded-lg bg-slate-100 w-fit">
+      <div className="flex flex-wrap gap-3">
         <button
           onClick={() => setChargeTab('consignes')}
-          className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+          className={`flex items-center gap-3 px-5 py-3 rounded-xl text-sm font-bold border-2 transition-all text-left ${
             chargeTab === 'consignes'
-              ? 'bg-white text-slate-900 shadow'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'bg-sky-600 border-sky-600 text-white shadow-lg ring-2 ring-sky-300'
+              : 'bg-white border-slate-200 text-slate-600 hover:border-sky-400 hover:bg-sky-50'
           }`}
         >
-          Consignes
+          <ClipboardList
+            className={`h-6 w-6 shrink-0 ${chargeTab === 'consignes' ? 'text-white' : 'text-sky-500'}`}
+          />
+          <span>
+            <span className="block text-base">Consignes</span>
+            <span
+              className={`block text-[11px] font-normal ${
+                chargeTab === 'consignes' ? 'text-sky-100' : 'text-slate-400'
+              }`}
+            >
+              Rapport des consignes (jour × shift)
+            </span>
+          </span>
         </button>
         <button
           onClick={() => setChargeTab('charge')}
-          className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+          className={`flex items-center gap-3 px-5 py-3 rounded-xl text-sm font-bold border-2 transition-all text-left ${
             chargeTab === 'charge'
-              ? 'bg-white text-slate-900 shadow'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg ring-2 ring-emerald-300'
+              : 'bg-white border-emerald-300 text-emerald-800 hover:border-emerald-500 hover:bg-emerald-50'
           }`}
         >
-          Charge (Victory)
+          <Rocket
+            className={`h-6 w-6 shrink-0 ${chargeTab === 'charge' ? 'text-white' : 'text-emerald-600'}`}
+          />
+          <span>
+            <span className="block text-base">Charge (Victory)</span>
+            <span
+              className={`block text-[11px] font-normal ${
+                chargeTab === 'charge' ? 'text-emerald-100' : 'text-emerald-600'
+              }`}
+            >
+              Workpackage Report → envoyer au profil
+            </span>
+          </span>
         </button>
       </div>
 
