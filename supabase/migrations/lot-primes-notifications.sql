@@ -92,13 +92,18 @@ begin
   where a.id = new.manager_id;
 
   html :=
-    '<h2>Nouvelle déclaration de prime à valider</h2>'
-    || '<p><b>Agent :</b> ' || coalesce(new.agent_nom, '') || ' (' || coalesce(new.agent_identifiant, '') || ')</p>'
-    || '<p><b>Avion :</b> ' || coalesce(new.avion, '—') || '</p>'
-    || '<p><b>Élément :</b> ' || coalesce(new.element, '—') || '</p>'
-    || '<p><b>Date de l''intervention :</b> ' || coalesce(new.date_intervention::text, '—') || '</p>'
-    || '<p><b>Description :</b><br>' || replace(coalesce(new.description, ''), E'\n', '<br>') || '</p>'
-    || '<p style="margin-top:16px"><a href="https://aerosuites.github.io/aeroteam/#/primes" style="background:#0284c7;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Ouvrir AeroTeam → Primes</a></p>';
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1e293b;line-height:1.5">'
+    || '<h2 style="margin:0 0 10px">Nouvelle déclaration de prime à valider</h2>'
+    || '<p style="margin:4px 0"><b>Agent :</b> ' || coalesce(new.agent_nom, '') || ' (' || coalesce(new.agent_identifiant, '') || ')</p>'
+    || '<p style="margin:4px 0"><b>Avion :</b> ' || coalesce(new.avion, '—') || '</p>'
+    || '<p style="margin:4px 0"><b>Élément :</b> ' || coalesce(new.element, '—') || '</p>'
+    || '<p style="margin:4px 0"><b>Date de l''intervention :</b> ' || coalesce(new.date_intervention::text, '—') || '</p>'
+    || '<p style="margin:4px 0"><b>Description :</b><br>' || replace(coalesce(new.description, ''), E'\n', '<br>') || '</p>'
+    || '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px"><tr>'
+    || '<td style="background:#0284c7;border-radius:6px;text-align:center">'
+    || '<a href="https://aerosuites.github.io/aeroteam/#/primes" style="display:inline-block;padding:10px 18px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;text-decoration:none;white-space:nowrap">Ouvrir AeroTeam &#8594; Primes</a>'
+    || '</td></tr></table>'
+    || '</div>';
 
   perform public.send_manager_email_(
     p_to := manager_email,
@@ -267,7 +272,7 @@ begin
     p_to := v_email,
     p_to_name := '',
     p_subject := 'Test — notifications AeroPrimes',
-    p_html := '<h2>Test réussi ✅</h2><p>Vos notifications des déclarations de primes sont bien configurées.</p>'
+    p_html := '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1e293b;line-height:1.5"><h2 style="margin:0 0 10px">Test réussi</h2><p style="margin:4px 0">Vos notifications des déclarations de primes sont bien configurées.</p></div>'
   );
 
   if not sent then

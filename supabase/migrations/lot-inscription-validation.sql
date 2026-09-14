@@ -326,10 +326,15 @@ declare
   html text;
 begin
   html :=
-    '<h2>Nouvelle demande d''accès AeroTeam</h2>'
-    || '<p><b>Profil demandé :</b> ' || coalesce(new.name, '') || '</p>'
-    || '<p><b>Le :</b> ' || to_char(now(), 'DD/MM/YYYY à HH24:MI') || '</p>'
-    || '<p style="margin-top:16px"><a href="https://aerosuites.github.io/aeroteam/#/admin" style="background:#0284c7;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Ouvrir AeroTeam → Administration</a></p>';
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1e293b;line-height:1.5">'
+    || '<h2 style="margin:0 0 10px">Nouvelle demande d''accès AeroTeam</h2>'
+    || '<p style="margin:4px 0"><b>Profil demandé :</b> ' || coalesce(new.name, '') || '</p>'
+    || '<p style="margin:4px 0"><b>Le :</b> ' || to_char(now(), 'DD/MM/YYYY à HH24:MI') || '</p>'
+    || '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px"><tr>'
+    || '<td style="background:#0284c7;border-radius:6px;text-align:center">'
+    || '<a href="https://aerosuites.github.io/aeroteam/#/admin" style="display:inline-block;padding:10px 18px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;text-decoration:none;white-space:nowrap">Ouvrir AeroTeam &#8594; Administration</a>'
+    || '</td></tr></table>'
+    || '</div>';
 
   select a.email, a.name into manager_email, manager_name
   from public.admins a
