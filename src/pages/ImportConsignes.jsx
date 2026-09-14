@@ -66,6 +66,9 @@ export default function ImportConsignes() {
   const [chargeBusy, setChargeBusy] = useState(false)
   const [chargeMsg, setChargeMsg] = useState('')
   const [chargeError, setChargeError] = useState('')
+  const [chargeSelected, setChargeSelected] = useState({})
+  const [chargeExpandedBlocks, setChargeExpandedBlocks] = useState([])
+  const [chargeExpandedZones, setChargeExpandedZones] = useState([])
   const chargeFileInputRef = useRef(null)
 
   useEffect(() => {
@@ -271,6 +274,9 @@ export default function ImportConsignes() {
         }
         const parsed = parseExcelRows(rows.slice(1), detected)
         setChargePreview(parsed)
+        setChargeSelected(Object.fromEntries(parsed.map((t) => [t.id, true])))
+        setChargeExpandedBlocks([])
+        setChargeExpandedZones([])
         setChargeStats({
           totalLines: rows.length - 1,
           kept: parsed.length,
@@ -284,7 +290,8 @@ export default function ImportConsignes() {
   }
 
   const sendCharge = async () => {
-    if (!chargePreview.length || !chargeProfileCode || !activeProfile?.code) return
+    const selectedTasks = chargePreview.filter((t) => chargeSelected[t.id])
+    if (!selectedTasks.length || !chargeProfileCode || !activeProfile?.code) return
     setChargeBusy(true)
     setChargeError('')
     setChargeMsg('')
@@ -295,7 +302,7 @@ export default function ImportConsignes() {
         setChargeBusy(false)
         return
       }
-      const mergedTasks = dedupeAndMerge(fresh?.data?.tasks || [], chargePreview)
+      const mergedTasks = dedupeAndMerge(fresh?.data?.tasks || [], selectedTasks)
       const updated = { ...(fresh.data || {}), tasks: mergedTasks }
       const saved = await profileStore.saveProfileData(
         chargeProfileCode,
@@ -306,11 +313,49 @@ export default function ImportConsignes() {
       if (saved?.error === 'conflict')
         setChargeError('Le profil a été modifié entre-temps. Réessayez.')
       else if (saved?.error) setChargeError("Échec de l'envoi de la charge.")
-      else setChargeMsg(`${chargePreview.length} tâche(s) ajoutée(s) au profil.`)
+      else setChargeMsg(`${selectedTasks.length} tâche(s) ajoutée(s) au profil.`)
     } catch {
       setChargeError("Échec de l'envoi (hors ligne ?).")
     }
     setChargeBusy(false)
+  }
+
+  const chargeTree = useMemo(() => {
+    const blocks = {}
+    chargePreview.forEach((t) => {
+      const b = t.taskType || 'AUTRE'
+      const z = t.workArea || 'Autre'
+      if (!blocks[b]) blocks[b] = {}
+      if (!blocks[b][z]) blocks[b][z] = []
+      blocks[b][z].push(t)
+    })
+    return Object.entries(blocks)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([block, zones]) => ({
+        block,
+        zones: Object.entries(zones)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([zone, tasks]) => ({
+            zone,
+            tasks: [...tasks].sort((x, y) => Number(x.seq) - Number(y.seq)),
+          })),
+      }))
+  }, [chargePreview])
+
+  const chargeSelectedCount = chargePreview.filter((t) => chargeSelected[t.id]).length
+
+  const toggleChargeTask = (id) =>
+    setChargeSelected((prev) => ({ ...prev, [id]: !prev[id] }))
+
+  const toggleChargeTasks = (taskList) => {
+    setChargeSelected((prev) => {
+      const allOn = taskList.every((t) => prev[t.id])
+      const next = { ...prev }
+      taskList.forEach((t) => {
+        next[t.id] = !allOn
+      })
+      return next
+    })
   }
 
   const handleFile = (file) => {
@@ -1076,9 +1121,29 @@ export default function ImportConsignes() {
           {chargePreview.length > 0 && (
             <div className="bg-white rounded-xl shadow overflow-hidden">
               <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b">
-                <h2 className="text-xl font-semibold">
-                  Aperçu — {chargePreview.length} tâches après filtres
-                </h2>
+                <div>
+                  <h2 className="text-xl font-semibold">
+                    Sélection — {chargeSelectedCount} / {chargePreview.length} tâche(s)
+                  </h2>
+                  <div className="flex gap-1.5 mt-1">
+                    <button
+                      onClick={() =>
+                        setChargeSelected(
+                          Object.fromEntries(chargePreview.map((t) => [t.id, true]))
+                        )
+                      }
+                      className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-2.5 py-0.5"
+                    >
+                      Tout cocher
+                    </button>
+                    <button
+                      onClick={() => setChargeSelected({})}
+                      className="text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 rounded-full px-2.5 py-0.5"
+                    >
+                      Tout décocher
+                    </button>
+                  </div>
+                </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <select
                     value={chargeProfileCode}
@@ -1108,60 +1173,134 @@ export default function ImportConsignes() {
                   <CheckCircle2 className="h-5 w-5" /> {chargeMsg}
                 </div>
               )}
-              <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-                <table className="w-full text-sm min-w-[720px]">
-                  <thead className="sticky top-0 bg-slate-50">
-                    <tr className="text-left">
-                      <th className="px-4 py-2 border-b">N°</th>
-                      <th className="px-4 py-2 border-b">Tâche</th>
-                      <th className="px-4 py-2 border-b">Skills</th>
-                      <th className="px-4 py-2 border-b">Status</th>
-                      <th className="px-4 py-2 border-b">Bloc</th>
-                      <th className="px-4 py-2 border-b">Zone</th>
-                      <th className="px-4 py-2 border-b">Heures</th>
-                      <th className="px-4 py-2 border-b">Appareil</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {chargePreview.map((task, idx) => {
-                      const color = getCategoryColor(task.taskType)
-                      return (
-                        <tr key={idx} style={{ backgroundColor: `${color}12` }} className="border-b hover:bg-slate-50">
-                          <td className="px-4 py-2 text-slate-500">{task.seq}</td>
-                          <td className="px-4 py-2 font-medium max-w-xs truncate" title={task.description}>
-                            {task.description}
-                          </td>
-                          <td className="px-4 py-2">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-700">
-                              {task.skills}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                task.mtxStatus === 'ACTV'
-                                  ? 'bg-green-100 text-green-700'
-                                  : task.mtxStatus === 'PAUSE'
-                                    ? 'bg-amber-100 text-amber-700'
-                                    : 'bg-slate-100 text-slate-700'
-                              }`}
-                            >
-                              {task.mtxStatus}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: color }}>
-                              {getCategoryLabel(task.taskType)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2 max-w-[150px] truncate" title={task.workArea}>{task.workArea}</td>
-                          <td className="px-4 py-2">{task.scheduledHours || '—'}</td>
-                          <td className="px-4 py-2">{task.registration || '—'}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+              <div className="max-h-[560px] overflow-y-auto">
+                {chargeTree.map(({ block, zones }) => {
+                  const blockTasks = zones.flatMap((z) => z.tasks)
+                  const blockSelected = blockTasks.filter((t) => chargeSelected[t.id]).length
+                  const blockOpen = chargeExpandedBlocks.includes(block)
+                  const color = getCategoryColor(block)
+                  return (
+                    <div key={block} className="border-b border-slate-100">
+                      <div
+                        className="flex items-center gap-2 px-3 py-2"
+                        style={{ backgroundColor: `${color}14`, borderLeft: `4px solid ${color}` }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={blockSelected === blockTasks.length && blockTasks.length > 0}
+                          ref={(el) => {
+                            if (el)
+                              el.indeterminate =
+                                blockSelected > 0 && blockSelected < blockTasks.length
+                          }}
+                          onChange={() => toggleChargeTasks(blockTasks)}
+                          className="h-4 w-4 accent-sky-600 shrink-0"
+                        />
+                        <button
+                          onClick={() =>
+                            setChargeExpandedBlocks((prev) =>
+                              prev.includes(block)
+                                ? prev.filter((b) => b !== block)
+                                : [...prev, block]
+                            )
+                          }
+                          className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                        >
+                          {blockOpen ? (
+                            <ChevronDown className="h-4 w-4 text-slate-500 shrink-0" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-slate-500 shrink-0" />
+                          )}
+                          <span className="font-semibold text-sm" style={{ color }}>
+                            {getCategoryLabel(block)}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            ({blockSelected}/{blockTasks.length})
+                          </span>
+                        </button>
+                      </div>
+                      {blockOpen &&
+                        zones.map(({ zone, tasks }) => {
+                          const zoneKey = `${block}::${zone}`
+                          const zoneOpen = chargeExpandedZones.includes(zoneKey)
+                          const zoneSelected = tasks.filter((t) => chargeSelected[t.id]).length
+                          return (
+                            <div key={zoneKey}>
+                              <div className="flex items-center gap-2 pl-8 pr-3 py-1.5 bg-slate-50 border-t border-slate-100">
+                                <input
+                                  type="checkbox"
+                                  checked={zoneSelected === tasks.length && tasks.length > 0}
+                                  ref={(el) => {
+                                    if (el)
+                                      el.indeterminate =
+                                        zoneSelected > 0 && zoneSelected < tasks.length
+                                  }}
+                                  onChange={() => toggleChargeTasks(tasks)}
+                                  className="h-4 w-4 accent-sky-600 shrink-0"
+                                />
+                                <button
+                                  onClick={() =>
+                                    setChargeExpandedZones((prev) =>
+                                      prev.includes(zoneKey)
+                                        ? prev.filter((k) => k !== zoneKey)
+                                        : [...prev, zoneKey]
+                                    )
+                                  }
+                                  className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                                >
+                                  {zoneOpen ? (
+                                    <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                  ) : (
+                                    <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                  )}
+                                  <span className="text-xs font-semibold text-slate-700">
+                                    📍 {zone}
+                                  </span>
+                                  <span className="text-[11px] text-slate-400">
+                                    ({zoneSelected}/{tasks.length})
+                                  </span>
+                                </button>
+                              </div>
+                              {zoneOpen &&
+                                tasks.map((task) => (
+                                  <label
+                                    key={task.id}
+                                    className="flex items-center gap-2 pl-14 pr-3 py-1.5 text-sm hover:bg-slate-50 cursor-pointer border-t border-dashed border-slate-100"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={!!chargeSelected[task.id]}
+                                      onChange={() => toggleChargeTask(task.id)}
+                                      className="h-4 w-4 accent-sky-600 shrink-0"
+                                    />
+                                    <span className="w-10 shrink-0 font-bold text-slate-500">
+                                      {task.seq || '—'}
+                                    </span>
+                                    {task.taskBarcode && (
+                                      <span className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
+                                        {task.taskBarcode}
+                                      </span>
+                                    )}
+                                    <span
+                                      className="flex-1 min-w-0 truncate text-slate-700"
+                                      title={task.description}
+                                    >
+                                      {task.description}
+                                    </span>
+                                    <span className="shrink-0 text-xs text-slate-400">
+                                      {task.scheduledHours || ''}
+                                    </span>
+                                    <span className="shrink-0 text-xs text-slate-400">
+                                      {task.registration || ''}
+                                    </span>
+                                  </label>
+                                ))}
+                            </div>
+                          )
+                        })}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
