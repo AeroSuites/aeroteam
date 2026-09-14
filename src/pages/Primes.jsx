@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
@@ -63,9 +63,9 @@ export default function Primes() {
 
   const [declarations, setDeclarations] = useState(null)
   const [detailAgent, setDetailAgent] = useState(null)
+  const [expandedAgents, setExpandedAgents] = useState([])
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState(null)
-  const [pickingId, setPickingId] = useState(null)
 
   const [agents, setAgents] = useState(null)
   const [agentsError, setAgentsError] = useState('')
@@ -248,7 +248,6 @@ export default function Primes() {
       setError('Échec de la validation.')
     }
     setBusyId(null)
-    setPickingId(null)
   }
 
   const handleRefuse = async (id) => {
@@ -408,6 +407,22 @@ export default function Primes() {
 
   const detailInfo = agentStats.find((a) => a.identifiant === detailAgent) || null
 
+  const pendingFor = (identifiant) =>
+    (declarations || [])
+      .filter(
+        (d) =>
+          (d.agent_identifiant || d.agent_nom || '—') === identifiant &&
+          d.statut === 'soumise'
+      )
+      .sort((a, b) => primeDay(a).localeCompare(primeDay(b)))
+
+  const toggleExpandedAgent = (identifiant) =>
+    setExpandedAgents((prev) =>
+      prev.includes(identifiant)
+        ? prev.filter((i) => i !== identifiant)
+        : [...prev, identifiant]
+    )
+
   const exportExcel = () => {
     // Feuille 1 : synthèse (1 agent = 1 ligne)
     const synth = agentStats.map((a) => [
@@ -522,24 +537,29 @@ export default function Primes() {
               </thead>
               <tbody>
                 {agentStats.map((a) => (
-                  <tr key={a.identifiant} className="border-b hover:bg-slate-50">
-                      <td className="px-3 py-2">
-                        <span className="font-medium">{a.nom || '—'}</span>
-                        <span className="block text-[11px] text-slate-400">{a.identifiant}</span>
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        {a.pending > 0 ? (
-                          <button
-                            onClick={() => setDetailAgent(a.identifiant)}
-                            className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 hover:bg-amber-200"
-                            title="Voir et valider les primes en attente"
-                          >
-                            {a.pending} à valider
-                          </button>
-                        ) : (
-                          <span className="text-slate-300">—</span>
-                        )}
-                      </td>
+                  <Fragment key={a.identifiant}>
+                  <tr className="border-b hover:bg-slate-50">
+                    <td className="px-3 py-2">
+                      <span className="font-medium">{a.nom || '—'}</span>
+                      <span className="block text-[11px] text-slate-400">{a.identifiant}</span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {a.pending > 0 ? (
+                        <button
+                          onClick={() => toggleExpandedAgent(a.identifiant)}
+                          className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                            expandedAgents.includes(a.identifiant)
+                              ? 'bg-amber-300 text-amber-900'
+                              : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                          }`}
+                          title="Afficher / masquer les primes à valider"
+                        >
+                          {a.pending} à valider
+                        </button>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
+                    </td>
                       <td className="px-3 py-2 text-center font-semibold text-emerald-700">
                         {a.valid.V034 || '—'}
                       </td>
@@ -558,6 +578,67 @@ export default function Primes() {
                         </button>
                       </td>
                   </tr>
+                  {expandedAgents.includes(a.identifiant) && (
+                    <tr className="bg-amber-50/40">
+                      <td colSpan={7} className="px-3 pb-3 pt-1">
+                        <div className="space-y-1.5">
+                          {pendingFor(a.identifiant).map((d) => (
+                            <div
+                              key={d.id}
+                              className="flex flex-wrap items-center gap-2 border border-amber-200 bg-white rounded-lg px-3 py-2"
+                            >
+                              <span className="font-mono font-bold text-sky-700 text-sm">
+                                {d.avion || '—'}
+                              </span>
+                              <span className="text-xs text-slate-600">{d.element || '—'}</span>
+                              <span className="text-[11px] text-slate-400">
+                                {d.date_intervention
+                                  ? new Date(
+                                      `${d.date_intervention}T12:00:00`
+                                    ).toLocaleDateString('fr-FR')
+                                  : new Date(d.created_at).toLocaleDateString('fr-FR')}
+                              </span>
+                              <span
+                                className="flex-1 min-w-[140px] truncate text-xs text-slate-600"
+                                title={d.description}
+                              >
+                                {d.description}
+                              </span>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {busyId === d.id ? (
+                                  <span className="text-xs text-slate-400">…</span>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={() => handleValidate(d.id, 'V034')}
+                                      className="rounded-full px-2.5 py-1 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700"
+                                      title="Valider en Toilette T1 (V034)"
+                                    >
+                                      T1 (V034)
+                                    </button>
+                                    <button
+                                      onClick={() => handleValidate(d.id, 'V035')}
+                                      className="rounded-full px-2.5 py-1 text-xs font-bold bg-teal-600 text-white hover:bg-teal-700"
+                                      title="Valider en Toilette T2 (V035)"
+                                    >
+                                      T2 (V035)
+                                    </button>
+                                    <button
+                                      onClick={() => handleRefuse(d.id)}
+                                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold border border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      <X className="h-3.5 w-3.5" /> Refuser
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -862,44 +943,34 @@ export default function Primes() {
                         </div>
                         <p className="text-xs text-slate-600 mt-1">{d.description}</p>
                         <div className="mt-2">
-                          {pickingId === d.id ? (
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {Object.entries(CATEGORIES).map(([code, label]) => (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {busyId === d.id ? (
+                              <span className="text-xs text-slate-400">…</span>
+                            ) : (
+                              <>
                                 <button
-                                  key={code}
-                                  onClick={() => handleValidate(d.id, code)}
-                                  disabled={busyId === d.id}
-                                  className="rounded-full px-2.5 py-1 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                                  onClick={() => handleValidate(d.id, 'V034')}
+                                  className="rounded-full px-2.5 py-1 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700"
+                                  title="Valider en Toilette T1 (V034)"
                                 >
-                                  {label}
+                                  T1 (V034)
                                 </button>
-                              ))}
-                              <button
-                                onClick={() => setPickingId(null)}
-                                className="rounded-full p-1 text-slate-400 hover:text-slate-700"
-                                title="Annuler"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex flex-wrap gap-1.5">
-                              <button
-                                onClick={() => setPickingId(d.id)}
-                                disabled={busyId === d.id}
-                                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-                              >
-                                <Check className="h-3.5 w-3.5" /> Valider
-                              </button>
-                              <button
-                                onClick={() => handleRefuse(d.id)}
-                                disabled={busyId === d.id}
-                                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                              >
-                                <X className="h-3.5 w-3.5" /> Refuser
-                              </button>
-                            </div>
-                          )}
+                                <button
+                                  onClick={() => handleValidate(d.id, 'V035')}
+                                  className="rounded-full px-2.5 py-1 text-xs font-bold bg-teal-600 text-white hover:bg-teal-700"
+                                  title="Valider en Toilette T2 (V035)"
+                                >
+                                  T2 (V035)
+                                </button>
+                                <button
+                                  onClick={() => handleRefuse(d.id)}
+                                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold border border-red-300 text-red-600 hover:bg-red-50"
+                                >
+                                  <X className="h-3.5 w-3.5" /> Refuser
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
