@@ -7,6 +7,7 @@ import {
   getCategoryLabel,
   getZoneColor,
   hexToRgb,
+  makeId,
 } from '../utils/helpers'
 import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
 import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw, FolderKanban } from 'lucide-react'
@@ -263,37 +264,38 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
       const tgt = tgtRes?.profile?.data || {}
       const pocketObj = (src.pockets || []).find((p) => p.id === pocket.id)
       const taskIds = new Set(pocketObj?.taskIds || [])
-      const movedTasks = (src.prepTasks || []).filter((t) => taskIds.has(t.id))
-      const srcData = {
-        ...src,
-        pockets: (src.pockets || []).filter((p) => p.id !== pocket.id),
-        prepTasks: (src.prepTasks || []).filter((t) => !taskIds.has(t.id)),
-      }
+      const copiedTasks = (src.prepTasks || [])
+        .filter((t) => taskIds.has(t.id))
+        .map((t) => ({ ...t, id: makeId('prep') }))
       const tgtData = {
         ...tgt,
         pockets: [
           ...(tgt.pockets || []),
-          { ...(pocketObj || { name: pocket.name }), taskIds: [...taskIds] },
+          {
+            id: makeId('pocket'),
+            name: (pocketObj || pocket).name,
+            taskIds: copiedTasks.map((t) => t.id),
+          },
         ],
-        prepTasks: [...(tgt.prepTasks || []), ...movedTasks],
+        prepTasks: [...(tgt.prepTasks || []), ...copiedTasks],
       }
-      const [savedSrc, savedTgt] = await Promise.all([
-        profileStore.saveProfileData(profile.code, srcData, srcRes?.profile?.rev ?? 0, false),
-        profileStore.saveProfileData(target.code, tgtData, tgtRes?.profile?.rev ?? 0, false),
-      ])
-      if (savedSrc?.error === 'conflict' || savedTgt?.error === 'conflict') {
-        setTransferError('Un des profils a été modifié entre-temps. Réessayez.')
-      } else if (savedSrc?.error || savedTgt?.error) {
-        setTransferError('Échec du transfert.')
+      const saved = await profileStore.saveProfileData(
+        target.code,
+        tgtData,
+        tgtRes?.profile?.rev ?? 0,
+        false
+      )
+      if (saved?.error === 'conflict') {
+        setTransferError('Le profil destinataire a été modifié entre-temps. Réessayez.')
+      } else if (saved?.error) {
+        setTransferError('Échec de la copie.')
       } else {
-        const again = await profileStore.adminGetProfileData(adminCode, profile.id)
-        if (again?.ok) setData(again.profile?.data || {})
-        setTransferMsg(`Pochette « ${pocket.name} » transférée à « ${target.name} ».`)
+        setTransferMsg(`Pochette « ${pocket.name} » copiée vers « ${target.name} ».`)
         setTransferFor(null)
         setTransferTargetCode('')
       }
     } catch {
-      setTransferError('Échec du transfert (hors ligne ?).')
+      setTransferError('Échec de la copie (hors ligne ?).')
     }
     setTransferring(false)
   }
@@ -554,7 +556,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                                 disabled={transferring || !transferTargetCode}
                                 className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-full px-3 py-1 disabled:opacity-50"
                               >
-                                {transferring ? 'Transfert…' : 'Transférer'}
+                                {transferring ? 'Copie…' : 'Copier'}
                               </button>
                               <button
                                 onClick={() => {
@@ -580,10 +582,10 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                               title={
                                 otherProfiles.length === 0
                                   ? 'Aucun autre profil disponible'
-                                  : 'Transférer cette pochette à un autre profil (passation de consigne)'
+                                  : 'Copier cette pochette (avec ses lignes) vers un autre profil — le profil d’origine la garde'
                               }
                             >
-                              Transférer à un autre profil
+                              Copier vers un autre profil
                             </button>
                           )}
                         </li>

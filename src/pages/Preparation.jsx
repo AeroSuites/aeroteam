@@ -12,6 +12,7 @@ import {
   getZoneColor,
   getCategoryLabel,
   hexToRgb,
+  makeId,
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import {
@@ -93,17 +94,15 @@ export default function Preparation() {
       const res = await profileStore.pocketTransferTo(
         activeProfile.code,
         target.id,
-        { id: p.id, name: p.name, taskIds: [...taskIds] },
-        movedTasks
+        { id: makeId('pocket'), name: p.name, taskIds: [...taskIds] },
+        movedTasks.map((t) => ({ ...t, id: makeId('prep') }))
       )
       if (res?.error === 'cible_invalide') {
         setTransferError('Profil destinataire invalide.')
       } else if (res?.error) {
-        setTransferError('Échec du transfert.')
+        setTransferError('Échec de la copie.')
       } else {
-        removePocket(p.id)
-        movedTasks.forEach((t) => removePrepTask(t.id))
-        setTransferMsg(`Pochette « ${p.name} » transférée à « ${target.name} ».`)
+        setTransferMsg(`Pochette « ${p.name} » copiée vers « ${target.name} ».`)
         setTransferPocketId(null)
         setTransferTargetCode('')
       }
@@ -687,19 +686,19 @@ export default function Preparation() {
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => {
-                            setTransferPocketId(p.id)
-                            setTransferTargetCode('')
-                            setTransferMsg('')
-                            setTransferError('')
-                          }}
-                          disabled={transferProfiles.length === 0}
-                          className="w-full text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1 disabled:opacity-50"
-                          title="Transférer cette pochette (avec ses lignes) à un autre profil — passation de consigne"
-                        >
-                          Transférer à un autre profil
-                        </button>
+                          <button
+                            onClick={() => {
+                              setTransferPocketId(p.id)
+                              setTransferTargetCode('')
+                              setTransferMsg('')
+                              setTransferError('')
+                            }}
+                            disabled={transferProfiles.length === 0}
+                            className="w-full text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1 disabled:opacity-50"
+                            title="Copier cette pochette (avec ses lignes) vers un autre profil — le profil d'origine la garde"
+                          >
+                            Copier vers un autre profil
+                          </button>
                       )}
                     </div>
                   </div>
