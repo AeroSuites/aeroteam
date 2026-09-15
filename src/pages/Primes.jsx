@@ -873,7 +873,7 @@ export default function Primes() {
         <p className="text-xs mt-2">
           {savedEmail ? (
             <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Email de notification enregistré :{' '}
+              <Check className="h-3.5 w-3.5" /> Email de notification enregistré :{' '}
               {savedEmail}
             </span>
           ) : (
