@@ -269,7 +269,9 @@ export default function LeaderPrimesForm() {
                       <option value="">— Tâche —</option>
                       {taskOptions.map((t) => (
                         <option key={t.id} value={t.id}>
-                          N° {t.seq || '—'} · {String(t.description || '').slice(0, 60)}
+                          N° {t.seq || '—'}
+                          {t.taskBarcode ? ` · ${t.taskBarcode}` : ''} ·{' '}
+                          {String(t.description || '').slice(0, 60)}
                         </option>
                       ))}
                     </select>
@@ -330,6 +332,7 @@ export default function LeaderPrimesForm() {
               <thead>
                 <tr className="text-left bg-slate-50">
                   <th className="px-3 py-2 font-semibold text-slate-700">Bénéficiaire</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">TRFX</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Tâche (bloc / zone / ligne)</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Avion</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Date</th>
@@ -340,8 +343,11 @@ export default function LeaderPrimesForm() {
                 {primeRequests.map((r) => (
                   <tr key={r.id} className="border-b hover:bg-slate-50">
                     <td className="px-3 py-2 font-medium">{r.beneficiaire}</td>
+                    <td className="px-3 py-2 font-mono text-sm font-bold text-slate-600 whitespace-nowrap">
+                      {r.trfx || '—'}
+                    </td>
                     <td className="px-3 py-2 text-slate-600">{r.element}</td>
-                    <td className="px-3 py-2 font-mono font-bold text-sky-700">{r.avion}</td>
+                    <td className="px-3 py-2 font-mono font-bold text-sky-700 whitespace-nowrap">{r.avion}</td>
                     <td className="px-3 py-2 text-slate-600">
                       {r.date
                         ? new Date(`${r.date}T12:00:00`).toLocaleDateString('fr-FR')
