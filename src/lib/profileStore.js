@@ -360,6 +360,16 @@ export async function adminDeleteAgentDeclarations(adminCode, identifiant) {
   return data
 }
 
+export async function leaderSubmitPrimes(leaderCode, managerId, items) {
+  const { data, error } = await supabase.rpc('leader_submit_primes', {
+    p_leader_code: leaderCode,
+    p_manager_id: managerId || null,
+    p_items: items,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function leaderSubmitPrime(
   leaderCode,
   beneficiaire,

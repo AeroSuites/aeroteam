@@ -131,34 +131,30 @@ export default function LeaderPrimesForm() {
       return
     }
     setBusy(true)
-    let sent = 0
-    const failed = []
-    for (const r of primeRequests) {
-      try {
-        const res = await profileStore.leaderSubmitPrime(
-          code,
-          r.beneficiaire,
-          r.identifiant,
-          r.element,
-          r.trfx,
-          r.avion,
-          r.date,
-          r.description,
-          managerId
+    try {
+      const items = primeRequests.map((r) => ({
+        beneficiaire: r.beneficiaire,
+        identifiant: r.identifiant,
+        element: r.element,
+        trfx: r.trfx || '',
+        avion: r.avion,
+        date: r.date,
+        description: r.description || '',
+      }))
+      const res = await profileStore.leaderSubmitPrimes(code, managerId, items)
+      if (res?.error === 'manager_inconnu') setError('Manager inconnu.')
+      else if (res?.error === 'aucune_ligne') setError('Aucune ligne à transmettre.')
+      else if (res?.error)
+        setError("Échec de la transmission — aucune ligne n'a été envoyée.")
+      else {
+        clearPrimeRequests()
+        setMsg(
+          `${res.count} déclaration(s) transmise(s) au manager — un seul email groupé envoyé.`
         )
-        if (res?.ok) sent += 1
-        else failed.push(r)
-      } catch {
-        failed.push(r)
       }
+    } catch {
+      setError('Échec de la transmission (hors ligne ?).')
     }
-    clearPrimeRequests()
-    failed.forEach((r) => addPrimeRequest(r))
-    if (sent > 0) setMsg(`${sent} déclaration(s) transmise(s) au manager.`)
-    if (failed.length > 0)
-      setError(
-        `${failed.length} ligne(s) n'ont pas pu être transmises — elles restent dans la liste.`
-      )
     setBusy(false)
   }
 
