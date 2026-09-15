@@ -875,52 +875,6 @@ export default function Affectation() {
                                     <span className="flex-1 min-w-0 truncate font-medium text-slate-800" title={t.description}>
                                       {t.description}
                                     </span>
-                                    {t.note && noteEditId !== t.id && (
-                                      <span
-                                        className="inline-flex items-center max-w-[160px] truncate shrink-0 bg-amber-50 text-amber-800 border border-amber-200 rounded px-1.5 py-0.5 text-[10px] font-semibold"
-                                        title={t.note}
-                                      >
-                                        {t.note}
-                                      </span>
-                                    )}
-                                    {noteEditId === t.id ? (
-                                      <div className="flex items-center gap-1 shrink-0">
-                                        <input
-                                          autoFocus
-                                          value={noteText}
-                                          onChange={(e) => setNoteText(e.target.value)}
-                                          onKeyDown={(e) => e.key === 'Enter' && saveTaskNote(t.id)}
-                                          placeholder="Note…"
-                                          className="border border-amber-300 rounded-md px-2 py-1 text-xs w-40"
-                                        />
-                                        <button
-                                          onClick={() => saveTaskNote(t.id)}
-                                          className="text-amber-700 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded p-1"
-                                          title="Enregistrer la note"
-                                        >
-                                          <Check className="h-3.5 w-3.5" />
-                                        </button>
-                                        <button
-                                          onClick={() => setNoteEditId(null)}
-                                          className="text-slate-400 hover:text-slate-700 p-1"
-                                          title="Annuler"
-                                        >
-                                          <X className="h-3.5 w-3.5" />
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <button
-                                        onClick={() => {
-                                          setNoteEditId(t.id)
-                                          setNoteText(t.note || '')
-                                        }}
-                                        className="inline-flex items-center gap-1 shrink-0 text-amber-700 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded px-1.5 py-0.5 text-[10px] font-semibold"
-                                        title={t.note || 'Ajouter / modifier la note'}
-                                      >
-                                        <Pencil className="h-3 w-3" />
-                                        {t.note ? 'Note' : 'Ajouter une note'}
-                                      </button>
-                                    )}
                                     <button
                                       onClick={() => manualUnassign(t.id, team.id)}
                                       className="text-slate-400 hover:text-red-600 shrink-0"
