@@ -626,6 +626,11 @@ export default function Primes() {
                               <span className="font-mono font-bold text-sky-700 text-sm">
                                 {d.avion || '—'}
                               </span>
+                              {d.trfx && (
+                                <span className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
+                                  {d.trfx}
+                                </span>
+                              )}
                               <span className="text-xs text-slate-600">{d.element || '—'}</span>
                               <span className="text-[11px] text-slate-400">
                                 {d.date_intervention
@@ -997,6 +1002,11 @@ export default function Primes() {
                           <span className="font-mono font-bold text-sky-700">
                             {d.avion || '—'}
                           </span>
+                          {d.trfx && (
+                            <span className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
+                              {d.trfx}
+                            </span>
+                          )}
                           <span className="text-slate-600">{d.element || '—'}</span>
                           <span className="text-xs text-slate-400">
                             {d.date_intervention
@@ -1060,6 +1070,7 @@ export default function Primes() {
                     <thead>
                       <tr className="text-left bg-slate-50">
                         <th className="px-3 py-2 font-semibold text-slate-700">Avion</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700">TRFX</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">Élément</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">Description</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">Catégorie</th>
@@ -1073,7 +1084,7 @@ export default function Primes() {
                           return (
                             <tr key={g.key} className="bg-slate-100">
                               <td
-                                colSpan={6}
+                                colSpan={7}
                                 className="px-3 py-1.5 font-bold text-slate-700 text-[13px] uppercase tracking-wide"
                               >
                                 {g.label}
@@ -1084,7 +1095,7 @@ export default function Primes() {
                           return (
                             <tr key={g.key} className="bg-slate-50">
                               <td
-                                colSpan={6}
+                                colSpan={7}
                                 className="px-3 py-1 font-semibold text-slate-500 text-xs"
                               >
                                 {g.label}
@@ -1096,6 +1107,9 @@ export default function Primes() {
                           <tr key={g.key} className="border-b hover:bg-slate-50 align-top">
                             <td className="px-3 py-2 font-mono font-bold text-sky-700">
                               {d.avion || '—'}
+                            </td>
+                            <td className="px-3 py-2 font-mono text-xs text-slate-600">
+                              {d.trfx || '—'}
                             </td>
                             <td className="px-3 py-2">{d.element || '—'}</td>
                             <td className="px-3 py-2 max-w-[240px]">
