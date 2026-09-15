@@ -47,14 +47,30 @@ update public.profiles p
 set identifiant = t.new_id
 from (
   select id,
-         coalesce(nullif(trim(both '.' from lower(regexp_replace(
-           coalesce(nullif(trim(name), ''), 'profil'), '[^a-zA-Z0-9]+', '.', 'g'))), ''), 'profil')
-         || case when rn > 1 then rn::text else '' end as new_id
+         slug || case when rn > 1 then rn::text else '' end as new_id
   from (
     select id,
+           coalesce(
+             nullif(
+               trim(both '.' from lower(regexp_replace(
+                 coalesce(nullif(trim(name), ''), 'profil'),
+                 '[^a-zA-Z0-9]+', '.', 'g'
+               ))),
+               ''
+             ),
+             'profil'
+           ) as slug,
            row_number() over (
-             partition by lower(regexp_replace(
-               coalesce(nullif(trim(name), ''), 'profil'), '[^a-zA-Z0-9]+', '.', 'g'))
+             partition by coalesce(
+               nullif(
+                 trim(both '.' from lower(regexp_replace(
+                   coalesce(nullif(trim(name), ''), 'profil'),
+                   '[^a-zA-Z0-9]+', '.', 'g'
+                 ))),
+                 ''
+               ),
+               'profil'
+             )
              order by created_at, id
            ) as rn
     from public.profiles
