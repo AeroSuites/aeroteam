@@ -88,11 +88,6 @@ export default function Layout({ children }) {
     return () => document.removeEventListener('mousedown', onDown)
   }, [adminMenuOpen])
 
-  // Ferme le menu quand on change de page
-  useEffect(() => {
-    setAdminMenuOpen(false)
-  }, [location.pathname])
-
   const adminRouteActive =
     location.pathname === '/admin' || location.pathname === '/primes'
 
@@ -224,6 +219,7 @@ export default function Layout({ children }) {
                 <div className="absolute left-0 top-full mt-1 z-50 bg-slate-800 rounded-lg shadow-xl border border-slate-700 py-1 min-w-[230px]">
                   <NavLink
                     to="/admin"
+                    onClick={() => setAdminMenuOpen(false)}
                     className={({ isActive }) =>
                       `flex items-center justify-between gap-2 px-3 py-2 text-sm ${
                         isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
@@ -239,6 +235,7 @@ export default function Layout({ children }) {
                   </NavLink>
                   <NavLink
                     to="/primes"
+                    onClick={() => setAdminMenuOpen(false)}
                     className={({ isActive }) =>
                       `flex items-center justify-between gap-2 px-3 py-2 text-sm ${
                         isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
