@@ -270,6 +270,51 @@ export default function Primes() {
     setBusyId(null)
   }
 
+  const handleDeleteDeclaration = async (d) => {
+    if (
+      !window.confirm(
+        `Supprimer cette demande de prime ?\n\n${d.avion || '—'} · ${d.element || '—'}\nCette action est irréversible.`
+      )
+    )
+      return
+    setBusyId(d.id)
+    setError('')
+    try {
+      const res = await profileStore.adminDeleteDeclaration(activeProfile?.code, d.id)
+      if (res?.error) setError('Échec de la suppression.')
+      else afterDecision()
+    } catch {
+      setError('Échec de la suppression (hors ligne ?).')
+    }
+    setBusyId(null)
+  }
+
+  const handleDeleteAgentHistory = async () => {
+    if (!detailAgent) return
+    if (
+      !window.confirm(
+        `Supprimer TOUT l'historique de primes de « ${detailInfo?.nom || detailAgent} » ?\n\nCette action est irréversible.`
+      )
+    )
+      return
+    setBusyId('all')
+    setError('')
+    try {
+      const res = await profileStore.adminDeleteAgentDeclarations(
+        activeProfile?.code,
+        detailAgent
+      )
+      if (res?.error) setError('Échec de la suppression.')
+      else {
+        setDetailAgent(null)
+        afterDecision()
+      }
+    } catch {
+      setError('Échec de la suppression (hors ligne ?).')
+    }
+    setBusyId(null)
+  }
+
   const handleToggleAgent = async (agent) => {
     setAgentBusy(agent.identifiant)
     setAgentsError('')
@@ -617,6 +662,13 @@ export default function Primes() {
                                     >
                                       <X className="h-3.5 w-3.5" /> Refuser
                                     </button>
+                                    <button
+                                      onClick={() => handleDeleteDeclaration(d)}
+                                      className="rounded-full p-1 text-slate-400 hover:text-red-600"
+                                      title="Supprimer cette demande"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
                                   </>
                                 )}
                               </div>
@@ -895,6 +947,16 @@ export default function Primes() {
                 <span className="text-emerald-300 font-bold">
                   T1 : {detailInfo?.valid.V034 || 0} · T2 : {detailInfo?.valid.V035 || 0}
                 </span>
+                {detailItems.length > 0 && (
+                  <button
+                    onClick={handleDeleteAgentHistory}
+                    disabled={busyId === 'all'}
+                    className="inline-flex items-center gap-1 text-red-200 border border-red-400/40 hover:bg-red-500/20 rounded-full px-2.5 py-1 font-bold disabled:opacity-50"
+                    title="Supprimer tout l'historique de primes de cet agent"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Tout supprimer
+                  </button>
+                )}
                 <button
                   onClick={() => setDetailAgent(null)}
                   className="text-slate-400 hover:text-white p-1"
@@ -956,6 +1018,13 @@ export default function Primes() {
                                 >
                                   <X className="h-3.5 w-3.5" /> Refuser
                                 </button>
+                                <button
+                                  onClick={() => handleDeleteDeclaration(d)}
+                                  className="rounded-full p-1 text-slate-400 hover:text-red-600"
+                                  title="Supprimer cette demande"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
                               </>
                             )}
                           </div>
@@ -980,6 +1049,7 @@ export default function Primes() {
                         <th className="px-3 py-2 font-semibold text-slate-700">Description</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">Catégorie</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">Statut</th>
+                        <th className="px-3 py-2"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -988,7 +1058,7 @@ export default function Primes() {
                           return (
                             <tr key={g.key} className="bg-slate-100">
                               <td
-                                colSpan={5}
+                                colSpan={6}
                                 className="px-3 py-1.5 font-bold text-slate-700 text-[13px] uppercase tracking-wide"
                               >
                                 {g.label}
@@ -999,7 +1069,7 @@ export default function Primes() {
                           return (
                             <tr key={g.key} className="bg-slate-50">
                               <td
-                                colSpan={5}
+                                colSpan={6}
                                 className="px-3 py-1 font-semibold text-slate-500 text-xs"
                               >
                                 {g.label}
@@ -1047,6 +1117,15 @@ export default function Primes() {
                                   {d.motif_refus}
                                 </span>
                               )}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <button
+                                onClick={() => handleDeleteDeclaration(d)}
+                                className="text-slate-400 hover:text-red-600"
+                                title="Supprimer cette demande"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </td>
                           </tr>
                         )

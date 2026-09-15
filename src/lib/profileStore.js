@@ -342,6 +342,24 @@ export async function adminTestEmail(adminCode) {
   return data
 }
 
+export async function adminDeleteDeclaration(adminCode, id) {
+  const { data, error } = await supabase.rpc('admin_delete_declaration', {
+    p_admin_code: adminCode,
+    p_id: id,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function adminDeleteAgentDeclarations(adminCode, identifiant) {
+  const { data, error } = await supabase.rpc('admin_delete_agent_declarations', {
+    p_admin_code: adminCode,
+    p_identifiant: identifiant,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function getConsignes() {
   const { data, error } = await supabase.rpc('get_consignes')
   if (error) throw error
