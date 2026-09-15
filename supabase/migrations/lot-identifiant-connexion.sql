@@ -12,6 +12,32 @@
 alter table public.profiles
   add column if not exists identifiant text;
 
+-- 1) IP du demandeur (normalement créée par lot-securite-inscription.sql,
+--    répétée ici pour que ce fichier soit autonome)
+create or replace function public.client_ip_()
+returns text
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  h jsonb;
+begin
+  begin
+    h := current_setting('request.headers', true)::jsonb;
+  exception when others then
+    return 'inconnu';
+  end;
+
+  if h is null then
+    return 'inconnu';
+  end if;
+
+  return split_part(coalesce(h->>'x-forwarded-for', 'inconnu'), ',', 1);
+end;
+$$;
+
 -- 2) Génère un identifiant libre depuis un nom (slug unique)
 create or replace function public.generate_identifiant_(p_name text)
 returns text
