@@ -163,6 +163,16 @@ export async function adminProfileLookup(adminCode, code) {
   return data
 }
 
+export async function adminSetProfileManager(adminCode, profileId, managerId) {
+  const { data, error } = await supabase.rpc('admin_set_profile_manager', {
+    p_admin_code: adminCode,
+    p_profile_id: profileId,
+    p_manager_id: managerId || null,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function adminListAdmins(adminCode) {
   const { data, error } = await supabase.rpc('admin_list_admins', {
     p_admin_code: adminCode,

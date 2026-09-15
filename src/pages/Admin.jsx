@@ -15,6 +15,7 @@ import {
   UserCog,
   Eye,
   EyeOff,
+  ArrowRightLeft,
 } from 'lucide-react'
 
 export default function Admin() {
@@ -130,6 +131,10 @@ export default function Admin() {
   const [pendingBusy, setPendingBusy] = useState(null)
   const [pendingMsg, setPendingMsg] = useState('')
   const [profilesTick, setProfilesTick] = useState(0)
+  const [managersList, setManagersList] = useState([])
+  const [transferProfileId, setTransferProfileId] = useState(null)
+  const [transferManagerId, setTransferManagerId] = useState('')
+  const [transferBusy, setTransferBusy] = useState(false)
 
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
@@ -217,6 +222,37 @@ setEditError(res.error || 'Échec de la mise à jour.')
       })
       .catch(() => setPendingMsg('Impossible de charger les demandes.'))
   }, [activeProfile?.code, profilesTick])
+
+  useEffect(() => {
+    profileStore
+      .listManagers()
+      .then((res) => setManagersList(res?.ok ? res.managers || [] : []))
+      .catch(() => setManagersList([]))
+  }, [])
+
+  const handleTransferProfile = async (profile) => {
+    setTransferBusy(true)
+    setProfilesError('')
+    try {
+      const res = await profileStore.adminSetProfileManager(
+        activeProfile?.code,
+        profile.id,
+        transferManagerId || null
+      )
+      if (res?.error === 'manager_inconnu') setProfilesError('Manager inconnu.')
+      else if (res?.error === 'not_found')
+        setProfilesError('Transfert impossible (profil hors de votre périmètre).')
+      else if (res?.error) setProfilesError('Échec du transfert.')
+      else {
+        setTransferProfileId(null)
+        setTransferManagerId('')
+        setProfilesTick((t) => t + 1)
+      }
+    } catch {
+      setProfilesError('Échec du transfert (hors ligne ?).')
+    }
+    setTransferBusy(false)
+  }
 
   const handleValidatePending = async (profileCode) => {
     setPendingBusy(profileCode)
@@ -453,6 +489,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                 <tr className="text-left bg-slate-50 border-b">
                   <th className="px-3 py-2 font-semibold text-slate-700">Nom</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Avion</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Manager</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Créé le</th>
                   <th className="px-3 py-2"></th>
                 </tr>
@@ -464,7 +501,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                   if (isEditing) {
                     return (
                       <tr key={profile.id} className="border-b bg-sky-50/50">
-                        <td className="px-3 py-2" colSpan={4}>
+                        <td className="px-3 py-2" colSpan={5}>
                           <div className="flex flex-wrap items-center gap-2">
                             <input
                               value={editName}
@@ -515,6 +552,61 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                         )}
                       </td>
                       <td className="px-3 py-2 text-slate-600">{profile.aircraft || '»”'}</td>
+                      <td className="px-3 py-2 text-slate-600">
+                        {transferProfileId === profile.id ? (
+                          <div className="flex flex-wrap items-center gap-1">
+                            <select
+                              value={transferManagerId}
+                              onChange={(e) => setTransferManagerId(e.target.value)}
+                              className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white"
+                            >
+                              <option value="">— Non assigné —</option>
+                              {managersList.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                  {m.name}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => handleTransferProfile(profile)}
+                              disabled={transferBusy}
+                              className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-full px-2.5 py-1 disabled:opacity-50"
+                            >
+                              OK
+                            </button>
+                            <button
+                              onClick={() => {
+                                setTransferProfileId(null)
+                                setTransferManagerId('')
+                              }}
+                              className="text-slate-400 hover:text-slate-700 p-1"
+                              title="Annuler"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            {profile.manager_nom ? (
+                              <span>{profile.manager_nom}</span>
+                            ) : (
+                              <span className="text-xs italic text-slate-400">
+                                Non assigné
+                              </span>
+                            )}
+                            <button
+                              onClick={() => {
+                                setTransferProfileId(profile.id)
+                                setTransferManagerId(profile.manager_id || '')
+                              }}
+                              className="text-slate-400 hover:text-sky-600 p-0.5"
+                              title="Transférer la gestion de ce profil à un autre manager"
+                            >
+                              <ArrowRightLeft className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-slate-500">
                         {profile.created_at
                           ? new Date(profile.created_at).toLocaleDateString('fr-FR')
