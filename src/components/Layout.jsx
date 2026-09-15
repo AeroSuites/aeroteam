@@ -94,9 +94,7 @@ export default function Layout({ children }) {
   }, [location.pathname])
 
   const adminRouteActive =
-    location.pathname === '/admin' ||
-    location.pathname === '/primes' ||
-    location.pathname === '/import-consignes'
+    location.pathname === '/admin' || location.pathname === '/primes'
 
   const switchProfile = () => {
     if (window.confirm(`Quitter le profil « ${activeProfile?.name} » ? (les données sont sauvegardées dans le cloud)`)) {
@@ -254,19 +252,24 @@ export default function Layout({ children }) {
                       </span>
                     )}
                   </NavLink>
-                  <NavLink
-                    to="/import-consignes"
-                    className={({ isActive }) =>
-                      `flex items-center justify-between gap-2 px-3 py-2 text-sm ${
-                        isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
-                      }`
-                    }
-                  >
-                    <span>Import consignes</span>
-                  </NavLink>
                 </div>
               )}
             </div>
+          )}
+
+          {isAdmin && (
+            <NavLink
+              to="/import-consignes"
+              className={({ isActive }) =>
+                `relative px-2.5 py-1.5 rounded-md text-[13px] whitespace-nowrap font-medium transition-colors shrink-0 ${
+                  isActive
+                    ? 'bg-sky-500 text-white'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`
+              }
+            >
+              Import consignes
+            </NavLink>
           )}
         </div>
       </nav>
