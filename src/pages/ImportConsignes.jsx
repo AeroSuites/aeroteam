@@ -273,6 +273,13 @@ export default function ImportConsignes() {
     }
   }
 
+  // Charge un profil par son code (identifiant + code requis à la connexion)
+  const getProfileByCode = async (codeVal) => {
+    const prof = (allProfiles || []).find((p) => p.code === codeVal)
+    if (!prof) return null
+    return profileStore.getProfile(prof.identifiant, prof.code)
+  }
+
   // Restauration de la dernière session d'import
   useEffect(() => {
     loadCreatedProfiles()
@@ -456,7 +463,7 @@ export default function ImportConsignes() {
     setChargeError('')
     setChargeMsg('')
     try {
-      const fresh = await profileStore.getProfile(chargeProfileCode)
+      const fresh = await getProfileByCode(chargeProfileCode)
       if (!fresh) {
         setChargeError('Profil introuvable.')
         setChargeBusy(false)
@@ -487,7 +494,7 @@ export default function ImportConsignes() {
         }
         setChargeMsg(`${selectedTasks.length} tâche(s) ajoutée(s) au profil.`)
         await loadCreatedProfiles()
-        const again = await profileStore.getProfile(chargeProfileCode)
+        const again = await getProfileByCode(chargeProfileCode)
         if (again) setChargeTargetTasks({ tasks: again?.data?.tasks || [] })
         setChargeRemoveSel({})
       }
@@ -514,9 +521,11 @@ export default function ImportConsignes() {
 
   useEffect(() => {
     if (!chargeProfileCode) return
+    const prof = (allProfiles || []).find((p) => p.code === chargeProfileCode)
+    if (!prof) return
     let cancelled = false
     profileStore
-      .getProfile(chargeProfileCode)
+      .getProfile(prof.identifiant, prof.code)
       .then((fresh) => {
         if (cancelled || !fresh) return
         setChargeTargetTasks({ tasks: fresh?.data?.tasks || [] })
@@ -526,7 +535,7 @@ export default function ImportConsignes() {
     return () => {
       cancelled = true
     }
-  }, [chargeProfileCode])
+  }, [chargeProfileCode, allProfiles])
 
   const removeChargeTasks = async () => {
     const removeIds = new Set(
@@ -537,7 +546,7 @@ export default function ImportConsignes() {
     setChargeError('')
     setChargeMsg('')
     try {
-      const fresh = await profileStore.getProfile(chargeProfileCode)
+      const fresh = await getProfileByCode(chargeProfileCode)
       if (!fresh) {
         setChargeError('Profil introuvable.')
         setChargeBusy(false)
@@ -667,7 +676,7 @@ export default function ImportConsignes() {
     for (const [immat, profileCode] of assigned) {
       const aircraftInfo = aircraftInfoForScope(immat)
       try {
-        const lookup = await profileStore.getProfile(profileCode)
+        const lookup = await getProfileByCode(profileCode)
         if (!lookup) {
           out.push({ immat, ok: false, error: 'profil introuvable' })
           continue
@@ -681,7 +690,7 @@ export default function ImportConsignes() {
           false
         )
         if (saved?.error === 'conflict') {
-          const fresh = await profileStore.getProfile(profileCode)
+          const fresh = await getProfileByCode(profileCode)
           const merged2 = buildProfileData(fresh?.data || {}, aircraftInfo, scope)
           saved = await profileStore.saveProfileData(
             profileCode,

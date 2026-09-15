@@ -7,10 +7,12 @@ export default function ProfileSelector() {
   const { connectProfile, requestProfile, error } = useApp()
 
   const [mode, setMode] = useState('login')
+  const [loginIdent, setLoginIdent] = useState('')
   const [code, setCode] = useState('')
   const [connecting, setConnecting] = useState(false)
   const [connectError, setConnectError] = useState('')
 
+  const [regIdent, setRegIdent] = useState('')
   const [regName, setRegName] = useState('')
   const [regCode, setRegCode] = useState('')
   const [regCode2, setRegCode2] = useState('')
@@ -30,7 +32,7 @@ export default function ProfileSelector() {
   const handleConnect = async () => {
     setConnecting(true)
     setConnectError('')
-    const res = await connectProfile(code)
+    const res = await connectProfile(loginIdent, code)
     if (!res.ok) setConnectError(res.error)
     setConnecting(false)
   }
@@ -38,6 +40,10 @@ export default function ProfileSelector() {
   const handleRegister = async () => {
     setRegError('')
     setRegOk(false)
+    if (!regIdent.trim() || regIdent.trim().length < 3) {
+      setRegError("L'identifiant doit contenir au moins 3 caractères.")
+      return
+    }
     if (!regName.trim()) {
       setRegError('Le nom est obligatoire.')
       return
@@ -55,13 +61,14 @@ export default function ProfileSelector() {
       return
     }
     setRegBusy(true)
-    const res = await requestProfile(regCode, regName, managerId)
+    const res = await requestProfile(regIdent, regCode, regName, managerId)
     setRegBusy(false)
     if (!res.ok) {
       setRegError(res.error)
       return
     }
     setRegOk(true)
+    setRegIdent('')
     setRegName('')
     setRegCode('')
     setRegCode2('')
@@ -80,8 +87,9 @@ export default function ProfileSelector() {
         {mode === 'login' ? (
           <>
             <p className="text-slate-500 mb-6">
-              Entrez votre <strong className="text-slate-700">code personnel</strong> pour
-              retrouver votre profil et vos données, sur n'importe quel appareil.
+              Entrez votre <strong className="text-slate-700">identifiant</strong> et votre{' '}
+              <strong className="text-slate-700">code personnel</strong> pour retrouver votre
+              profil et vos données, sur n'importe quel appareil.
             </p>
 
             <div className="border border-slate-200 rounded-xl p-4 space-y-3">
@@ -89,19 +97,25 @@ export default function ProfileSelector() {
                 <KeyRound className="h-4 w-4 text-sky-500" /> Se connecter à mon profil
               </h2>
               <input
+                value={loginIdent}
+                onChange={(e) => setLoginIdent(e.target.value)}
+                placeholder="Identifiant (ex : farid.ayad)"
+                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
+                autoFocus
+              />
+              <input
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
                 type="password"
                 placeholder="Votre code personnel"
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
-                autoFocus
               />
               {connectError && <p className="text-sm text-red-600">{connectError}</p>}
               {!connectError && error && <p className="text-sm text-red-600">{error}</p>}
               <button
                 onClick={handleConnect}
-                disabled={connecting || !code.trim()}
+                disabled={connecting || !code.trim() || !loginIdent.trim()}
                 className="w-full bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold flex items-center justify-center gap-2"
               >
                 <LogIn className="h-4 w-4" /> {connecting ? 'Connexion…' : 'Se connecter'}
@@ -124,7 +138,7 @@ export default function ProfileSelector() {
         ) : (
           <>
             <p className="text-slate-500 mb-6">
-              Créez votre profil : <strong className="text-slate-700">nom + code personnel</strong>
+              Créez votre profil : <strong className="text-slate-700">identifiant + nom + code personnel</strong>
               . Un administrateur devra valider votre demande avant votre première connexion.
             </p>
 
@@ -133,11 +147,17 @@ export default function ProfileSelector() {
                 <UserPlus className="h-4 w-4 text-sky-500" /> Demande de création de profil
               </h2>
               <input
+                value={regIdent}
+                onChange={(e) => setRegIdent(e.target.value)}
+                placeholder="Identifiant (ex : farid.ayad — 3 caractères minimum)"
+                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
+                autoFocus
+              />
+              <input
                 value={regName}
                 onChange={(e) => setRegName(e.target.value)}
                 placeholder="Nom complet (ex : AYAD (FARID))"
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
-                autoFocus
               />
               <select
                 value={managerId}

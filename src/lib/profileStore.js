@@ -3,8 +3,9 @@ import { supabase } from './supabase'
 // Gère l'accès aux profils via Supabase (fonctions RPC).
 // Chaque profil est identifié par un CODE secret qui sert de clé d'accès.
 
-export async function createProfile(code, name, aircraft) {
+export async function createProfile(identifiant, code, name, aircraft) {
   const { data, error } = await supabase.rpc('create_profile', {
+    p_identifiant: identifiant,
     p_code: code,
     p_name: name,
     p_aircraft: aircraft,
@@ -16,11 +17,17 @@ export async function createProfile(code, name, aircraft) {
   if (data?.error === 'code_too_short') {
     throw new Error('code_too_short')
   }
+  if (data?.error === 'identifiant_indisponible') {
+    throw new Error('identifiant_indisponible')
+  }
   return data
 }
 
-export async function getProfile(code) {
-  const { data, error } = await supabase.rpc('get_profile', { p_code: code })
+export async function getProfile(identifiant, code) {
+  const { data, error } = await supabase.rpc('get_profile', {
+    p_identifiant: identifiant,
+    p_code: code,
+  })
   if (error) throw error
   if (data?.error === 'locked') return { locked: true }
   if (data?.error === 'pending') return { pending: true }
@@ -28,8 +35,11 @@ export async function getProfile(code) {
   return data
 }
 
-export async function profileExists(code) {
-  const { data, error } = await supabase.rpc('profile_exists', { p_code: code })
+export async function profileExists(identifiant, code) {
+  const { data, error } = await supabase.rpc('profile_exists', {
+    p_identifiant: identifiant,
+    p_code: code,
+  })
   if (error) throw error
   return data
 }
@@ -98,8 +108,9 @@ export async function adminSetProfileAircraft(adminCode, profileCode, aircraft) 
   return data
 }
 
-export async function requestProfile(code, name, managerId) {
+export async function requestProfile(identifiant, code, name, managerId) {
   const { data, error } = await supabase.rpc('request_profile', {
+    p_identifiant: identifiant,
     p_code: code,
     p_name: name,
     p_manager_id: managerId,
@@ -138,6 +149,15 @@ export async function adminGetProfileData(adminCode, id) {
   const { data, error } = await supabase.rpc('admin_get_profile_data', {
     p_admin_code: adminCode,
     p_id: id,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function adminProfileLookup(adminCode, code) {
+  const { data, error } = await supabase.rpc('admin_profile_lookup', {
+    p_admin_code: adminCode,
+    p_code: code,
   })
   if (error) throw error
   return data

@@ -9,6 +9,7 @@ import { noteActions } from './notes'
 const AppContext = createContext(null)
 
 const ACTIVE_CODE_KEY = 'maintenance-app-active-code'
+const ACTIVE_IDENT_KEY = 'maintenance-app-active-ident'
 const ACTIVE_AT_KEY = 'maintenance-app-active-at'
 const SESSION_MAX_HOURS = 12
 
@@ -24,6 +25,19 @@ function loadActiveCode() {
       return ''
     }
     return code
+  } catch {
+    return ''
+  }
+}
+
+function loadActiveIdent() {
+  try {
+    const ident = localStorage.getItem(ACTIVE_IDENT_KEY) || ''
+    const at = localStorage.getItem(ACTIVE_AT_KEY)
+    if (!ident || !at) return ''
+    const hours = (Date.now() - Number(at)) / (1000 * 60 * 60)
+    if (hours > SESSION_MAX_HOURS) return ''
+    return ident
   } catch {
     return ''
   }
@@ -55,6 +69,7 @@ const DEFAULT_EMPTY = {
 
 export function AppProvider({ children }) {
   const [code, setCode] = useState(loadActiveCode)
+  const [identifiant, setIdentifiant] = useState(loadActiveIdent)
   const [activeProfile, setActiveProfile] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -72,6 +87,7 @@ export function AppProvider({ children }) {
   const saveTimer = useRef(null)
   const pendingPayload = useRef(null)
   const codeRef = useRef('')
+  const identRef = useRef('')
   const revRef = useRef(0)
   const lastSavedJsonRef = useRef('')
 
@@ -82,7 +98,11 @@ export function AppProvider({ children }) {
     codeRef.current = code
   }, [code])
 
-  const isConnected = !!code && !!activeProfile
+  useEffect(() => {
+    identRef.current = identifiant
+  }, [identifiant])
+
+  const isConnected = !!code && !!identifiant && !!activeProfile
   const [saveState, setSaveState] = useState('saved')
   const [isAdmin, setIsAdmin] = useState(null)
 
@@ -121,6 +141,7 @@ export function AppProvider({ children }) {
     setActiveProfile({
       id: profile.id,
       code: profile.code ?? codeRef.current,
+      identifiant: profile.identifiant ?? identRef.current,
       name: profile.name,
       aircraft: profile.aircraft,
     })
@@ -128,7 +149,12 @@ export function AppProvider({ children }) {
       localStorage.setItem(
         cacheKeyFor(codeRef.current),
         JSON.stringify({
-          profile: { id: profile.id, name: profile.name, aircraft: profile.aircraft },
+          profile: {
+            id: profile.id,
+            identifiant: profile.identifiant ?? identRef.current,
+            name: profile.name,
+            aircraft: profile.aircraft,
+          },
           data,
           rev: profile.rev ?? 0,
         })
@@ -192,7 +218,7 @@ export function AppProvider({ children }) {
     if (pendingPayload.current) return
     const payloadJson = JSON.stringify(totalPayload())
     try {
-      const profile = await profileStore.getProfile(codeRef.current)
+      const profile = await profileStore.getProfile(identRef.current, codeRef.current)
       if (!profile || profile.error === 'not_found') return
       if (profile.rev === revRef.current) return
       if (payloadJson !== lastSavedJsonRef.current) {
@@ -230,7 +256,7 @@ export function AppProvider({ children }) {
 
   // Charger le profil + ses données depuis Supabase quand le code change
   useEffect(() => {
-    if (!code) {
+    if (!code || !identifiant) {
       // eslint-disable-next-line react/set-state-in-effect -- réinitialisation volontaire à la déconnexion
       setActiveProfile(null)
       setTasks([])
@@ -252,7 +278,7 @@ export function AppProvider({ children }) {
     setError('')
 
     profileStore
-      .getProfile(code)
+      .getProfile(identifiant, code)
       .then((profile) => {
         if (cancelled) return
         if (profile?.locked) {
@@ -269,10 +295,12 @@ export function AppProvider({ children }) {
           return
         }
         if (!profile) {
-          // Le code n'existe pas (profil supprimé sur le cloud) : on déconnecte
+          // Le couple identifiant + code n'existe pas : on déconnecte
           localStorage.removeItem(ACTIVE_CODE_KEY)
+          localStorage.removeItem(ACTIVE_IDENT_KEY)
           localStorage.removeItem(ACTIVE_AT_KEY)
           setCode('')
+          setIdentifiant('')
           setActiveProfile(null)
           setLoaded(false)
           return
@@ -322,7 +350,7 @@ export function AppProvider({ children }) {
     return () => {
       cancelled = true
     }
-  }, [code, applyProfileData])
+  }, [code, identifiant, applyProfileData])
 
   // Sauvegarde des données dans Supabase (debounce) une fois chargées
   useEffect(() => {
@@ -342,7 +370,7 @@ export function AppProvider({ children }) {
     async (mode) => {
       if (mode === 'reload') {
         try {
-          const profile = await profileStore.getProfile(codeRef.current)
+          const profile = await profileStore.getProfile(identRef.current, codeRef.current)
           if (!profile || profile.error === 'not_found') {
             setSaveState('offline')
             return
@@ -361,15 +389,18 @@ export function AppProvider({ children }) {
     [applyProfileData, totalPayload, performSave]
   )
 
-  const connectProfile = useCallback(async (profileCode) => {
+  const connectProfile = useCallback(async (profileIdentifiant, profileCode) => {
+    const ident = String(profileIdentifiant || '').trim().toLowerCase()
     const c = String(profileCode || '').trim()
-    if (!c) return { ok: false, error: 'Veuillez saisir un code.' }
-    const exists = await profileStore.profileExists(c)
+    if (!ident || !c) return { ok: false, error: 'Saisissez votre identifiant et votre code.' }
+    const exists = await profileStore.profileExists(ident, c)
     if (exists?.locked) return { ok: false, error: 'Trop de tentatives de connexion : réessayez dans 15 minutes.' }
     if (exists?.pending) return { ok: false, error: 'Ce compte est en attente de validation par un administrateur.' }
-    if (!exists?.ok) return { ok: false, error: 'Aucun profil ne correspond à ce code.' }
+    if (!exists?.ok) return { ok: false, error: 'Identifiant ou code incorrect.' }
     localStorage.setItem(ACTIVE_CODE_KEY, c)
+    localStorage.setItem(ACTIVE_IDENT_KEY, ident)
     localStorage.setItem(ACTIVE_AT_KEY, String(Date.now()))
+    setIdentifiant(ident)
     setCode(c)
     try {
       const admin = await profileStore.checkAdmin(c)
@@ -381,16 +412,25 @@ export function AppProvider({ children }) {
   }, [])
 
   const createProfile = useCallback(
-    async ({ code: profileCode, name, aircraft }) => {
+    async ({ identifiant: profileIdentifiant, code: profileCode, name, aircraft }) => {
+      const ident = String(profileIdentifiant || '').trim().toLowerCase()
       const c = String(profileCode || '').trim()
       if (!c) return { ok: false, error: 'Le code est obligatoire.' }
       if (!name || !String(name).trim()) return { ok: false, error: 'Le nom du profil est obligatoire.' }
       try {
-        await profileStore.createProfile(c, String(name).trim(), String(aircraft || '').trim())
+        const res = await profileStore.createProfile(
+          ident,
+          c,
+          String(name).trim(),
+          String(aircraft || '').trim()
+        )
+        const finalIdent = res?.identifiant || ident
         localStorage.setItem(ACTIVE_CODE_KEY, c)
+        localStorage.setItem(ACTIVE_IDENT_KEY, finalIdent)
         localStorage.setItem(ACTIVE_AT_KEY, String(Date.now()))
+        setIdentifiant(finalIdent)
         setCode(c)
-        return { ok: true }
+        return { ok: true, identifiant: finalIdent }
       } catch (err) {
         if (err.message === 'code_exists') {
           return { ok: false, error: 'Ce code est déjà utilisé. Choisissez un autre code.' }
@@ -398,15 +438,19 @@ export function AppProvider({ children }) {
         if (err.message === 'code_too_short') {
           return { ok: false, error: 'Le code doit contenir au moins 8 caractères.' }
         }
+        if (err.message === 'identifiant_indisponible') {
+          return { ok: false, error: 'Cet identifiant est déjà utilisé. Choisissez-en un autre.' }
+        }
         return { ok: false, error: 'Échec de la création : ' + (err.message || 'erreur réseau') }
       }
     },
     []
   )
 
-  const requestProfile = useCallback(async (profileCode, name, managerId) => {
+  const requestProfile = useCallback(async (profileIdentifiant, profileCode, name, managerId) => {
     try {
       const res = await profileStore.requestProfile(
+        String(profileIdentifiant || '').trim().toLowerCase(),
         String(profileCode || '').trim(),
         String(name || '').trim(),
         managerId || null
@@ -417,6 +461,10 @@ export function AppProvider({ children }) {
         res?.error === 'code_indisponible'
       )
         return { ok: false, error: 'Ce code est déjà utilisé. Choisissez-en un autre.' }
+      if (res?.error === 'identifiant_indisponible')
+        return { ok: false, error: 'Cet identifiant est déjà utilisé. Choisissez-en un autre.' }
+      if (res?.error === 'identifiant_court')
+        return { ok: false, error: "L'identifiant doit contenir au moins 3 caractères." }
       if (res?.error === 'trop_de_tentatives')
         return {
           ok: false,
@@ -461,8 +509,10 @@ export function AppProvider({ children }) {
 
   const disconnect = useCallback(() => {
     localStorage.removeItem(ACTIVE_CODE_KEY)
+    localStorage.removeItem(ACTIVE_IDENT_KEY)
     localStorage.removeItem(ACTIVE_AT_KEY)
     setCode('')
+    setIdentifiant('')
     setActiveProfile(null)
     setTasks([])
     setTeams([])

@@ -21,6 +21,7 @@ export default function Admin() {
   const { createProfile, activeProfile, updateOwnProfile } = useApp()
 
   const [newName, setNewName] = useState('')
+  const [newIdentifiant, setNewIdentifiant] = useState('')
   const [newAircraft, setNewAircraft] = useState('')
   const [newCode, setNewCode] = useState('')
   const [makeAdmin, setMakeAdmin] = useState(false)
@@ -55,9 +56,14 @@ export default function Admin() {
     setAdminBusy(true)
     setAdminMsg('')
     try {
-      const exists = await profileStore.getProfile(code)
-      if (!exists) {
+      const exists = await profileStore.adminProfileLookup(activeProfile?.code, code)
+      if (exists?.error === 'not_found') {
         setAdminMsg('Aucun profil existant avec ce code — créez d’abord le profil normal.')
+        setAdminBusy(false)
+        return
+      }
+      if (exists?.error) {
+        setAdminMsg("Votre code administrateur n'est plus valide.")
         setAdminBusy(false)
         return
       }
@@ -271,7 +277,12 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
     setCreating(true)
     setCreateError('')
     setSuccess('')
-    const res = await createProfile({ code: newCode, name: newName, aircraft: newAircraft })
+    const res = await createProfile({
+      identifiant: newIdentifiant,
+      code: newCode,
+      name: newName,
+      aircraft: newAircraft,
+    })
     if (!res.ok) setCreateError(res.error)
     else {
       if (makeAdmin) {
@@ -287,9 +298,12 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
         }
       }
       setSuccess(
-        `Profil « ${newName} » créé avec succès${makeAdmin ? ' et promu administrateur.' : '.'}`
+        `Profil « ${newName} » créé avec succès${
+          makeAdmin ? ' et promu administrateur.' : '.'
+        } Identifiant de connexion : ${res.identifiant || newIdentifiant || '—'}`
       )
       setNewName('')
+      setNewIdentifiant('')
       setNewAircraft('')
       setNewCode('')
       setMakeAdmin(false)
@@ -371,6 +385,12 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
             className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
           />
           <input
+            value={newIdentifiant}
+            onChange={(e) => setNewIdentifiant(e.target.value)}
+            placeholder="Identifiant de connexion (optionnel — généré depuis le nom si vide)"
+            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
+          />
+          <input
             value={newAircraft}
             onChange={(e) => setNewAircraft(e.target.value)}
             placeholder="Avion / immatriculation (ex: F-GKXT)"
@@ -383,7 +403,8 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
             className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
           />
           <p className="text-xs text-slate-500">
-            Ce code est la clé d'accès du profil. Remettez-le aux leaders concernés.
+            Ce code est la clé d'accès du profil (avec l'identifiant à la connexion).
+            Remettez-les aux leaders concernés.
           </p>
           <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
             <input
@@ -478,6 +499,11 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                     <tr key={profile.id} className="border-b hover:bg-slate-50">
                       <td className="px-3 py-2 font-medium">
                         {profile.name}
+                        {profile.identifiant && (
+                          <span className="block text-[11px] text-slate-400 font-mono">
+                            {profile.identifiant}
+                          </span>
+                        )}
                         {isSelf && (
                           <span className="ml-2 text-[10px] font-semibold text-sky-600 bg-sky-50 border border-sky-200 rounded-full px-2 py-0.5">
                             votre profil
