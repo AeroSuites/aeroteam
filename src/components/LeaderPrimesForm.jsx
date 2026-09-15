@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
-import { makeId, getCategoryLabel, getCategoryColor } from '../utils/helpers'
+import { makeId, getCategoryLabel } from '../utils/helpers'
 import { Trash2, Save, Send, AlertTriangle, CheckCircle2, Users } from 'lucide-react'
 
 export default function LeaderPrimesForm() {
