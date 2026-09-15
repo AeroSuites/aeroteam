@@ -355,7 +355,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
     }
     if (
       !window.confirm(
-        "Réinitialiser le travail de ce profil ?\n\nTâches, équipes, affectations, préparation, consignes et membres assignés à l'avion du jour seront effacés.\nSeuls les membres permanents sont conservés. Action irréversible."
+        "Réinitialiser le travail de ce profil ?\n\nTâches, équipes, affectations, préparation, consignes et membres assignés à l'avion du jour seront effacés, et l'avion associé sera retiré.\nSeuls les membres permanents sont conservés. Action irréversible."
       )
     ) {
       return
@@ -387,10 +387,15 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
       } else if (saved?.error) {
         setError('Échec de la réinitialisation.')
       } else {
+        try {
+          await profileStore.adminSetProfileAircraft(adminCode, profile.code, '')
+        } catch {
+          // l'avion pourra être retiré manuellement
+        }
         const again = await profileStore.adminGetProfileData(adminCode, profile.id)
         if (again?.ok) {
           setData(again.profile?.data || {})
-          setMsg('Réinitialisation effectuée (membres permanents conservés).')
+          setMsg('Réinitialisation effectuée (membres permanents conservés, avion retiré).')
         }
       }
     } catch {

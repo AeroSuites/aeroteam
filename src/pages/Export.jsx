@@ -4,7 +4,7 @@ import { assignedTaskCount } from '../utils/helpers'
 import { FileSpreadsheet, FileJson, Trash2, Download } from 'lucide-react'
 
 export default function Export() {
-  const { tasks, teams, assignments, resetData } = useApp()
+  const { tasks, teams, assignments, resetData, activeProfile, updateOwnProfile } = useApp()
   const assigned = assignedTaskCount(assignments)
   const unassigned = tasks.length - assigned
 
@@ -70,12 +70,25 @@ export default function Export() {
         <h2 className="text-lg font-semibold text-red-700 mb-2">Zone danger</h2>
         <p className="text-sm text-red-600 mb-4">
           Réinitialise toutes les données de travail (tâches, équipes, affectations,
-          préparation, consignes et membres assignés à l'avion du jour). Seuls les membres
-          permanents sont conservés. Cette action est irréversible.
+          préparation, consignes et membres assignés à l'avion du jour) et retire l'avion
+          associé au profil. Seuls les membres permanents sont conservés. Cette action est
+          irréversible.
         </p>
         <button
-          onClick={() => {
-            if (window.confirm('Êtes-vous sûr de vouloir réinitialiser toutes les données de travail ? (seuls les membres permanents sont conservés)')) {
+          onClick={async () => {
+            if (
+              window.confirm(
+                'Êtes-vous sûr de vouloir réinitialiser toutes les données de travail ? (membres permanents conservés, avion retiré)'
+              )
+            ) {
+              try {
+                await updateOwnProfile({
+                  name: activeProfile?.name,
+                  aircraft: '',
+                })
+              } catch {
+                // l'avion sera retiré à la prochaine occasion
+              }
               resetData()
             }
           }}
