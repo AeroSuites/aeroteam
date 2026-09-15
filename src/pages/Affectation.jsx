@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
+import LeaderPrimesForm from '../components/LeaderPrimesForm'
 import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, Pencil, Check, X } from 'lucide-react'
@@ -13,6 +14,7 @@ export default function Affectation() {
   const [lastAutoAssignments, setLastAutoAssignments] = useState(null)
   const [noteEditId, setNoteEditId] = useState(null)
   const [noteText, setNoteText] = useState('')
+  const [tab, setTab] = useState('affectation')
 
   const saveTaskNote = (id) => {
     updateTask(id, { note: noteText.trim() || undefined })
@@ -276,6 +278,32 @@ export default function Affectation() {
           Affectez par <strong>bloc complet</strong> (menu en haut de chaque bloc) ou <strong>ligne par ligne</strong>. Glissez-déposez également possible.
         </p>
       </div>
+
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={() => setTab('affectation')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
+            tab === 'affectation'
+              ? 'bg-sky-600 border-sky-600 text-white shadow-lg ring-2 ring-sky-300'
+              : 'bg-white border-slate-200 text-slate-600 hover:border-sky-400 hover:bg-sky-50'
+          }`}
+        >
+          Affectation des tâches
+        </button>
+        <button
+          onClick={() => setTab('primes')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
+            tab === 'primes'
+              ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg ring-2 ring-emerald-300'
+              : 'bg-white border-emerald-300 text-emerald-800 hover:border-emerald-500 hover:bg-emerald-50'
+          }`}
+        >
+          Primes toilettes — bénéficiaires
+        </button>
+      </div>
+
+      {tab === 'affectation' ? (
+        <>
 
       <div className="bg-white rounded-xl shadow p-3 flex flex-wrap items-center justify-between gap-2 border-l-4 border-l-sky-600">
         <div>
@@ -909,6 +937,10 @@ export default function Affectation() {
           </div>
         </div>
       </div>
+      </>
+      ) : (
+        <LeaderPrimesForm />
+      )}
     </div>
   )
 }

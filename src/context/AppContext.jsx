@@ -65,6 +65,7 @@ const DEFAULT_EMPTY = {
   prepTasks: [],
   notes: [],
   pockets: [],
+  primeRequests: [],
 }
 
 export function AppProvider({ children }) {
@@ -79,6 +80,7 @@ export function AppProvider({ children }) {
   const [assignments, setAssignments] = useState({})
   const [members, setMembers] = useState([])
   const [dayMembers, setDayMembers] = useState([])
+  const [primeRequests, setPrimeRequests] = useState([])
   const [prepTasks, setPrepTasks] = useState([])
   const [pockets, setPockets] = useState([])
   const [notes, setNotes] = useState([])
@@ -127,6 +129,7 @@ export function AppProvider({ children }) {
       prepTasks: toArray(data.prepTasks),
       pockets: toArray(data.pockets),
       notes: toArray(data.notes),
+      primeRequests: toArray(data.primeRequests),
     }
     setTasks(dedupeTasks(cleaned.tasks))
     setTeams(cleaned.teams)
@@ -136,6 +139,7 @@ export function AppProvider({ children }) {
     setPrepTasks(cleaned.prepTasks)
     setPockets(cleaned.pockets)
     setNotes(cleaned.notes)
+    setPrimeRequests(cleaned.primeRequests)
     revRef.current = profile.rev ?? 0
     lastSavedJsonRef.current = JSON.stringify(cleaned)
     setActiveProfile({
@@ -165,8 +169,18 @@ export function AppProvider({ children }) {
   }, [])
 
   const totalPayload = useCallback(
-    () => ({ tasks, teams, assignments, members, dayMembers, prepTasks, notes, pockets }),
-    [tasks, teams, assignments, members, dayMembers, prepTasks, notes, pockets]
+    () => ({
+      tasks,
+      teams,
+      assignments,
+      members,
+      dayMembers,
+      prepTasks,
+      notes,
+      pockets,
+      primeRequests,
+    }),
+    [tasks, teams, assignments, members, dayMembers, prepTasks, notes, pockets, primeRequests]
   )
 
   const performSave = useCallback(
@@ -264,6 +278,7 @@ export function AppProvider({ children }) {
       setAssignments({})
       setMembers([])
       setDayMembers([])
+      setPrimeRequests([])
       setPrepTasks([])
       setPockets([])
       setNotes([])
@@ -519,6 +534,7 @@ export function AppProvider({ children }) {
     setAssignments({})
     setMembers([])
     setDayMembers([])
+    setPrimeRequests([])
     setPrepTasks([])
     setPockets([])
     setNotes([])
@@ -577,6 +593,20 @@ export function AppProvider({ children }) {
     pocketActions({ setPockets })
   const { addNote, updateNote, removeNote } = noteActions({ setNotes })
 
+  const addPrimeRequest = useCallback((req) => {
+    setPrimeRequests((prev) => [...prev, req])
+  }, [])
+
+  const updatePrimeRequest = useCallback((id, updates) => {
+    setPrimeRequests((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)))
+  }, [])
+
+  const removePrimeRequest = useCallback((id) => {
+    setPrimeRequests((prev) => prev.filter((r) => r.id !== id))
+  }, [])
+
+  const clearPrimeRequests = useCallback(() => setPrimeRequests([]), [])
+
   const resetData = useCallback(() => {
     setTasks([])
     setTeams([])
@@ -589,6 +619,7 @@ export function AppProvider({ children }) {
 
 const value = {
     tasks, teams, assignments, members, dayMembers, prepTasks, notes, pockets,
+    primeRequests,
     activeProfile, code, isAdmin,
     loading, error, saveState, resolveConflict,
     connectProfile, createProfile, requestProfile, disconnect, deleteProfile,
@@ -599,6 +630,7 @@ const value = {
     addPrepTasks, removePrepTask, removePrepTasksByBlock, updatePrepTask, clearPrepTasks,
     addPocket, renamePocket, addTasksToPocket, removeTasksFromPocket, removePocket,
     addNote, updateNote, removeNote,
+    addPrimeRequest, updatePrimeRequest, removePrimeRequest, clearPrimeRequests,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

@@ -360,6 +360,30 @@ export async function adminDeleteAgentDeclarations(adminCode, identifiant) {
   return data
 }
 
+export async function leaderSubmitPrime(
+  leaderCode,
+  beneficiaire,
+  identifiant,
+  type,
+  avion,
+  date,
+  description,
+  managerId
+) {
+  const { data, error } = await supabase.rpc('leader_submit_prime', {
+    p_leader_code: leaderCode,
+    p_beneficiaire: beneficiaire,
+    p_identifiant: identifiant,
+    p_type: type,
+    p_avion: avion,
+    p_date: date,
+    p_description: description,
+    p_manager_id: managerId || null,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function getConsignes() {
   const { data, error } = await supabase.rpc('get_consignes')
   if (error) throw error

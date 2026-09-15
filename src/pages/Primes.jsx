@@ -75,6 +75,7 @@ export default function Primes() {
   const [assignValue, setAssignValue] = useState('')
 
   const [notifyEmail, setNotifyEmail] = useState('')
+  const [savedEmail, setSavedEmail] = useState('')
   const [notifyServiceId, setNotifyServiceId] = useState('')
   const [notifyTemplateId, setNotifyTemplateId] = useState('')
   const [notifyPublicKey, setNotifyPublicKey] = useState('')
@@ -142,6 +143,7 @@ export default function Primes() {
       .then((res) => {
         if (res?.ok) {
           setNotifyEmail(res.email || '')
+          setSavedEmail(res.email || '')
           setNotifyServiceId(res.service_id || '')
           setNotifyTemplateId(res.template_id || '')
           setNotifyPublicKey(res.public_key || '')
@@ -175,6 +177,7 @@ export default function Primes() {
       else if (res?.error) setNotifyError("Échec de l'enregistrement.")
       else {
         setNotifyMsg('Adresse enregistrée.')
+        setSavedEmail(res.email || notifyEmail)
         setNotifyEmail(res.email || notifyEmail)
       }
     } catch (err) {
@@ -867,6 +870,18 @@ export default function Primes() {
             Enregistrer
           </button>
         </div>
+        <p className="text-xs mt-2">
+          {savedEmail ? (
+            <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Email de notification enregistré :{' '}
+              {savedEmail}
+            </span>
+          ) : (
+            <span className="text-amber-700 font-semibold">
+              Aucun email de notification enregistré pour le moment.
+            </span>
+          )}
+        </p>
         <button
           onClick={sendTestEmail}
           disabled={notifyBusy}
