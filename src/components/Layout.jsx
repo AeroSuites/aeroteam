@@ -21,6 +21,7 @@ export default function Layout({ children }) {
   const navigate = useNavigate()
 
   const [primesPending, setPrimesPending] = useState(0)
+  const [adminPending, setAdminPending] = useState(0)
 
   useEffect(() => {
     if (!isAdmin || !activeProfile?.code) return
@@ -41,6 +42,28 @@ export default function Layout({ children }) {
       alive = false
       clearInterval(timer)
       window.removeEventListener('primes-updated', onUpdate)
+    }
+  }, [isAdmin, activeProfile?.code])
+
+  useEffect(() => {
+    if (!isAdmin || !activeProfile?.code) return
+    let alive = true
+    const load = () => {
+      profileStore
+        .adminListPendingProfiles(activeProfile.code)
+        .then((res) => {
+          if (alive && res?.ok) setAdminPending((res.pending || []).length)
+        })
+        .catch(() => {})
+    }
+    load()
+    const timer = setInterval(load, 60000)
+    const onUpdate = () => load()
+    window.addEventListener('admin-updated', onUpdate)
+    return () => {
+      alive = false
+      clearInterval(timer)
+      window.removeEventListener('admin-updated', onUpdate)
     }
   }, [isAdmin, activeProfile?.code])
 
@@ -156,6 +179,14 @@ export default function Layout({ children }) {
                   title={`${primesPending} prime(s) en attente de validation`}
                 >
                   {primesPending}
+                </span>
+              )}
+              {item.to === '/admin' && adminPending > 0 && (
+                <span
+                  className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold align-middle"
+                  title={`${adminPending} demande(s) d'accès en attente`}
+                >
+                  {adminPending}
                 </span>
               )}
             </NavLink>

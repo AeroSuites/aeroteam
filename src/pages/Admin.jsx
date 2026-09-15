@@ -227,6 +227,7 @@ setEditError(res.error || 'Échec de la mise à jour.')
       else {
         setPendingProfiles((prev) => (prev || []).filter((p) => p.code !== profileCode))
         setProfilesTick((t) => t + 1)
+        window.dispatchEvent(new Event('admin-updated'))
       }
     } catch {
       setPendingMsg('Échec de la validation.')
@@ -242,7 +243,10 @@ setEditError(res.error || 'Échec de la mise à jour.')
     try {
       const res = await profileStore.adminRefuseProfile(activeProfile?.code, profileCode)
       if (res?.error) setPendingMsg('Échec du refus.')
-      else setPendingProfiles((prev) => (prev || []).filter((p) => p.code !== profileCode))
+      else {
+        setPendingProfiles((prev) => (prev || []).filter((p) => p.code !== profileCode))
+        window.dispatchEvent(new Event('admin-updated'))
+      }
     } catch {
       setPendingMsg('Échec du refus.')
     }
