@@ -127,11 +127,12 @@ export function AppProvider({ children }) {
       members: toArray(data.members),
       dayMembers: toArray(data.dayMembers),
       prepTasks: toArray(data.prepTasks),
-      pockets: toArray(data.pockets),
       notes: toArray(data.notes),
+      pockets: toArray(data.pockets),
       primeRequests: toArray(data.primeRequests),
     }
-    setTasks(dedupeTasks(cleaned.tasks))
+    cleaned.tasks = dedupeTasks(cleaned.tasks)
+    setTasks(cleaned.tasks)
     setTeams(cleaned.teams)
     setAssignments(cleaned.assignments)
     setMembers(cleaned.members)

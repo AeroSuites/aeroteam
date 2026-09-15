@@ -147,12 +147,17 @@ export default function Affectation() {
     const snapshot = lastAutoAssignments
     const allIds = new Set([...Object.keys(snapshot), ...Object.keys(assignments)])
     allIds.forEach((id) => {
-      const prevTeam = snapshot[id]
-      if (prevTeam) {
-        if (!isAssignedTo(assignments, id, prevTeam)) assignTask(id, prevTeam)
-      } else {
-        assignmentTeams(assignments, id).forEach((tid) => unassignTask(id, tid))
-      }
+      const prev = snapshot[id]
+      const prevTeams = Array.isArray(prev) ? prev : prev ? [prev] : []
+      const curTeams = assignmentTeams(assignments, id)
+      // Retirer les équipes ajoutées par la répartition automatique
+      curTeams.forEach((tid) => {
+        if (!prevTeams.includes(tid)) unassignTask(id, tid)
+      })
+      // Remettre les équipes telles qu'avant
+      prevTeams.forEach((tid) => {
+        if (!curTeams.includes(tid)) assignTask(id, tid)
+      })
     })
     setLastAutoAssignments(null)
   }

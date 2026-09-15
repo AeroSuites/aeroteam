@@ -614,7 +614,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button
-                          onClick={() => openProfileView(profile)}
+                          onClick={() => setViewProfile(profile)}
                           className="text-slate-400 hover:text-sky-600 p-1"
                           title={`Voir les équipes du profil « ${profile.name} »`}
                         >
