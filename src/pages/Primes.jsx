@@ -622,11 +622,11 @@ export default function Primes() {
                               key={d.id}
                               className="flex flex-wrap items-center gap-2 border border-amber-200 bg-white rounded-lg px-3 py-2"
                             >
-                              <span className="font-mono font-bold text-sky-700 text-sm">
+                              <span className="font-mono font-bold text-sky-700 text-sm whitespace-nowrap">
                                 {d.avion || '—'}
                               </span>
                               {d.trfx && (
-                                <span className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
+                                <span className="inline-flex items-center justify-center shrink-0 font-mono text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 whitespace-nowrap">
                                   {d.trfx}
                                 </span>
                               )}
@@ -998,11 +998,11 @@ export default function Primes() {
                         className="border border-amber-200 bg-amber-50/40 rounded-lg p-3"
                       >
                         <div className="flex flex-wrap items-center gap-2 text-sm">
-                          <span className="font-mono font-bold text-sky-700">
+                          <span className="font-mono font-bold text-sky-700 whitespace-nowrap">
                             {d.avion || '—'}
                           </span>
                           {d.trfx && (
-                            <span className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
+                            <span className="inline-flex items-center justify-center shrink-0 font-mono text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 whitespace-nowrap">
                               {d.trfx}
                             </span>
                           )}
@@ -1069,7 +1069,7 @@ export default function Primes() {
                     <thead>
                       <tr className="text-left bg-slate-50">
                         <th className="px-3 py-2 font-semibold text-slate-700">Avion</th>
-                        <th className="px-3 py-2 font-semibold text-slate-700">TRFX</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700 text-center">TRFX</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">Élément</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">Description</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">Catégorie</th>
@@ -1104,10 +1104,10 @@ export default function Primes() {
                         const d = g.data
                         return (
                           <tr key={g.key} className="border-b hover:bg-slate-50 align-top">
-                            <td className="px-3 py-2 font-mono font-bold text-sky-700">
+                            <td className="px-3 py-2 font-mono font-bold text-sky-700 whitespace-nowrap">
                               {d.avion || '—'}
                             </td>
-                            <td className="px-3 py-2 font-mono text-xs text-slate-600">
+                            <td className="px-3 py-2 font-mono text-sm text-slate-600 text-center whitespace-nowrap">
                               {d.trfx || '—'}
                             </td>
                             <td className="px-3 py-2">{d.element || '—'}</td>
