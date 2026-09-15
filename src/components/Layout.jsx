@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
-import { Plane, LogOut, ClipboardList } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { Plane, LogOut, ClipboardList, ChevronDown } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
 
@@ -19,6 +19,9 @@ const navItems = [
 export default function Layout({ children }) {
   const { activeProfile, disconnect, isAdmin, saveState, resolveConflict, notes } = useApp()
   const navigate = useNavigate()
+  const location = useLocation()
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false)
+  const adminMenuRef = useRef(null)
 
   const [primesPending, setPrimesPending] = useState(0)
   const [adminPending, setAdminPending] = useState(0)
@@ -71,9 +74,29 @@ export default function Layout({ children }) {
     String(n.title || '').startsWith('[C] ')
   ).length
 
-  const items = isAdmin
-    ? [...navItems, { to: '/admin', label: 'Administration' }, { to: '/primes', label: 'Primes' }, { to: '/import-consignes', label: 'Import consignes' }]
-    : navItems
+  const items = navItems
+
+  // Ferme le menu Administration au clic extérieur
+  useEffect(() => {
+    if (!adminMenuOpen) return
+    const onDown = (e) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target)) {
+        setAdminMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [adminMenuOpen])
+
+  // Ferme le menu quand on change de page
+  useEffect(() => {
+    setAdminMenuOpen(false)
+  }, [location.pathname])
+
+  const adminRouteActive =
+    location.pathname === '/admin' ||
+    location.pathname === '/primes' ||
+    location.pathname === '/import-consignes'
 
   const switchProfile = () => {
     if (window.confirm(`Quitter le profil « ${activeProfile?.name} » ? (les données sont sauvegardées dans le cloud)`)) {
@@ -173,24 +196,78 @@ export default function Layout({ children }) {
                 </span>
               )}
               {item.label}
-              {item.to === '/primes' && primesPending > 0 && (
-                <span
-                  className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow"
-                  title={`${primesPending} prime(s) en attente de validation`}
-                >
-                  {primesPending}
-                </span>
-              )}
-              {item.to === '/admin' && adminPending > 0 && (
-                <span
-                  className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold shadow"
-                  title={`${adminPending} demande(s) d'accès en attente`}
-                >
-                  {adminPending}
-                </span>
-              )}
             </NavLink>
           ))}
+
+          {isAdmin && (
+            <div className="relative shrink-0" ref={adminMenuRef}>
+              <button
+                onClick={() => setAdminMenuOpen((o) => !o)}
+                className={`relative flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[13px] whitespace-nowrap font-medium transition-colors ${
+                  adminRouteActive || adminMenuOpen
+                    ? 'bg-sky-500 text-white'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+                title="Administration, Primes et Import consignes"
+              >
+                Administration
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${
+                    adminMenuOpen ? 'rotate-180' : ''
+                  }`}
+                />
+                {(primesPending > 0 || adminPending > 0) && (
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold shadow">
+                    {primesPending + adminPending}
+                  </span>
+                )}
+              </button>
+              {adminMenuOpen && (
+                <div className="absolute left-0 top-full mt-1 z-50 bg-slate-800 rounded-lg shadow-xl border border-slate-700 py-1 min-w-[230px]">
+                  <NavLink
+                    to="/admin"
+                    className={({ isActive }) =>
+                      `flex items-center justify-between gap-2 px-3 py-2 text-sm ${
+                        isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
+                      }`
+                    }
+                  >
+                    <span>Administration</span>
+                    {adminPending > 0 && (
+                      <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+                        {adminPending}
+                      </span>
+                    )}
+                  </NavLink>
+                  <NavLink
+                    to="/primes"
+                    className={({ isActive }) =>
+                      `flex items-center justify-between gap-2 px-3 py-2 text-sm ${
+                        isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
+                      }`
+                    }
+                  >
+                    <span>Primes</span>
+                    {primesPending > 0 && (
+                      <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+                        {primesPending}
+                      </span>
+                    )}
+                  </NavLink>
+                  <NavLink
+                    to="/import-consignes"
+                    className={({ isActive }) =>
+                      `flex items-center justify-between gap-2 px-3 py-2 text-sm ${
+                        isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
+                      }`
+                    }
+                  >
+                    <span>Import consignes</span>
+                  </NavLink>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </nav>
       <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
