@@ -411,10 +411,17 @@ export function AppProvider({ children }) {
         String(name || '').trim(),
         managerId || null
       )
-      if (res?.error === 'code_exists')
+      if (
+        res?.error === 'code_exists' ||
+        res?.error === 'code_reserve' ||
+        res?.error === 'code_indisponible'
+      )
         return { ok: false, error: 'Ce code est déjà utilisé. Choisissez-en un autre.' }
-      if (res?.error === 'code_reserve')
-        return { ok: false, error: 'Ce code est réservé. Choisissez-en un autre.' }
+      if (res?.error === 'trop_de_tentatives')
+        return {
+          ok: false,
+          error: "Trop de tentatives d'inscription. Réessayez dans 15 minutes.",
+        }
       if (res?.error === 'code_too_short')
         return { ok: false, error: 'Le code doit contenir au moins 8 caractères.' }
       if (res?.error === 'nom_requis')
