@@ -149,7 +149,9 @@ export default function LeaderPrimesForm() {
       else {
         clearPrimeRequests()
         setMsg(
-          `${res.count} déclaration(s) transmise(s) au manager — un seul email groupé envoyé.`
+          res.count > 1
+            ? `${res.count} déclarations transmises au manager — un seul email groupé envoyé.`
+            : 'Déclaration transmise au manager — email envoyé.'
         )
       }
     } catch {
