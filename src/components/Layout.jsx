@@ -160,7 +160,7 @@ export default function Layout({ children }) {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `px-2.5 py-1.5 rounded-md text-[13px] whitespace-nowrap font-medium transition-colors shrink-0 ${
+                `relative px-2.5 py-1.5 rounded-md text-[13px] whitespace-nowrap font-medium transition-colors shrink-0 ${
                   isActive
                     ? 'bg-sky-500 text-white'
                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -175,7 +175,7 @@ export default function Layout({ children }) {
               {item.label}
               {item.to === '/primes' && primesPending > 0 && (
                 <span
-                  className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold align-middle"
+                  className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow"
                   title={`${primesPending} prime(s) en attente de validation`}
                 >
                   {primesPending}
@@ -183,7 +183,7 @@ export default function Layout({ children }) {
               )}
               {item.to === '/admin' && adminPending > 0 && (
                 <span
-                  className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold align-middle"
+                  className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold shadow"
                   title={`${adminPending} demande(s) d'accès en attente`}
                 >
                   {adminPending}
