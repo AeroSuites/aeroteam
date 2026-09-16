@@ -10,7 +10,6 @@ import {
   Filter,
   ChevronDown,
   ChevronRight,
-  Trash2,
 } from 'lucide-react'
 
 export default function ImportExcel() {
@@ -20,9 +19,11 @@ export default function ImportExcel() {
   const [fileName, setFileName] = useState('')
   const [error, setError] = useState('')
   const [imported, setImported] = useState(false)
+  const [importedCount, setImportedCount] = useState(0)
   const [stats, setStats] = useState(null)
   const [expandedBlocks, setExpandedBlocks] = useState([])
   const [expandedZones, setExpandedZones] = useState([])
+  const [selected, setSelected] = useState({})
 
   // Arborescence du fichier : bloc -> sous-tâche (zone) -> lignes
   const tree = useMemo(() => {
@@ -47,39 +48,25 @@ export default function ImportExcel() {
       }))
   }, [preview])
 
-  const removePreviewLines = (predicate, label) => {
-    if (!window.confirm(label)) return
-    const next = preview.filter((t) => !predicate(t))
-    setPreview(next)
-    setStats((s) =>
-      s ? { ...s, kept: next.length, filteredOut: s.totalLines - next.length } : s
-    )
+  const selectedCount = preview.filter((t) => selected[t.id]).length
+
+  const toggleTask = (id) => setSelected((prev) => ({ ...prev, [id]: !prev[id] }))
+
+  const toggleTasks = (list) => {
+    setSelected((prev) => {
+      const allOn = list.every((t) => prev[t.id])
+      const next = { ...prev }
+      list.forEach((t) => {
+        next[t.id] = !allOn
+      })
+      return next
+    })
   }
 
-  const removeBlock = (block) => {
-    const n = preview.filter((t) => (t.taskType || 'AUTRE') === block).length
-    removePreviewLines(
-      (t) => (t.taskType || 'AUTRE') === block,
-      `Retirer tout le bloc ${getCategoryLabel(block)} de l'import (${n} ligne(s)) ?`
-    )
-  }
+  const selectAll = () =>
+    setSelected(Object.fromEntries(preview.map((t) => [t.id, true])))
 
-  const removeZone = (block, zone) => {
-    const n = preview.filter(
-      (t) => (t.taskType || 'AUTRE') === block && (t.workArea || 'Autre') === zone
-    ).length
-    removePreviewLines(
-      (t) => (t.taskType || 'AUTRE') === block && (t.workArea || 'Autre') === zone,
-      `Retirer la sous-tâche « ${zone} » du bloc ${getCategoryLabel(block)} (${n} ligne(s)) ?`
-    )
-  }
-
-  const removeLine = (task) => {
-    removePreviewLines(
-      (t) => t.id === task.id,
-      `Retirer la ligne N° ${task.seq || '—'} de l'import ?`
-    )
-  }
+  const selectNone = () => setSelected({})
 
   const handleFile = useCallback(
     (file) => {
@@ -108,6 +95,9 @@ export default function ImportExcel() {
 
           const parsed = parseExcelRows(rows.slice(1), detected)
           setPreview(parsed)
+          setSelected(Object.fromEntries(parsed.map((t) => [t.id, true])))
+          setExpandedBlocks([])
+          setExpandedZones([])
 
           // Statistiques de filtrage
           const totalLines = rows.length - 1
@@ -124,8 +114,10 @@ export default function ImportExcel() {
   )
 
   const handleImport = () => {
-    if (!preview.length) return
-    addTasks(preview)
+    const list = preview.filter((t) => selected[t.id])
+    if (!list.length) return
+    addTasks(list)
+    setImportedCount(list.length)
     setImported(true)
   }
 
@@ -210,31 +202,47 @@ export default function ImportExcel() {
           <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b">
             <div>
               <h2 className="text-xl font-semibold">
-                Aperçu — {preview.length} tâches après filtres
+                Sélection — {selectedCount} / {preview.length} tâche(s)
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Classé par <strong>bloc → sous-tâche → ligne</strong> : retirez ce que vous ne
-                voulez pas importer (bloc, sous-tâche ou ligne).
+                Classé par <strong>bloc → sous-tâche → ligne</strong> : cochez ce que vous voulez
+                importer (décocher un bloc ou une sous-tâche exclut tout son contenu).
               </p>
+              <div className="flex gap-1.5 mt-2">
+                <button
+                  onClick={selectAll}
+                  className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-2.5 py-0.5"
+                >
+                  Tout cocher
+                </button>
+                <button
+                  onClick={selectNone}
+                  className="text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 rounded-full px-2.5 py-0.5"
+                >
+                  Tout décocher
+                </button>
+              </div>
             </div>
             <button
               onClick={handleImport}
-              className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 flex items-center gap-2"
+              disabled={selectedCount === 0}
+              className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 flex items-center gap-2"
             >
-              <CheckCircle2 className="h-4 w-4" /> Importer les tâches
+              <CheckCircle2 className="h-4 w-4" /> Importer {selectedCount} tâche(s)
             </button>
           </div>
 
           {imported && (
             <div className="bg-green-50 border-b border-green-200 text-green-700 px-6 py-3 flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5" />
-              {preview.length} tâches importées avec succès !
+              {importedCount} tâches importées avec succès !
             </div>
           )}
 
           <div className="max-h-[540px] overflow-y-auto">
             {tree.map(({ block, zones }) => {
               const blockTasks = zones.flatMap((z) => z.tasks)
+              const blockSelected = blockTasks.filter((t) => selected[t.id]).length
               const blockOpen = expandedBlocks.includes(block)
               const color = getCategoryColor(block)
               return (
@@ -243,6 +251,17 @@ export default function ImportExcel() {
                     className="flex items-center gap-2 px-3 py-2"
                     style={{ backgroundColor: `${color}14`, borderLeft: `4px solid ${color}` }}
                   >
+                    <input
+                      type="checkbox"
+                      checked={blockSelected === blockTasks.length && blockTasks.length > 0}
+                      ref={(el) => {
+                        if (el)
+                          el.indeterminate =
+                            blockSelected > 0 && blockSelected < blockTasks.length
+                      }}
+                      onChange={() => toggleTasks(blockTasks)}
+                      className="h-4 w-4 accent-sky-600 shrink-0"
+                    />
                     <button
                       onClick={() =>
                         setExpandedBlocks((prev) =>
@@ -261,14 +280,9 @@ export default function ImportExcel() {
                       <span className="font-semibold text-sm" style={{ color }}>
                         {getCategoryLabel(block)}
                       </span>
-                      <span className="text-xs text-slate-500">({blockTasks.length})</span>
-                    </button>
-                    <button
-                      onClick={() => removeBlock(block)}
-                      className="text-slate-400 hover:text-red-600 p-1 shrink-0"
-                      title={`Retirer tout le bloc ${getCategoryLabel(block)} de l'import`}
-                    >
-                      <Trash2 className="h-4 w-4" />
+                      <span className="text-xs text-slate-500">
+                        ({blockSelected}/{blockTasks.length})
+                      </span>
                     </button>
                   </div>
 
@@ -276,9 +290,21 @@ export default function ImportExcel() {
                     zones.map(({ zone, tasks: zoneTasks }) => {
                       const zoneKey = `${block}::${zone}`
                       const zoneOpen = expandedZones.includes(zoneKey)
+                      const zoneSelected = zoneTasks.filter((t) => selected[t.id]).length
                       return (
                         <div key={zoneKey}>
                           <div className="flex items-center gap-2 pl-8 pr-3 py-1.5 bg-slate-50 border-t border-slate-100">
+                            <input
+                              type="checkbox"
+                              checked={zoneSelected === zoneTasks.length && zoneTasks.length > 0}
+                              ref={(el) => {
+                                if (el)
+                                  el.indeterminate =
+                                    zoneSelected > 0 && zoneSelected < zoneTasks.length
+                              }}
+                              onChange={() => toggleTasks(zoneTasks)}
+                              className="h-4 w-4 accent-sky-600 shrink-0"
+                            />
                             <button
                               onClick={() =>
                                 setExpandedZones((prev) =>
@@ -298,23 +324,22 @@ export default function ImportExcel() {
                                 📍 {zone}
                               </span>
                               <span className="text-[11px] text-slate-400">
-                                ({zoneTasks.length})
+                                ({zoneSelected}/{zoneTasks.length})
                               </span>
-                            </button>
-                            <button
-                              onClick={() => removeZone(block, zone)}
-                              className="text-slate-400 hover:text-red-600 p-1 shrink-0"
-                              title={`Retirer la sous-tâche « ${zone} » de l'import`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
                           {zoneOpen &&
                             zoneTasks.map((task) => (
-                              <div
+                              <label
                                 key={task.id}
-                                className="flex items-center gap-2 pl-14 pr-3 py-1.5 text-sm hover:bg-slate-50 border-t border-dashed border-slate-100"
+                                className="flex items-center gap-2 pl-14 pr-3 py-1.5 text-sm hover:bg-slate-50 cursor-pointer border-t border-dashed border-slate-100"
                               >
+                                <input
+                                  type="checkbox"
+                                  checked={!!selected[task.id]}
+                                  onChange={() => toggleTask(task.id)}
+                                  className="h-4 w-4 accent-sky-600 shrink-0"
+                                />
                                 <span className="w-10 shrink-0 font-bold text-slate-500">
                                   {task.seq || '—'}
                                 </span>
@@ -341,14 +366,7 @@ export default function ImportExcel() {
                                 <span className="shrink-0 text-xs text-slate-400 w-16 text-right">
                                   {task.registration || ''}
                                 </span>
-                                <button
-                                  onClick={() => removeLine(task)}
-                                  className="text-slate-400 hover:text-red-600 p-1 shrink-0"
-                                  title="Retirer cette ligne de l'import"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
+                              </label>
                             ))}
                         </div>
                       )
