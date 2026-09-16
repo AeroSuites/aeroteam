@@ -149,7 +149,7 @@ export default function ProfileSelector() {
               <input
                 value={regIdent}
                 onChange={(e) => setRegIdent(e.target.value)}
-                placeholder="Ce sera votre identifiant de connexion (3 caractères minimum)"
+                placeholder="Identifiant : ce sera votre identifiant de connexion"
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
                 autoFocus
               />
