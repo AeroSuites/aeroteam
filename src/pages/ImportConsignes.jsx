@@ -350,21 +350,6 @@ export default function ImportConsignes() {
     return block?.shifts[selectedShift] || []
   }
 
-  // Avions réellement concernés par des consignes ce jour (tous shifts confondus,
-  // modifications manuelles comprises) — sert au masquage des avions vides.
-  const visibleBlocks = useMemo(() => {
-    const blocks = sheet?.blocks || []
-    if (!hideNoConsignes) return blocks
-    return blocks.filter((b) =>
-      ['matin', 'soir', 'nuit'].some((s) => {
-        const ov = overrides[`${selectedDay}::${b.immat}::${s}`]
-        return (Array.isArray(ov) ? ov : b.shifts[s] || []).length > 0
-      })
-    )
-  }, [sheet, overrides, selectedDay, hideNoConsignes])
-
-  const hiddenBlocksCount = (sheet?.blocks.length || 0) - visibleBlocks.length
-
   const unassignAircraft = async (p) => {
     if (
       !window.confirm(
@@ -650,6 +635,21 @@ export default function ImportConsignes() {
     )
     return [...withEffectif].filter((immat) => !haveTasks.has(immat)).sort()
   }, [sheet, eligible, selectedShift])
+
+  // Avions réellement concernés par des consignes ce jour (tous shifts confondus,
+  // modifications manuelles comprises) — sert au masquage des avions vides.
+  const visibleBlocks = useMemo(() => {
+    const blocks = sheet?.blocks || []
+    if (!hideNoConsignes) return blocks
+    return blocks.filter((b) =>
+      ['matin', 'soir', 'nuit'].some((s) => {
+        const ov = overrides[`${selectedDay}::${b.immat}::${s}`]
+        return (Array.isArray(ov) ? ov : b.shifts[s] || []).length > 0
+      })
+    )
+  }, [sheet, overrides, selectedDay, hideNoConsignes])
+
+  const hiddenBlocksCount = (sheet?.blocks.length || 0) - visibleBlocks.length
 
   const aircraftInfoForScope = (immat) => {
     const shiftEff = sheet.effectif.find((s) => s.shift === selectedShift)
