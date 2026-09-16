@@ -23,7 +23,6 @@ export default function Admin() {
 
   const [newName, setNewName] = useState('')
   const [newIdentifiant, setNewIdentifiant] = useState('')
-  const [newAircraft, setNewAircraft] = useState('')
   const [newCode, setNewCode] = useState('')
   const [makeAdmin, setMakeAdmin] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -321,7 +320,6 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
       identifiant: newIdentifiant,
       code: newCode,
       name: newName,
-      aircraft: newAircraft,
     })
     if (!res.ok) setCreateError(res.error)
     else {
@@ -344,7 +342,6 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
       )
       setNewName('')
       setNewIdentifiant('')
-      setNewAircraft('')
       setNewCode('')
       setMakeAdmin(false)
     }
@@ -429,12 +426,6 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
             onChange={(e) => setNewIdentifiant(e.target.value)}
             placeholder="Identifiant de connexion (optionnel — généré depuis le nom si vide)"
             className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
-          />
-          <input
-            value={newAircraft}
-            onChange={(e) => setNewAircraft(e.target.value)}
-            placeholder="Avion / immatriculation (ex: F-GKXT)"
-            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
           />
           <input
             value={newCode}
