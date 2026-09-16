@@ -8,6 +8,7 @@ import {
   getZoneColor,
   hexToRgb,
   makeId,
+  isAssignedTo,
 } from '../utils/helpers'
 import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
 import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw, FolderKanban } from 'lucide-react'
@@ -136,8 +137,8 @@ function buildRecapPdf(profile, data) {
   y += 6
 
   ;(data?.teams || []).forEach((team) => {
-    const teamTasks = (data?.tasks || []).filter(
-      (t) => data.assignments?.[t.id] === team.id
+    const teamTasks = (data?.tasks || []).filter((t) =>
+      isAssignedTo(data.assignments, t.id, team.id)
     )
     ensureRoom(16)
     doc.setFillColor(...hexToRgb(team.color || '#64748b'))
@@ -615,8 +616,8 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                 )}
                 <div className="grid gap-3 md:grid-cols-2">
                   {(data.teams || []).map((team) => {
-                    const teamTasks = (data.tasks || []).filter(
-                      (t) => data.assignments?.[t.id] === team.id
+                    const teamTasks = (data.tasks || []).filter((t) =>
+                      isAssignedTo(data.assignments, t.id, team.id)
                     )
                     const zoneGroups = groupTeamTasks(teamTasks)
                     return (
