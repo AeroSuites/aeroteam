@@ -435,9 +435,11 @@ export default function Consignes() {
                           en cours
                         </span>
                       )}
-                      <span className="ml-auto text-xs text-slate-400 shrink-0 pr-1">
-                        {children.length} av.
-                      </span>
+                      {!isCurrent && (
+                        <span className="ml-auto text-xs text-slate-400 shrink-0 pr-1">
+                          {children.length} av.
+                        </span>
+                      )}
                     </button>
                     {!wf.id.startsWith('__') && (
                       <>
