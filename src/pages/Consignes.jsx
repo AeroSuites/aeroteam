@@ -77,17 +77,6 @@ export default function Consignes() {
     }
   }, [])
 
-  // Ouvre automatiquement le dossier de la semaine en cours
-  useEffect(() => {
-    if (!folders || !currentWeekNum) return
-    const current = folders.find(
-      (f) => !f.parent_id && parseWeekNumber(f.name) === currentWeekNum
-    )
-    if (!current) return
-    // eslint-disable-next-line react/set-state-in-effect -- ouverture automatique de la semaine en cours
-    setExpanded((prev) => (prev.includes(current.id) ? prev : [...prev, current.id]))
-  }, [folders, currentWeekNum])
-
   const [folderModal, setFolderModal] = useState(null)
   const [folderName, setFolderName] = useState('')
   const [folderCouleur, setFolderCouleur] = useState(PALETTE[0])
@@ -369,7 +358,7 @@ export default function Consignes() {
 
       {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
 
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         {/* Arborescence des dossiers */}
         <div className="space-y-3">
           <button
@@ -393,7 +382,7 @@ export default function Consignes() {
               return (
                 <div key={wf.id}>
                   <div
-                    className={`flex items-center gap-2 px-3 py-2.5 text-sm border-b border-slate-100 transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-2.5 text-sm border-b border-slate-100 transition-colors ${
                       isCurrent
                         ? 'bg-amber-50 border-l-4 border-l-amber-500'
                         : weekOpen
@@ -435,24 +424,22 @@ export default function Consignes() {
                           en cours
                         </span>
                       )}
-                      {!isCurrent && (
-                        <span className="ml-auto text-xs text-slate-400 shrink-0 pr-1">
-                          {children.length} av.
-                        </span>
-                      )}
+                      <span className="ml-auto text-[11px] text-slate-400 shrink-0 pl-1">
+                        {children.length} av.
+                      </span>
                     </button>
                     {!wf.id.startsWith('__') && (
                       <>
                         <button
                           onClick={() => openFolderModal('new', wf)}
-                          className="text-slate-400 hover:text-sky-600 p-1 shrink-0"
+                          className="text-slate-400 hover:text-sky-600 p-0.5 shrink-0"
                           title={`Ajouter un avion dans « ${wf.name} »`}
                         >
                           <Plus className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openFolderModal('rename', wf)}
-                          className="text-slate-400 hover:text-sky-600 p-1 shrink-0"
+                          className="text-slate-400 hover:text-sky-600 p-0.5 shrink-0"
                           title={`Renommer « ${wf.name} »`}
                         >
                           <Pencil className="h-4 w-4" />
@@ -460,7 +447,7 @@ export default function Consignes() {
                         {isAdmin && (
                           <button
                             onClick={() => removeFolder(wf)}
-                            className="text-slate-400 hover:text-red-600 p-1 shrink-0"
+                            className="text-slate-400 hover:text-red-600 p-0.5 shrink-0"
                             title={`Supprimer « ${wf.name} » (administrateur uniquement)`}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -502,7 +489,7 @@ export default function Consignes() {
                             <>
                               <button
                                 onClick={() => openFolderModal('rename', af)}
-                                className="text-slate-400 hover:text-sky-600 p-1 shrink-0"
+                                className="text-slate-400 hover:text-sky-600 p-0.5 shrink-0"
                                 title={`Renommer « ${af.name} »`}
                               >
                                 <Pencil className="h-4 w-4" />
@@ -510,7 +497,7 @@ export default function Consignes() {
                               {isAdmin && (
                                 <button
                                   onClick={() => removeFolder(af)}
-                                  className="text-slate-400 hover:text-red-600 p-1 shrink-0"
+                                  className="text-slate-400 hover:text-red-600 p-0.5 shrink-0"
                                   title={`Supprimer « ${af.name} » (administrateur uniquement)`}
                                 >
                                   <Trash2 className="h-4 w-4" />
