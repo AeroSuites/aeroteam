@@ -13,6 +13,32 @@ const NOTE_PREFIX = '[C] '
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1)
 
+const frDate = (iso) => {
+  if (!iso) return ''
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/)
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso)
+}
+
+// En-tête d'information avion ajouté aux consignes transmises au profil
+function infosHeader(infos) {
+  if (!infos) return []
+  const header = []
+  const entre = [frDate(infos.dateEntree), infos.heureEntree].filter(Boolean).join(' ')
+  const sortie = [frDate(infos.dateSortie), infos.heureSortie].filter(Boolean).join(' ')
+  if (infos.typeVisite) header.push(`Type de visite : ${infos.typeVisite}`)
+  if (entre) header.push(`Date d'entrée : ${entre}`)
+  if (infos.osm || infos.config || infos.position) {
+    header.push(
+      `OSM : ${infos.osm || '—'} · Config : ${infos.config || '—'} · Position : ${
+        infos.position || '—'
+      }`
+    )
+  }
+  if (sortie) header.push(`Date de sortie : ${sortie}`)
+  if (header.length > 0) header.push('')
+  return header
+}
+
 function shiftMembers(days, shift) {
   const out = []
   Object.values(days || {}).forEach((d) => {
@@ -49,12 +75,13 @@ export function buildProfileData(existing, aircraftInfo, scope) {
   })
   const consigneNotes = []
   Object.entries(aircraftInfo.days || {}).forEach(([day, d]) => {
+    const header = infosHeader(d.infos)
     Object.entries(d.consignes || {}).forEach(([s, tasks]) => {
       if (!Array.isArray(tasks) || tasks.length === 0) return
       consigneNotes.push({
         id: makeId('note'),
         title: `${NOTE_PREFIX}${day.toUpperCase()} ${cap(s)}`,
-        content: tasks.map((t) => `- ${t}`).join('\n'),
+        content: [...header, ...tasks.map((t) => `- ${t}`)].join('\n'),
         createdAt: Date.now(),
       })
     })

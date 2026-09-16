@@ -53,9 +53,23 @@ function buildFixtureSheet() {
   rows[base] = []
   rows[base][8] = 'Type\nde visite'
   rows[base][9] = 'A 04'
+  rows[base][6] = "Date\nd'entrée"
+  rows[base][7] = 46271
+  rows[base][14] = 'OSM'
+  rows[base][15] = 'Config'
+  rows[base][22] = 'Position'
+  rows[base][23] = 'Date\nde sortie'
+  rows[base][24] = 46272
   rows[base + 1] = []
   rows[base + 1][8] = 'Immat'
   rows[base + 1][9] = 'F-GSQB'
+  rows[base + 1][6] = "Heure\nd'entrée"
+  rows[base + 1][7] = '20H'
+  rows[base + 1][14] = 63994878
+  rows[base + 1][15] = 'Y148'
+  rows[base + 1][22] = 'H1-1B'
+  rows[base + 1][23] = 'Heure\nde sortie'
+  rows[base + 1][24] = '12H'
   rows[base + 2] = []
   rows[base + 2][8] = 'Consignes générales'
   rows[base + 3] = []
@@ -122,6 +136,18 @@ describe('parseBlocks', () => {
     expect(blocks[0].shifts.soir).toEqual(['LEADER INSP LAVATORIES', 'MEL L203 GWIV'])
     expect(blocks[0].shifts.nuit).toEqual(['WASTE'])
   })
+
+  it('extrait les cases d’en-tête (entrée/sortie, OSM Config Position)', () => {
+    const { rows } = buildFixtureSheet()
+    const blocks = parseBlocks(rows)
+    expect(blocks[0].dateEntree).toBe('2026-09-06')
+    expect(blocks[0].heureEntree).toBe('20H')
+    expect(blocks[0].osm).toBe('63994878')
+    expect(blocks[0].config).toBe('Y148')
+    expect(blocks[0].position).toBe('H1-1B')
+    expect(blocks[0].dateSortie).toBe('2026-09-07')
+    expect(blocks[0].heureSortie).toBe('12H')
+  })
 })
 
 describe('parseConsignesWorkbook + summarizeAircrafts', () => {
@@ -139,5 +165,7 @@ describe('parseConsignesWorkbook + summarizeAircrafts', () => {
     expect(gsqb.days.LUNDI.nuit).toEqual(['NICOLAS (ALEXANDRE)'])
     expect(gsqb.days.LUNDI.consignes.matin).toEqual(['LEADER + ACL + IDT', 'CAB SECU + PRELIM'])
     expect(gsqb.days.LUNDI.consignes.nuit).toEqual(['WASTE'])
+    expect(gsqb.days.LUNDI.infos.osm).toBe('63994878')
+    expect(gsqb.days.LUNDI.infos.position).toBe('H1-1B')
   })
 })

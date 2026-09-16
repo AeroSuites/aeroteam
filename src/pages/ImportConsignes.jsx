@@ -640,6 +640,7 @@ export default function ImportConsignes() {
     const members = (shiftEff?.members || [])
       .filter((m) => m.aircrafts.includes(immat))
       .map((m) => m.name)
+    const block = sheet.blocks.find((b) => b.immat === immat)
     return {
       immat,
       totalTasks: effectiveTasks(immat).length,
@@ -647,6 +648,18 @@ export default function ImportConsignes() {
         [selectedDay]: {
           [selectedShift]: [...new Set(members)],
           consignes: { [selectedShift]: effectiveTasks(immat) },
+          infos: block
+            ? {
+                typeVisite: block.typeVisite || '',
+                dateEntree: block.dateEntree || '',
+                heureEntree: block.heureEntree || '',
+                osm: block.osm || '',
+                config: block.config || '',
+                position: block.position || '',
+                dateSortie: block.dateSortie || '',
+                heureSortie: block.heureSortie || '',
+              }
+            : null,
         },
       },
     }

@@ -19,6 +19,7 @@ function norm(s) {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’'`]/g, '')
     .replace(/\s+/g, '')
 }
 
@@ -97,14 +98,8 @@ export function parseBlocks(rows) {
     if (!/^F-[\w-]+$/i.test(immat)) continue
     const endRow = i + 1 < immatRows.length ? immatRows[i + 1].r : rows.length
 
-    let typeVisite = ''
-    let heureEntree = ''
-    if (r - 1 >= 0) {
-      for (let tc = 0; tc < 40; tc++) {
-        if (norm(cell(rows, r - 1, tc)) === 'typedevisite') typeVisite = cell(rows, r - 1, tc + 1)
-        if (norm(cell(rows, r - 1, tc)) === 'heuredentree') heureEntree = cell(rows, r - 1, tc + 1)
-      }
-    }
+    // En-tête du bloc : libellés sur la ligne au-dessus et la ligne d'immat
+    const info = blockHeaderInfo(rows, r)
 
     const shifts = {}
     // Délégations : "Consignes X" définies sur plusieurs lignes
@@ -124,9 +119,42 @@ export function parseBlocks(rows) {
         if (tasks.length || !shifts[shiftName]) shifts[shiftName] = tasks
       }
     }
-    blocks.push({ immat, typeVisite, heureEntree, shifts })
+    blocks.push({ immat, ...info, shifts })
   }
   return blocks
+}
+
+// Lit les cases d'en-tête d'un bloc avion :
+// « Type de visite », « Date/Heure d'entrée », « OSM », « Config »,
+// « Position », « Date/Heure de sortie » (libellés détectés par contenu,
+// valeurs à droite du libellé — ou en dessous pour OSM/Config/Position).
+export function blockHeaderInfo(rows, r) {
+  const info = {
+    typeVisite: '',
+    dateEntree: '',
+    heureEntree: '',
+    osm: '',
+    config: '',
+    position: '',
+    dateSortie: '',
+    heureSortie: '',
+  }
+  for (const hr of [r - 1, r]) {
+    if (hr < 0 || hr >= rows.length) continue
+    for (let c = 0; c < 40; c++) {
+      const n = norm(cell(rows, hr, c))
+      if (!n) continue
+      if (n === 'typedevisite') info.typeVisite = info.typeVisite || cell(rows, hr, c + 1)
+      else if (n === 'datedentree') info.dateEntree = info.dateEntree || toDateString(rows[hr] ? rows[hr][c + 1] : undefined)
+      else if (n === 'heuredentree') info.heureEntree = info.heureEntree || cell(rows, hr, c + 1)
+      else if (n === 'datedesortie') info.dateSortie = info.dateSortie || toDateString(rows[hr] ? rows[hr][c + 1] : undefined)
+      else if (n === 'heuredesortie') info.heureSortie = info.heureSortie || cell(rows, hr, c + 1)
+      else if (n === 'osm') info.osm = info.osm || cell(rows, hr + 1, c)
+      else if (n === 'config') info.config = info.config || cell(rows, hr + 1, c)
+      else if (n === 'position') info.position = info.position || cell(rows, hr + 1, c)
+    }
+  }
+  return info
 }
 
 export function parseConsignesSheet(ws) {
@@ -168,6 +196,16 @@ export function summarizeAircrafts(results) {
     sheet.blocks.forEach((b) => {
       if (!byAircraft[b.immat]) byAircraft[b.immat] = { days: {} }
       if (!byAircraft[b.immat].days[day]) byAircraft[b.immat].days[day] = {}
+      byAircraft[b.immat].days[day].infos = {
+        typeVisite: b.typeVisite || '',
+        dateEntree: b.dateEntree || '',
+        heureEntree: b.heureEntree || '',
+        osm: b.osm || '',
+        config: b.config || '',
+        position: b.position || '',
+        dateSortie: b.dateSortie || '',
+        heureSortie: b.heureSortie || '',
+      }
       if (!byAircraft[b.immat].days[day].consignes) byAircraft[b.immat].days[day].consignes = {}
       Object.entries(b.shifts).forEach(([shift, tasks]) => {
         byAircraft[b.immat].days[day].consignes[shift] = tasks

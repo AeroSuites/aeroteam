@@ -58,6 +58,45 @@ describe('buildProfileData (jour × shift)', () => {
     expect(data.notes.some((n) => n.content === 'ancienne liste')).toBe(false)
     expect(data.notes.some((n) => n.title === '[C] LUNDI Matin')).toBe(true)
   })
+
+  it('ajoute l’en-tête avion (entrée / OSM Config Position / sortie) aux consignes', () => {
+    const existing = {
+      tasks: [],
+      teams: [],
+      assignments: {},
+      members: [],
+      dayMembers: [],
+      prepTasks: [],
+      notes: [],
+      pockets: [],
+    }
+    const info = {
+      immat: 'F-GSQB',
+      totalTasks: 1,
+      days: {
+        MERCREDI: {
+          soir: ['DIAS (BRUNO)'],
+          consignes: { soir: ['Tâche A'] },
+          infos: {
+            typeVisite: 'A 04',
+            dateEntree: '2026-09-06',
+            heureEntree: '20H',
+            osm: '63994878',
+            config: 'Y148',
+            position: 'H1-1B',
+            dateSortie: '2026-09-07',
+            heureSortie: '12H',
+          },
+        },
+      },
+    }
+    const data = buildProfileData(existing, info, { day: 'MERCREDI', shift: 'soir' })
+    const note = data.notes.find((n) => n.title === '[C] MERCREDI Soir')
+    expect(note.content).toContain("Date d'entrée : 06/09/2026 20H")
+    expect(note.content).toContain('OSM : 63994878 · Config : Y148 · Position : H1-1B')
+    expect(note.content).toContain("Date de sortie : 07/09/2026 12H")
+    expect(note.content).toContain('- Tâche A')
+  })
 })
 
 describe('aircraftProfileLabel', () => {
