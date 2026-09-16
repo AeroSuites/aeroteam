@@ -387,9 +387,9 @@ export default function Consignes() {
                 sous-dossier par immatriculation d'avion.
               </p>
             )}
-            {tree.map(({ folder: wf, children }) => {
+            {tree.map(({ folder: wf, weekNum, children }) => {
               const weekOpen = expanded.includes(wf.id)
-              const isCurrent = wf.weekNum === currentWeekNum && currentWeekNum > 0
+              const isCurrent = weekNum === currentWeekNum && currentWeekNum > 0
               return (
                 <div key={wf.id}>
                   <div
