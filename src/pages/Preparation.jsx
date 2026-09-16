@@ -31,6 +31,8 @@ import {
   Check,
   FileDown,
   FileImage,
+  CheckCircle2,
+  RotateCcw,
 } from 'lucide-react'
 
 export default function Preparation() {
@@ -147,43 +149,28 @@ export default function Preparation() {
     setFileName('')
   }
 
-  const toggleBlock = (block) => {
+  const toggleZone = (zone) => {
     setCollapsed((prev) =>
-      prev.includes(block) ? prev.filter((b) => b !== block) : [...prev, block]
+      prev.includes(zone) ? prev.filter((z) => z !== zone) : [...prev, zone]
     )
   }
 
-  const blocks = useMemo(() => {
-    return [...new Set(prepTasks.map((t) => t.taskType).filter(Boolean))].sort()
-  }, [prepTasks])
-
-  // Replie par défaut chaque nouveau bloc (tuiles fermées au chargement)
-  useEffect(() => {
-    setCollapsed((prev) => [...new Set([...prev, ...blocks])])
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocks.join('|')])
-
-  // Regrouper par bloc, puis par zone
-  const byBlock = useMemo(() => {
+  // Regrouper par zone — même mise en page que la page Tâches
+  const groupedByZone = useMemo(() => {
     const map = {}
     prepTasks.forEach((t) => {
-      const blk = t.taskType || 'AUTRE'
-      if (!map[blk]) map[blk] = { zones: {}, totalHours: 0, count: 0 }
       const zone = t.workArea || 'Sans zone'
-      if (!map[blk].zones[zone]) map[blk].zones[zone] = []
-      map[blk].zones[zone].push(t)
-      map[blk].count += 1
-      const h = parseFloat(t.scheduledHours)
-      if (!isNaN(h)) map[blk].totalHours += h
-    })
-    // Trier les zones par nom dans chaque bloc
-    Object.keys(map).forEach((blk) => {
-      map[blk].zones = Object.fromEntries(
-        Object.entries(map[blk].zones).sort((a, b) => a[0].localeCompare(b[0]))
-      )
+      if (!map[zone]) map[zone] = []
+      map[zone].push(t)
     })
     return map
   }, [prepTasks])
+
+  // Replie par défaut chaque nouvelle zone (tuiles fermées au chargement)
+  useEffect(() => {
+    setCollapsed((prev) => [...new Set([...prev, ...Object.keys(groupedByZone)])])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Object.keys(groupedByZone).join('|')])
 
   const allZones = useMemo(() => {
     return [...new Set(prepTasks.map((t) => t.workArea).filter(Boolean))].sort()
@@ -210,14 +197,9 @@ export default function Preparation() {
     addTasksToPocket(pocketId, taskIds)
   }
 
-  const assignBlockToPocket = (pocketId, block) => {
-    const ids = prepTasks.filter((t) => (t.taskType || 'AUTRE') === block).map((t) => t.id)
-    assignToPocket(pocketId, ids)
-  }
-
-  const assignZoneToPocket = (pocketId, block, zone) => {
+  const assignZoneToPocket = (pocketId, zone) => {
     const ids = prepTasks
-      .filter((t) => (t.taskType || 'AUTRE') === block && (t.workArea || 'Sans zone') === zone)
+      .filter((t) => (t.workArea || 'Sans zone') === zone)
       .map((t) => t.id)
     assignToPocket(pocketId, ids)
   }
@@ -432,7 +414,8 @@ export default function Preparation() {
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Préparation de charge</h1>
           <p className="text-slate-600 mt-1">
             Charge restante pour la vacation suivante — {prepTasks.length} lignes
-            {blocks.length > 0 && ` · ${blocks.length} blocs`}
+            {Object.keys(groupedByZone).length > 0 &&
+              ` · ${[...new Set(prepTasks.map((t) => t.taskType).filter(Boolean))].length} blocs`}
           </p>
         </div>
         {prepTasks.length > 0 && (
@@ -716,177 +699,228 @@ export default function Preparation() {
         </div>
       )}
 
-      {blocks.length === 0 && preview.length === 0 && (
+      {prepTasks.length === 0 && preview.length === 0 && (
         <div className="bg-white rounded-xl shadow p-10 text-center text-slate-500">
           <FolderClock className="h-10 w-10 mx-auto text-slate-300 mb-2" />
           Aucune charge de préparation. Chargez le fichier de charge restante ci-dessus.
         </div>
       )}
 
-      {blocks.length > 0 && (
+      {prepTasks.length > 0 && (
+        <div className="bg-white rounded-xl shadow p-3 flex flex-wrap items-center justify-between gap-2 border-l-4 border-l-sky-600">
+          <p className="text-sm font-semibold text-slate-800">Ajouter une ligne manuellement</p>
+          <ManualTaskForm onAdd={addPrepTasks} zoneOptions={allZones} />
+        </div>
+      )}
+
+      {/* Charge groupée par zone — même mise en page que la page Tâches */}
+      {Object.keys(groupedByZone).length > 0 && (
         <div className="grid gap-4">
-          {blocks
-            .map((blk) => ({ blk, ...byBlock[blk] }))
-            .sort((a, b) => b.totalHours - a.totalHours)
-            .map(({ blk, zones, totalHours, count }) => {
-              const color = getCategoryColor(blk)
-              const isCollapsed = collapsed.includes(blk)
-              const zoneNames = Object.keys(zones)
-              const blockTaskIds = prepTasks
-                .filter((t) => (t.taskType || 'AUTRE') === blk)
-                .map((t) => t.id)
-              const blockCounts = pocketCounts(blockTaskIds)
+          {Object.entries(groupedByZone)
+            .sort((a, b) => b[1].length - a[1].length)
+            .map(([zone, zoneTasks]) => {
+              const zoneColor = getZoneColor(zone, allZones)
+              const expanded = !collapsed.includes(zone)
+              const zoneTaskIds = zoneTasks.map((t) => t.id)
+              const zoneHours = zoneTasks.reduce((acc, t) => {
+                const h = parseFloat(t.scheduledHours)
+                return acc + (isNaN(h) ? 0 : h)
+              }, 0)
               return (
-                <div key={blk} className="bg-white rounded-xl shadow overflow-hidden">
+                <div key={zone} className="bg-white rounded-xl shadow overflow-hidden">
                   <div
-                    className="px-4 sm:px-5 py-3 flex items-center justify-between gap-2 cursor-pointer"
-                    style={{ backgroundColor: color }}
-                    onClick={() => toggleBlock(blk)}
+                    className="px-3 sm:px-5 py-2 sm:py-3 flex items-center justify-between flex-wrap gap-2"
+                    style={{ backgroundColor: zoneColor }}
                   >
-                    <div className="flex items-center gap-2">
-                      {isCollapsed ? (
-                        <ChevronRight className="h-5 w-5 text-white" />
+                    <div
+                      className="flex items-center gap-2 cursor-pointer"
+                      onClick={() => toggleZone(zone)}
+                    >
+                      {expanded ? (
+                        <ChevronDown className="h-5 sm:h-6 w-5 sm:w-6 text-white" />
                       ) : (
-                        <ChevronDown className="h-5 w-5 text-white" />
+                        <ChevronRight className="h-5 sm:h-6 w-5 sm:w-6 text-white" />
                       )}
-                      <h2 className="font-bold text-white text-lg">
-                        {getCategoryLabel(blk)}{' '}
-                        <span className="font-normal opacity-80">({count})</span>
-                      </h2>
+                      <div>
+                        <h2 className="font-bold text-white text-base sm:text-lg">
+                          {zone}{' '}
+                          <span className="font-normal opacity-80">({zoneTasks.length})</span>
+                        </h2>
+                        {zoneHours > 0 && (
+                          <p className="text-white font-bold text-sm mt-0.5">
+                            {formatHours(zoneHours)} h
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="bg-white/25 px-2.5 py-1 rounded-full text-xs font-semibold text-white">
-                        {formatHours(totalHours)} h
-                      </span>
-                      <span className="hidden sm:block text-white/90 text-sm">
-                        {zoneNames.length} zone{zoneNames.length > 1 ? 's' : ''}
-                      </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <PocketChips
                         dark
-                        counts={blockCounts}
+                        counts={pocketCounts(zoneTaskIds)}
                         pocketById={pocketById}
-                        onRemove={(pid) => removeScopeFromPocket(pid, blockTaskIds)}
+                        onRemove={(pid) => removeScopeFromPocket(pid, zoneTaskIds)}
                       />
                       <div onClick={(e) => e.stopPropagation()}>
                         <PocketSelect
                           variant="dark"
                           pockets={pockets}
-                          placeholder={`Affecter le bloc ${getCategoryLabel(blk)}...`}
-                          onSelect={(pid) => assignBlockToPocket(pid, blk)}
+                          placeholder="Affecter la zone..."
+                          onSelect={(pid) => assignZoneToPocket(pid, zone)}
                         />
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (window.confirm(`Supprimer tout le bloc ${getCategoryLabel(blk)} (${count} lignes) ?`)) {
-                            removePrepTasksByBlock(blk)
-                          }
-                        }}
-                        className="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded"
-                        title={`Supprimer le bloc ${getCategoryLabel(blk)}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {[...new Set(zoneTasks.map((t) => t.taskType).filter(Boolean))].map((blk) => {
+                        const n = zoneTasks.filter((t) => t.taskType === blk).length
+                        const total = prepTasks.filter((t) => t.taskType === blk).length
+                        return (
+                          <button
+                            key={blk}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (
+                                window.confirm(
+                                  `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} ligne(s) au total, toutes zones) ?`
+                                )
+                              ) {
+                                removePrepTasksByBlock(blk)
+                              }
+                            }}
+                            className="bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-xs font-semibold text-white flex items-center gap-1"
+                            title={`Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} lignes, toutes zones confondues)`}
+                          >
+                            {getCategoryLabel(blk)} · {n}
+                            <Trash2 className="h-3 w-3 opacity-80" />
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
-                  {!isCollapsed && (
-                    <div className="px-4 sm:px-5 py-2">
-                      <ManualTaskForm onAdd={addPrepTasks} defaultBlock={blk} zoneOptions={allZones} existingTasks={prepTasks} />
-                    </div>
-                  )}
-                  {!isCollapsed && (
-                    <div className="divide-y divide-slate-100">
-                      {zoneNames.map((zone) => (
-                        <div key={zone} className="py-2">
-                          <div
-                            className="px-4 sm:px-5 py-1.5 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wide"
-                            style={{ color: getZoneColor(zone, allZones) }}
-                          >
-                            <span
-                              className="inline-block w-2.5 h-2.5 rounded-full"
-                              style={{ backgroundColor: getZoneColor(zone, allZones) }}
-                            />
-                            {zone}
-                            <span className="text-slate-400 font-normal normal-case">
-                              ({zones[zone].length})
-                            </span>
-                            <PocketChips
-                              counts={pocketCounts(zones[zone].map((t) => t.id))}
-                              pocketById={pocketById}
-                              onRemove={(pid) =>
-                                removeScopeFromPocket(pid, zones[zone].map((t) => t.id))
-                              }
-                            />
-                            <span className="ml-auto">
-                              <PocketSelect
-                                pockets={pockets}
-                                placeholder="Affecter la zone..."
-                                onSelect={(pid) => assignZoneToPocket(pid, blk, zone)}
-                              />
-                            </span>
-                          </div>
-                          <ul className="px-4 sm:px-5 divide-y divide-slate-50">
-                            {zones[zone].map((task) => {
-                              const h = parseFloat(task.scheduledHours)
-                              const inPocket = pockets.filter((p) => pocketTaskIds(p).includes(task.id))
-                              return (
-                                <li key={task.id} className="flex items-center gap-2 py-1.5 group">
-                                  <span className="text-xs font-mono text-slate-400 w-12 shrink-0">
-                                    {task.seq || '-'}
-                                  </span>
-                                  <span
-                                    className="flex-1 text-sm text-slate-700 truncate"
-                                    title={task.description}
-                                  >
-                                    {task.description}
-                                  </span>
-                                  {inPocket.length > 0 && (
-                                    <span className="shrink-0 flex gap-1">
-                                      {inPocket.map((p) => (
-                                        <span
-                                          key={p.id}
-                                          className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-sky-50 text-sky-700 border border-sky-300 rounded text-[10px] font-semibold"
-                                          title={`Dans la pochette « ${p.name} » — cliquez pour retirer`}
-                                        >
-                                          {p.name}
-                                          <button
-                                            onClick={() => removeTasksFromPocket(p.id, [task.id])}
-                                            className="text-sky-400 hover:text-red-600"
-                                          >
-                                            <X className="h-3 w-3" />
-                                          </button>
-                                        </span>
-                                      ))}
-                                    </span>
+                  {expanded && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm min-w-[760px]">
+                        <thead>
+                          <tr className="text-left bg-slate-50">
+                            <th className="px-4 py-2 border-b">N°</th>
+                            <th className="px-4 py-2 border-b">Tâche</th>
+                            <th className="px-4 py-2 border-b">Bloc</th>
+                            <th className="px-4 py-2 border-b">Skills</th>
+                            <th className="px-4 py-2 border-b">TRFX</th>
+                            <th className="px-4 py-2 border-b">Statut</th>
+                            <th className="px-4 py-2 border-b">Appareil</th>
+                            <th className="px-4 py-2 border-b">Note</th>
+                            <th className="px-4 py-2 border-b">Pochette</th>
+                            <th className="px-4 py-2 border-b"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {zoneTasks.map((task) => {
+                            const h = parseFloat(task.scheduledHours)
+                            const inPocket = pockets.filter((p) => pocketTaskIds(p).includes(task.id))
+                            return (
+                              <tr key={task.id} className="border-b hover:bg-slate-50">
+                                <td className="px-4 py-2 font-bold text-slate-500">
+                                  {task.seq || '-'}
+                                </td>
+                                <td className="px-4 py-2 font-medium max-w-md" title={task.description}>
+                                  {task.description}
+                                  {!isNaN(h) && (
+                                    <div className="text-[11px] text-slate-400 font-normal">
+                                      {formatHours(h)} h
+                                    </div>
                                   )}
+                                </td>
+                                <td className="px-4 py-2">
+                                  <span
+                                    className="px-2 py-0.5 rounded-full text-xs font-semibold text-white"
+                                    style={{ backgroundColor: getCategoryColor(task.taskType) }}
+                                  >
+                                    {getCategoryLabel(task.taskType) || '-'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2 text-xs">{task.skills || '-'}</td>
+                                <td className="px-4 py-2 font-mono font-bold text-xs">
+                                  {task.taskBarcode || '-'}
+                                </td>
+                                <td className="px-4 py-2">
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                      task.mtxStatus === 'ACTV'
+                                        ? 'bg-green-100 text-green-700'
+                                        : task.mtxStatus === 'PAUSE'
+                                        ? 'bg-amber-100 text-amber-700'
+                                        : task.mtxStatus === 'COMPLETE'
+                                        ? 'bg-green-800 text-white'
+                                        : 'bg-slate-100 text-slate-700'
+                                    }`}
+                                  >
+                                    {task.mtxStatus || '—'}
+                                  </span>
+                                  {task.mtxStatus !== 'COMPLETE' ? (
+                                    <button
+                                      onClick={() => updatePrepTask(task.id, { mtxStatus: 'COMPLETE' })}
+                                      className="text-slate-300 hover:text-green-600 ml-1"
+                                      title="Marquer la tâche COMPLETE"
+                                    >
+                                      <CheckCircle2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => updatePrepTask(task.id, { mtxStatus: 'ACTV' })}
+                                      className="text-slate-300 hover:text-sky-600 ml-1"
+                                      title="Rétablir la tâche ACTV"
+                                    >
+                                      <RotateCcw className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2">{task.registration || '-'}</td>
+                                <td className="px-4 py-2">
                                   <NoteCell
                                     note={task.note}
                                     onSave={(v) => updatePrepTask(task.id, { note: v })}
                                   />
-                                  <span className="text-xs text-slate-500 shrink-0 w-14 text-right hidden sm:block">
-                                    {!isNaN(h) ? `${formatHours(h)} h` : ''}
-                                  </span>
-                                  <PocketSelect
-                                    pockets={pockets}
-                                    placeholder="+ pochette"
-                                    compact
-                                    onSelect={(pid) => assignToPocket(pid, [task.id])}
-                                  />
+                                </td>
+                                <td className="px-4 py-2">
+                                  <div className="flex flex-wrap items-center gap-1">
+                                    {inPocket.map((p) => (
+                                      <span
+                                        key={p.id}
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-sky-50 text-sky-700 border border-sky-300 rounded text-[10px] font-semibold"
+                                        title={`Dans la pochette « ${p.name} » — cliquez sur la croix pour retirer`}
+                                      >
+                                        {p.name}
+                                        <button
+                                          onClick={() => removeTasksFromPocket(p.id, [task.id])}
+                                          className="text-sky-400 hover:text-red-600"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      </span>
+                                    ))}
+                                    <PocketSelect
+                                      pockets={pockets}
+                                      placeholder="+ pochette"
+                                      compact
+                                      onSelect={(pid) => assignToPocket(pid, [task.id])}
+                                    />
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2">
                                   <button
                                     onClick={() => {
-                                      if (window.confirm('Supprimer cette ligne ?')) removePrepTask(task.id)
+                                      if (window.confirm('Supprimer cette ligne ?'))
+                                        removePrepTask(task.id)
                                     }}
-                                    className="text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                    className="text-slate-400 hover:text-red-600"
                                     title="Supprimer cette ligne"
                                   >
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <Trash2 className="h-4 w-4" />
                                   </button>
-                                </li>
-                              )
-                            })}
-                          </ul>
-                        </div>
-                      ))}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>
