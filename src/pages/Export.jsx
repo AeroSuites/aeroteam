@@ -71,14 +71,14 @@ export default function Export() {
         <p className="text-sm text-red-600 mb-4">
           Réinitialise toutes les données de travail (tâches, équipes, affectations,
           préparation, consignes et membres assignés à l'avion du jour) et retire l'avion
-          associé au profil. Seuls les membres permanents sont conservés. Cette action est
-          irréversible.
+          associé au profil. Les membres permanents et les notes du Bloc-notes sont conservés.
+          Cette action est irréversible.
         </p>
         <button
           onClick={async () => {
             if (
               window.confirm(
-                'Êtes-vous sûr de vouloir réinitialiser toutes les données de travail ? (membres permanents conservés, avion retiré)'
+                'Êtes-vous sûr de vouloir réinitialiser toutes les données de travail ? (membres permanents et notes du Bloc-notes conservés, avion retiré)'
               )
             ) {
               try {

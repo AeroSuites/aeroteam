@@ -615,7 +615,8 @@ export function AppProvider({ children }) {
     setPrepTasks([])
     setPockets([])
     setDayMembers([])
-    setNotes([])
+    // Seules les consignes [C] sont effacées : les notes du Bloc-notes sont conservées
+    setNotes((prev) => prev.filter((n) => !String(n.title || '').startsWith('[C] ')))
   }, [])
 
 const value = {

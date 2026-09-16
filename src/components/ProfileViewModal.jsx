@@ -355,7 +355,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
     }
     if (
       !window.confirm(
-        "Réinitialiser le travail de ce profil ?\n\nTâches, équipes, affectations, préparation, consignes et membres assignés à l'avion du jour seront effacés, et l'avion associé sera retiré.\nSeuls les membres permanents sont conservés. Action irréversible."
+        "Réinitialiser le travail de ce profil ?\n\nTâches, équipes, affectations, préparation, consignes et membres assignés à l'avion du jour seront effacés, et l'avion associé sera retiré.\nLes membres permanents et les notes du Bloc-notes sont conservés. Action irréversible."
       )
     ) {
       return
@@ -373,7 +373,9 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
         members: d.members || [],
         dayMembers: [],
         prepTasks: [],
-        notes: [],
+        notes: (d.notes || []).filter(
+          (n) => !String(n.title || '').startsWith('[C] ')
+        ),
         pockets: [],
       }
       const saved = await profileStore.saveProfileData(
