@@ -77,6 +77,17 @@ export default function Consignes() {
     }
   }, [])
 
+  // Ouvre automatiquement le dossier de la semaine en cours
+  useEffect(() => {
+    if (!folders || !currentWeekNum) return
+    const current = folders.find(
+      (f) => !f.parent_id && parseWeekNumber(f.name) === currentWeekNum
+    )
+    if (!current) return
+    // eslint-disable-next-line react/set-state-in-effect -- ouverture automatique de la semaine en cours
+    setExpanded((prev) => (prev.includes(current.id) ? prev : [...prev, current.id]))
+  }, [folders, currentWeekNum])
+
   const [folderModal, setFolderModal] = useState(null)
   const [folderName, setFolderName] = useState('')
   const [folderCouleur, setFolderCouleur] = useState(PALETTE[0])
@@ -164,13 +175,18 @@ export default function Consignes() {
         weekNum: parseWeekNumber(wf.name),
         children: (byParent[wf.id] || []).sort((a, b) => a.name.localeCompare(b.name)),
       }))
-      .sort((a, b) => b.weekNum - a.weekNum)
+      .sort((a, b) => {
+        const aCur = currentWeekNum > 0 && a.weekNum === currentWeekNum
+        const bCur = currentWeekNum > 0 && b.weekNum === currentWeekNum
+        if (aCur !== bCur) return aCur ? -1 : 1
+        return b.weekNum - a.weekNum
+      })
     const orphanMessages = selectedDossierId === '__none__' || messages?.length
     if (orphanMessages && !weeks.some((w) => w.folder.id === '__sans_dossier__')) {
       // dossier virtuel : messages orphelins éventuels visibles au besoin
     }
     return weeks
-  }, [folders, selectedDossierId, messages])
+  }, [folders, selectedDossierId, messages, currentWeekNum])
 
   const totalAvions = useMemo(
     () => (folders || []).filter((f) => f.parent_id).length,
@@ -374,7 +390,7 @@ export default function Consignes() {
                   <div
                     className={`flex items-center gap-2 px-3 py-2.5 text-sm border-b border-slate-100 transition-colors ${
                       isCurrent
-                        ? 'bg-amber-100 ring-2 ring-inset ring-amber-400'
+                        ? 'bg-amber-50 border-l-4 border-l-amber-500'
                         : weekOpen
                         ? 'bg-slate-100'
                         : 'hover:bg-slate-50'
@@ -395,13 +411,21 @@ export default function Consignes() {
                       ) : (
                         <Folder className="h-4 w-4 text-amber-500 shrink-0" />
                       )}
-                      <span className={`truncate ${weekOpen ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>
+                      <span
+                        className={`truncate ${
+                          isCurrent
+                            ? 'font-bold text-amber-900'
+                            : weekOpen
+                            ? 'font-semibold text-slate-900'
+                            : 'text-slate-700'
+                        }`}
+                      >
                         {wf.name}
                       </span>
                       {isCurrent && (
-                        <span className="ml-1 inline-flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+                        <span className="ml-1 inline-flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-bold">
                           <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                          EN COURS
+                          SEMAINE EN COURS
                         </span>
                       )}
                       <span className="ml-auto text-xs text-slate-400 shrink-0 pr-1">
