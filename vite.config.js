@@ -8,6 +8,7 @@ const buildLabel = new Date().toLocaleString('fr-FR', {
   month: '2-digit',
   hour: '2-digit',
   minute: '2-digit',
+  timeZone: 'Europe/Paris',
 })
 
 // https://vite.dev/config/
