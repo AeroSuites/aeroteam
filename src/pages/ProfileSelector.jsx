@@ -221,6 +221,11 @@ export default function ProfileSelector() {
           </>
         )}
       </div>
+      {typeof __APP_VERSION__ !== 'undefined' && (
+        <p className="text-center text-[11px] text-slate-400 font-mono mt-4">
+          version {__APP_VERSION__}
+        </p>
+      )}
     </div>
   )
 }
