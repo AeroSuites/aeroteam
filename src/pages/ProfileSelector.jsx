@@ -99,7 +99,7 @@ export default function ProfileSelector() {
               <input
                 value={loginIdent}
                 onChange={(e) => setLoginIdent(e.target.value)}
-                placeholder="Identifiant (ex : farid.ayad)"
+                  placeholder="Votre identifiant de connexion"
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
                 autoFocus
               />
@@ -149,14 +149,14 @@ export default function ProfileSelector() {
               <input
                 value={regIdent}
                 onChange={(e) => setRegIdent(e.target.value)}
-                placeholder="Identifiant (ex : farid.ayad — 3 caractères minimum)"
+                placeholder="Ce sera votre identifiant de connexion (3 caractères minimum)"
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
                 autoFocus
               />
               <input
                 value={regName}
                 onChange={(e) => setRegName(e.target.value)}
-                placeholder="Nom complet (ex : AYAD (FARID))"
+                placeholder="Nom complet"
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
               />
               <select

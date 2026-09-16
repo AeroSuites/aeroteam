@@ -78,9 +78,6 @@ export default function Taches() {
       <div className="bg-white rounded-xl shadow p-3 flex flex-wrap items-center justify-between gap-2 border-l-4 border-l-sky-600">
         <div>
           <p className="text-sm font-semibold text-slate-800">Ajouter une ligne manuellement</p>
-          <p className="text-xs text-slate-500">
-            Utile quand une ligne ne correspond à aucune tâche importée (pièce, stock, etc.).
-          </p>
         </div>
         <ManualTaskForm onAdd={addTasks} zoneOptions={zones} existingTasks={tasks} />
       </div>

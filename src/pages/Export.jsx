@@ -1,7 +1,7 @@
 import { useApp } from '../context/AppContext'
-import { exportToExcel, exportTeamsJSON } from '../utils/export'
+import { exportToExcel } from '../utils/export'
 import { assignedTaskCount } from '../utils/helpers'
-import { FileSpreadsheet, FileJson, Trash2, Download } from 'lucide-react'
+import { FileSpreadsheet, Trash2, Download } from 'lucide-react'
 
 export default function Export() {
   const { tasks, teams, assignments, resetData, activeProfile, updateOwnProfile } = useApp()
@@ -31,24 +31,7 @@ export default function Export() {
             disabled={tasks.length === 0}
             className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            <Download className="h-4 w-4" /> Télécharger le planning (.xlsx)
-          </button>
-        </div>
-
-        <div className="bg-white rounded-xl shadow p-4 sm:p-6">
-          <div className="inline-flex p-2 rounded-lg bg-sky-50 text-sky-600 mb-3">
-            <FileJson className="h-6 w-6" />
-          </div>
-          <h2 className="text-xl font-semibold mb-2">Exporter en JSON</h2>
-          <p className="text-sm text-slate-600 mb-4">
-            Sauvegarde structurée par équipe, avec les tâches associées.
-          </p>
-          <button
-            onClick={() => exportTeamsJSON({ teams, assignments, tasks })}
-            disabled={tasks.length === 0}
-            className="w-full bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Download className="h-4 w-4" /> Télécharger le planning (.json)
+            <Download className="h-4 w-4" /> Télécharger la charge (.xlsx)
           </button>
         </div>
       </div>
