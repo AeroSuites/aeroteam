@@ -226,6 +226,7 @@ export default function ImportConsignes() {
   const [chargeExpandedBlocks, setChargeExpandedBlocks] = useState([])
   const [chargeExpandedZones, setChargeExpandedZones] = useState([])
   const [chargeAircraft, setChargeAircraft] = useState('')
+  const [hideNoConsignes, setHideNoConsignes] = useState(true)
   const [chargeTargetTasks, setChargeTargetTasks] = useState(null)
   const [chargeRemoveSel, setChargeRemoveSel] = useState({})
   const chargeFileInputRef = useRef(null)
@@ -348,6 +349,21 @@ export default function ImportConsignes() {
     const block = sheet?.blocks.find((b) => b.immat === immat)
     return block?.shifts[selectedShift] || []
   }
+
+  // Avions réellement concernés par des consignes ce jour (tous shifts confondus,
+  // modifications manuelles comprises) — sert au masquage des avions vides.
+  const visibleBlocks = useMemo(() => {
+    const blocks = sheet?.blocks || []
+    if (!hideNoConsignes) return blocks
+    return blocks.filter((b) =>
+      ['matin', 'soir', 'nuit'].some((s) => {
+        const ov = overrides[`${selectedDay}::${b.immat}::${s}`]
+        return (Array.isArray(ov) ? ov : b.shifts[s] || []).length > 0
+      })
+    )
+  }, [sheet, overrides, selectedDay, hideNoConsignes])
+
+  const hiddenBlocksCount = (sheet?.blocks.length || 0) - visibleBlocks.length
 
   const unassignAircraft = async (p) => {
     if (
@@ -1165,11 +1181,27 @@ export default function ImportConsignes() {
               </div>
 
               <div className="bg-white rounded-xl shadow p-4 sm:p-6">
-                <h2 className="font-semibold mb-3 flex items-center gap-2">
-                  <Plane className="h-5 w-5 text-sky-500" />
-                  Charge {selectedDay} — {selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)} (
-                  {sheet.blocks.length} avions)
-                </h2>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <h2 className="font-semibold flex items-center gap-2">
+                    <Plane className="h-5 w-5 text-sky-500" />
+                    Charge {selectedDay} — {selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)} (
+                    {visibleBlocks.length} avions)
+                  </h2>
+                  <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={hideNoConsignes}
+                      onChange={(e) => setHideNoConsignes(e.target.checked)}
+                      className="h-4 w-4 accent-sky-600"
+                    />
+                    Masquer les avions sans consignes
+                    {hiddenBlocksCount > 0 && (
+                      <span className="text-slate-400">
+                        ({hiddenBlocksCount} masqué{hiddenBlocksCount > 1 ? 's' : ''})
+                      </span>
+                    )}
+                  </label>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm min-w-[520px]">
                     <thead>
@@ -1186,7 +1218,7 @@ export default function ImportConsignes() {
                       </tr>
                     </thead>
                     <tbody>
-                      {sheet.blocks.map((b, i) => {
+                      {visibleBlocks.map((b, i) => {
                         const tasks = effectiveTasks(b.immat)
                         const overridden = Array.isArray(overrides[overrideKey(b.immat)])
                         const others = ['matin', 'soir', 'nuit']
@@ -1311,6 +1343,14 @@ export default function ImportConsignes() {
                         <tr>
                           <td colSpan={5} className="px-3 py-6 text-center text-slate-400 text-sm">
                             Aucun bloc de charge détecté ce jour.
+                          </td>
+                        </tr>
+                      )}
+                      {sheet.blocks.length > 0 && visibleBlocks.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-3 py-6 text-center text-slate-400 text-sm">
+                            Aucun avion avec consignes ce jour — décochez « Masquer les avions
+                            sans consignes » pour tout afficher.
                           </td>
                         </tr>
                       )}
