@@ -188,6 +188,11 @@ export default function Consignes() {
     return weeks
   }, [folders, selectedDossierId, messages, currentWeekNum])
 
+  const currentFolder = useMemo(
+    () => tree.find((w) => currentWeekNum > 0 && w.weekNum === currentWeekNum)?.folder || null,
+    [tree, currentWeekNum]
+  )
+
   const totalAvions = useMemo(
     () => (folders || []).filter((f) => f.parent_id).length,
     [folders]
@@ -515,11 +520,15 @@ export default function Consignes() {
                 </div>
               )
             })}
-            {totalAvions > 0 && (
-              <p className="text-[11px] text-slate-400 px-4 py-2">
-                {totalAvions} avion{totalAvions > 1 ? 's' : ''} au total
-              </p>
-            )}
+            <p className="text-[11px] text-slate-400 px-4 py-2">
+              {totalAvions} avion{totalAvions > 1 ? 's' : ''} au total
+              {' · '}semaine en cours :{' '}
+              {currentWeekNum > 0 ? `S${currentWeekNum}` : 'non détectée'}
+              {currentWeekNum > 0 &&
+                (currentFolder
+                  ? ` — dossier « ${currentFolder.name} »`
+                  : ' — aucun dossier ne correspond')}
+            </p>
           </div>
         </div>
 
