@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import LeaderPrimesForm from '../components/LeaderPrimesForm'
-import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
-import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, Pencil, Check, X } from 'lucide-react'
+import LeaderPrimesForm from '../components/LeaderPrimesForm'
+import NoteCell from '../components/NoteCell'
+import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo } from '../utils/helpers'
+import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X } from 'lucide-react'
 
 export default function Affectation() {
   const { tasks, teams, assignments, assignTask, unassignTask, updateTeam, addTasks, removeTasksByBlock, updateTask } = useApp()
@@ -12,14 +13,7 @@ export default function Affectation() {
   const [expandedBlocks, setExpandedBlocks] = useState([])
   const [expandedZones, setExpandedZones] = useState([])
   const [lastAutoAssignments, setLastAutoAssignments] = useState(null)
-  const [noteEditId, setNoteEditId] = useState(null)
-  const [noteText, setNoteText] = useState('')
   const [tab, setTab] = useState('affectation')
-
-  const saveTaskNote = (id) => {
-    updateTask(id, { note: noteText.trim() || undefined })
-    setNoteEditId(null)
-  }
 
   // Équipes pouvant recevoir des tâches à la répartition automatique
   const autoTeams = useMemo(() => teams.filter((t) => !t.locked), [teams])
@@ -663,55 +657,12 @@ export default function Affectation() {
                                     </p>
                                   </div>
 
-                                  {task.note && noteEditId !== task.id && (
-                                    <span
-                                      className="inline-flex items-center max-w-[180px] truncate shrink-0 bg-amber-50 text-amber-800 border border-amber-200 rounded px-1.5 py-0.5 text-[10px] font-semibold"
-                                      title={task.note}
-                                    >
-                                      {task.note}
-                                    </span>
-                                  )}
+                                   <NoteCell
+                                     note={task.note}
+                                     onSave={(v) => updateTask(task.id, { note: v })}
+                                   />
 
-                                  {noteEditId === task.id ? (
-                                    <div className="flex items-center gap-1 shrink-0">
-                                      <input
-                                        autoFocus
-                                        value={noteText}
-                                        onChange={(e) => setNoteText(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && saveTaskNote(task.id)}
-                                        placeholder="Note…"
-                                        className="border border-amber-300 rounded-md px-2 py-1 text-xs w-44"
-                                      />
-                                      <button
-                                        onClick={() => saveTaskNote(task.id)}
-                                        className="text-amber-700 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded p-1"
-                                        title="Enregistrer la note"
-                                      >
-                                        <Check className="h-3.5 w-3.5" />
-                                      </button>
-                                      <button
-                                        onClick={() => setNoteEditId(null)}
-                                        className="text-slate-400 hover:text-slate-700 p-1"
-                                        title="Annuler"
-                                      >
-                                        <X className="h-3.5 w-3.5" />
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      onClick={() => {
-                                        setNoteEditId(task.id)
-                                        setNoteText(task.note || '')
-                                      }}
-                                      className="inline-flex items-center gap-1 shrink-0 text-amber-700 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded px-1.5 py-0.5 text-[10px] font-semibold"
-                                      title={task.note || 'Ajouter / modifier la note'}
-                                    >
-                                      <Pencil className="h-3 w-3" />
-                                      {task.note ? 'Note' : 'Ajouter une note'}
-                                    </button>
-                                  )}
-
-                                  {assigned ? (
+                                   {assigned ? (
                                     <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                                       {assignedTeams.map((teamChip) => (
                                         <span

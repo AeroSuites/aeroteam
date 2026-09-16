@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
-import { Search, Trash2, ChevronDown, ChevronRight, Pencil, Check, X, CheckCircle2, RotateCcw } from 'lucide-react'
+import NoteCell from '../components/NoteCell'
+import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw } from 'lucide-react'
 
 export default function Taches() {
   const { tasks, teams, assignments, removeTask, removeTasksByBlock, addTasks, updateTask } = useApp()
@@ -10,8 +11,6 @@ export default function Taches() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedBlocks, setSelectedBlocks] = useState([])
   const [expandedZones, setExpandedZones] = useState([])
-  const [noteEditId, setNoteEditId] = useState(null)
-  const [noteText, setNoteText] = useState('')
 
   const toggleZone = (zone) => {
     setExpandedZones((prev) =>
@@ -292,57 +291,10 @@ export default function Taches() {
                           </td>
                           <td className="px-4 py-2">{task.registration || '-'}</td>
                           <td className="px-4 py-2">
-                            {noteEditId === task.id ? (
-                              <div className="flex items-center gap-1">
-                                <input
-                                  autoFocus
-                                  value={noteText}
-                                  onChange={(e) => setNoteText(e.target.value)}
-                                  placeholder="Note…"
-                                  className="border border-slate-300 rounded px-1.5 py-0.5 text-xs w-28"
-                                />
-                                <button
-                                  onClick={() => {
-                                    updateTask(task.id, { note: noteText.trim() || undefined })
-                                    setNoteEditId(null)
-                                  }}
-                                  className="text-sky-600 hover:text-sky-800"
-                                  title="Enregistrer la note"
-                                >
-                                  <Check className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => setNoteEditId(null)}
-                                  className="text-slate-400 hover:text-slate-600"
-                                  title="Annuler"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1">
-                                {task.note ? (
-                                  <span
-                                    className="inline-flex items-center gap-1 max-w-[120px] truncate bg-amber-50 text-amber-800 border border-amber-200 rounded px-1.5 py-0.5 text-[11px] font-semibold"
-                                    title={task.note}
-                                  >
-                                    {task.note}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300">—</span>
-                                )}
-                                <button
-                                  onClick={() => {
-                                    setNoteEditId(task.id)
-                                    setNoteText(task.note || '')
-                                  }}
-                                  className="text-slate-400 hover:text-amber-600"
-                                  title="Ajouter / modifier la note"
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            )}
+                            <NoteCell
+                              note={task.note}
+                              onSave={(v) => updateTask(task.id, { note: v })}
+                            />
                           </td>
                           <td className="px-4 py-2">
                             {taskTeams.length > 0 ? (

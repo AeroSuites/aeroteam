@@ -15,6 +15,7 @@ import {
   makeId,
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
+import NoteCell from '../components/NoteCell'
 import {
   Upload,
   FileSpreadsheet,
@@ -59,8 +60,6 @@ export default function Preparation() {
   const [renameText, setRenameText] = useState('')
   const [printPocketId, setPrintPocketId] = useState(null)
   const [selectedTasks, setSelectedTasks] = useState([])
-  const [noteEditId, setNoteEditId] = useState(null)
-  const [noteText, setNoteText] = useState('')
   const [transferPocketId, setTransferPocketId] = useState(null)
   const [transferTargetCode, setTransferTargetCode] = useState('')
   const [transferProfiles, setTransferProfiles] = useState([])
@@ -860,56 +859,10 @@ export default function Preparation() {
                                       ))}
                                     </span>
                                   )}
-                                  {noteEditId === task.id ? (
-                                    <span className="shrink-0 flex items-center gap-1">
-                                      <input
-                                        autoFocus
-                                        value={noteText}
-                                        onChange={(e) => setNoteText(e.target.value)}
-                                        placeholder="Note…"
-                                        className="border border-slate-300 rounded px-1.5 py-0.5 text-xs w-28"
-                                      />
-                                      <button
-                                        onClick={() => {
-                                          updatePrepTask(task.id, { note: noteText.trim() || undefined })
-                                          setNoteEditId(null)
-                                        }}
-                                        className="text-sky-600 hover:text-sky-800"
-                                        title="Enregistrer la note"
-                                      >
-                                        <Check className="h-3.5 w-3.5" />
-                                      </button>
-                                      <button
-                                        onClick={() => setNoteEditId(null)}
-                                        className="text-slate-400 hover:text-slate-600"
-                                        title="Annuler"
-                                      >
-                                        <X className="h-3.5 w-3.5" />
-                                      </button>
-                                    </span>
-                                  ) : (
-                                    <span className="shrink-0 flex items-center gap-1">
-                                      {task.note ? (
-                                        <span
-                                          className="inline-flex items-center max-w-[110px] truncate bg-amber-50 text-amber-800 border border-amber-200 rounded px-1.5 py-0.5 text-[10px] font-semibold"
-                                          title={task.note}
-                                        >
-                                          {task.note}
-                                        </span>
-                                      ) : null}
-                                      <button
-                                        onClick={() => {
-                                          setNoteEditId(task.id)
-                                          setNoteText(task.note || '')
-                                        }}
-                                        className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded px-1.5 py-0.5 text-[10px] font-semibold"
-                                        title="Ajouter / modifier la note"
-                                      >
-                                        <Pencil className="h-3.5 w-3.5" />
-                                        {task.note ? 'Note' : 'Ajouter une note'}
-                                      </button>
-                                    </span>
-                                  )}
+                                  <NoteCell
+                                    note={task.note}
+                                    onSave={(v) => updatePrepTask(task.id, { note: v })}
+                                  />
                                   <span className="text-xs text-slate-500 shrink-0 w-14 text-right hidden sm:block">
                                     {!isNaN(h) ? `${formatHours(h)} h` : ''}
                                   </span>
