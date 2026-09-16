@@ -417,7 +417,7 @@ export default function Consignes() {
                         <Folder className="h-4 w-4 text-amber-500 shrink-0" />
                       )}
                       <span
-                        className={`truncate ${
+                        className={`min-w-0 truncate ${
                           isCurrent
                             ? 'font-bold text-amber-900'
                             : weekOpen
@@ -428,9 +428,11 @@ export default function Consignes() {
                         {wf.name}
                       </span>
                       {isCurrent && (
-                        <span className="ml-1 inline-flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-bold">
-                          <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                          SEMAINE EN COURS
+                        <span
+                          className="ml-1 shrink-0 px-1.5 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-semibold leading-none"
+                          title="Semaine en cours"
+                        >
+                          en cours
                         </span>
                       )}
                       <span className="ml-auto text-xs text-slate-400 shrink-0 pr-1">
