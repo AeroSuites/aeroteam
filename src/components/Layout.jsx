@@ -104,7 +104,14 @@ export default function Layout({ children }) {
         <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 shrink-0">
             <Plane className="h-7 w-7 text-sky-400" />
-            <span className="text-xl font-bold">AeroTeam</span>
+            <div className="leading-tight">
+              <span className="text-xl font-bold">AeroTeam</span>
+              {typeof __APP_VERSION__ !== 'undefined' && (
+                <p className="text-[10px] text-slate-500 font-mono">
+                  version {__APP_VERSION__}
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {consignesCount > 0 && (

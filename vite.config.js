@@ -3,9 +3,19 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const buildLabel = new Date().toLocaleString('fr-FR', {
+  day: '2-digit',
+  month: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
 // https://vite.dev/config/
 export default defineConfig({
   base: '/aeroteam/',
+  define: {
+    __APP_VERSION__: JSON.stringify(buildLabel),
+  },
   plugins: [
     react(),
     tailwindcss(),
