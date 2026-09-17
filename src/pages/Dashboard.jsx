@@ -47,7 +47,7 @@ export default function Dashboard() {
   const [editingConsigneId, setEditingConsigneId] = useState(null)
   const [consigneText, setConsigneText] = useState('')
 
-  const consignes = useMemo(() => {
+  const { todayConsignes, weekConsignes } = useMemo(() => {
     const DAY_ORDER = {
       DIMANCHE: 0,
       LUNDI: 1,
@@ -58,7 +58,8 @@ export default function Dashboard() {
       SAMEDI: 6,
     }
     const todayIdx = new Date().getDay() // 0 = dimanche
-    return notes
+    const todayName = Object.keys(DAY_ORDER)[todayIdx]
+    const all = notes
       .filter((n) => String(n.title || '').startsWith('[C] '))
       .map((n) => {
         const day = String(n.title).split(' ')[1]?.toUpperCase()
@@ -71,7 +72,13 @@ export default function Dashboard() {
           String(a.n.title).localeCompare(String(b.n.title))
       )
       .map((x) => x.n)
+    const today = all.filter(
+      (n) => String(n.title).split(' ')[1]?.toUpperCase() === todayName
+    )
+    return { todayConsignes: today, weekConsignes: all }
   }, [notes])
+  const [showAllConsignes, setShowAllConsignes] = useState(false)
+  const consignes = showAllConsignes ? weekConsignes : todayConsignes
 
   const ALL_BLOCKS_KEY = 'dashboard-expanded-blocks'
   const [expandedBlocks, setExpandedBlocks] = useState(() => [])
@@ -299,11 +306,27 @@ export default function Dashboard() {
         <StatCard icon={<Clock className="h-6 w-6" />} label="Heures totales" value={`${hoursTotal.toFixed(1)}h`} color="bg-violet-50 text-violet-600" />
       </div>
 
-      {consignes.length > 0 && (
+      {weekConsignes.length > 0 && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <ClipboardList className="h-5 w-5 text-amber-500" /> Consignes du jour
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-amber-500" /> Consignes{' '}
+              {showAllConsignes ? 'de la semaine' : 'du jour'}
+              <span className="text-sm font-normal text-slate-400">({consignes.length})</span>
+            </h2>
+            <button
+              onClick={() => setShowAllConsignes((v) => !v)}
+              className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1"
+            >
+              {showAllConsignes ? "Voir aujourd'hui uniquement" : 'Voir toute la semaine'}
+            </button>
+          </div>
+          {consignes.length === 0 ? (
+            <p className="text-sm text-slate-400 italic">
+              Aucune consigne pour aujourd'hui — utilisez « Voir toute la semaine » pour afficher
+              les autres jours.
+            </p>
+          ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {consignes.map((n) => (
               <div key={n.id} className="border border-amber-200 bg-amber-50/40 rounded-lg p-3">
@@ -376,6 +399,7 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
