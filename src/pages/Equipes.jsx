@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
+import ConsignesAvions from '../components/ConsignesAvions'
 import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen } from 'lucide-react'
 
 export default function Equipes() {
@@ -115,6 +116,9 @@ export default function Equipes() {
           {showAdd ? 'Annuler' : 'Nouvelle équipe'}
         </button>
       </div>
+
+      {/* Consignes des avions (jour × shift) — visibles aussi depuis les équipes */}
+      <ConsignesAvions />
 
       {/* Gestion des membres : deux onglets */}
       <div className="bg-white rounded-xl shadow p-4 sm:p-6">
