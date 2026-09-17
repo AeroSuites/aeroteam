@@ -689,6 +689,11 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                                               <span className="truncate" title={t.description}>
                                                 {t.description}
                                               </span>
+                                              {t.registration && (
+                                                <span className="shrink-0 ml-auto font-mono text-[10px] font-bold text-sky-700">
+                                                  ✈ {t.registration}
+                                                </span>
+                                              )}
                                             </li>
                                           ))}
                                         </ul>
