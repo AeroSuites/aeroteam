@@ -118,7 +118,7 @@ export default function Equipes() {
       </div>
 
       {/* Consignes des avions (jour × shift) — visibles aussi depuis les équipes */}
-      <ConsignesAvions />
+      <ConsignesAvions scope="equipes" />
 
       {/* Gestion des membres : deux onglets */}
       <div className="bg-white rounded-xl shadow p-4 sm:p-6">

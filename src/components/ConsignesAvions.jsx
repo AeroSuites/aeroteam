@@ -4,7 +4,6 @@ import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
 
 const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
-const CHECKS_KEY = 'affectation-consignes-checks-v1'
 
 const currentShiftNow = () => {
   const h = new Date().getHours()
@@ -14,9 +13,13 @@ const currentShiftNow = () => {
 }
 
 // Panneau partagé : consignes des avions (jour × shift) avec cases à cocher.
-// Utilisé dans Affectation et Équipes.
-export default function ConsignesAvions() {
+// Utilisé dans Consignes, Affectation et Équipes — les coches sont INDÉPENDANTES
+// selon l'onglet d'origine (scope).
+export default function ConsignesAvions({ scope = 'affectation' }) {
   const { activeProfile } = useApp()
+  const CHECKS_KEY = `consignes-checks-${scope}-v1`
+  // Affectation conserve l'ancien format de clés (compatibilité des coches existantes)
+  const keyPrefix = scope === 'affectation' ? '' : `${scope}|`
   const [conDay, setConDay] = useState(() => DAY_NAMES[new Date().getDay()])
   const [conShift, setConShift] = useState(currentShiftNow)
   const [conList, setConList] = useState(null)
@@ -174,7 +177,7 @@ export default function ConsignesAvions() {
                         </p>
                       )
                     }
-                    const checkKey = `${c.profile_id || c.profile_name}|${c.title}|${line.trim()}`
+                    const checkKey = `${keyPrefix}${c.profile_id || c.profile_name}|${c.title}|${line.trim()}`
                     const checked = !!conChecks[checkKey]
                     return (
                       <label

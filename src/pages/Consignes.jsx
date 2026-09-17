@@ -360,7 +360,7 @@ export default function Consignes() {
       {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
 
       {/* Consignes des avions (jour × shift) — consultables aussi depuis la page Consignes */}
-      <ConsignesAvions />
+      <ConsignesAvions scope="consignes" />
 
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         {/* Arborescence des dossiers */}
