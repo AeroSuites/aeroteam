@@ -32,6 +32,38 @@ export default function Affectation() {
   const [conError, setConError] = useState('')
   const [conLoading, setConLoading] = useState(false)
 
+  // Coches des lignes de consignes (par appareil, conservées sur cet appareil)
+  const [conChecks, setConChecks] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('affectation-consignes-checks-v1')) || {}
+    } catch {
+      return {}
+    }
+  })
+
+  const toggleConsigneCheck = (key) => {
+    setConChecks((prev) => {
+      const next = { ...prev }
+      if (next[key]) delete next[key]
+      else next[key] = true
+      try {
+        localStorage.setItem('affectation-consignes-checks-v1', JSON.stringify(next))
+      } catch {
+        // stockage indisponible : les coches restent valables pour la session
+      }
+      return next
+    })
+  }
+
+  const clearChecks = () => {
+    try {
+      localStorage.removeItem('affectation-consignes-checks-v1')
+    } catch {
+      // ignoré
+    }
+    setConChecks({})
+  }
+
   const loadConsignes = async (day = conDay, shift = conShift) => {
     setConLoading(true)
     setConError('')
@@ -381,6 +413,15 @@ export default function Affectation() {
             >
               {conLoading ? 'Chargement…' : 'Actualiser'}
             </button>
+            {Object.keys(conChecks).length > 0 && (
+              <button
+                onClick={clearChecks}
+                className="text-xs text-slate-500 hover:text-red-600 border border-slate-200 rounded-full px-3 py-1"
+                title="Décocher toutes les consignes cochées"
+              >
+                Décocher tout
+              </button>
+            )}
           </div>
         </div>
         {conError && <p className="text-xs text-red-600 mt-2">{conError}</p>}
@@ -402,9 +443,46 @@ export default function Affectation() {
                   {c.profile_name}
                   {c.aircraft ? ` · ${c.aircraft}` : ''}
                 </p>
-                <p className="whitespace-pre-wrap text-xs text-slate-700 mt-1 leading-relaxed">
-                  {c.content || '-'}
-                </p>
+                <div className="mt-1 space-y-0.5">
+                  {String(c.content || '-')
+                    .split('\n')
+                    .map((line, li) => {
+                      const isTask = line.trim().startsWith('- ')
+                      if (!isTask) {
+                        return (
+                          <p
+                            key={li}
+                            className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap"
+                          >
+                            {line || '\u00A0'}
+                          </p>
+                        )
+                      }
+                      const checkKey = `${c.profile_name}|${c.title}|${line.trim()}`
+                      const checked = !!conChecks[checkKey]
+                      return (
+                        <label
+                          key={li}
+                          className="flex items-start gap-2 cursor-pointer rounded px-1 -mx-1 hover:bg-amber-100/60"
+                          title={checked ? 'Décocher' : 'Cocher cette consigne'}
+                        >
+                          <span
+                            className={`text-xs leading-relaxed flex-1 ${
+                              checked ? 'line-through text-slate-400' : 'text-slate-700'
+                            }`}
+                          >
+                            {line}
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleConsigneCheck(checkKey)}
+                            className="mt-0.5 h-3.5 w-3.5 accent-emerald-600 shrink-0"
+                          />
+                        </label>
+                      )
+                    })}
+                </div>
               </div>
             ))}
           </div>
