@@ -443,6 +443,29 @@ export async function getAircraftConsignes(day, shift) {
   return data?.consignes || []
 }
 
+// Coches des lignes de consignes (partagées entre appareils)
+export async function getConsigneChecks() {
+  const { data, error } = await supabase.rpc('get_consigne_checks')
+  if (error) throw error
+  return data?.checks || {}
+}
+
+export async function setConsigneCheck(key, checked, by) {
+  const { data, error } = await supabase.rpc('set_consigne_check', {
+    p_key: key,
+    p_checked: checked,
+    p_by: by || '',
+  })
+  if (error) throw error
+  return data
+}
+
+export async function clearConsigneChecks() {
+  const { data, error } = await supabase.rpc('clear_consigne_checks')
+  if (error) throw error
+  return data
+}
+
 export async function addFolder(parentId, name, couleur, createdBy) {
   const { data, error } = await supabase.rpc('add_folder', {
     p_parent_id: parentId,

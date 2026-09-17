@@ -32,36 +32,50 @@ export default function Affectation() {
   const [conError, setConError] = useState('')
   const [conLoading, setConLoading] = useState(false)
 
-  // Coches des lignes de consignes (par appareil, conservées sur cet appareil)
+  // Coches des lignes de consignes (partagées via Supabase, cache local de secours)
+  const CHECKS_KEY = 'affectation-consignes-checks-v1'
   const [conChecks, setConChecks] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('affectation-consignes-checks-v1')) || {}
+      return JSON.parse(localStorage.getItem(CHECKS_KEY)) || {}
     } catch {
       return {}
     }
   })
 
+  const saveLocalChecks = (next) => {
+    try {
+      localStorage.setItem(CHECKS_KEY, JSON.stringify(next))
+    } catch {
+      // stockage indisponible : les coches restent valables pour la session
+    }
+  }
+
+  const loadChecks = async () => {
+    try {
+      const checks = await profileStore.getConsigneChecks()
+      setConChecks(checks || {})
+      saveLocalChecks(checks || {})
+    } catch {
+      // migration pas encore exécutée : on garde le cache local
+    }
+  }
+
   const toggleConsigneCheck = (key) => {
+    const nowChecked = !conChecks[key]
     setConChecks((prev) => {
       const next = { ...prev }
-      if (next[key]) delete next[key]
-      else next[key] = true
-      try {
-        localStorage.setItem('affectation-consignes-checks-v1', JSON.stringify(next))
-      } catch {
-        // stockage indisponible : les coches restent valables pour la session
-      }
+      if (nowChecked) next[key] = true
+      else delete next[key]
+      saveLocalChecks(next)
       return next
     })
+    profileStore.setConsigneCheck(key, nowChecked, activeProfile?.name || '').catch(() => {})
   }
 
   const clearChecks = () => {
-    try {
-      localStorage.removeItem('affectation-consignes-checks-v1')
-    } catch {
-      // ignoré
-    }
     setConChecks({})
+    saveLocalChecks({})
+    profileStore.clearConsigneChecks().catch(() => {})
   }
 
   const loadConsignes = async (day = conDay, shift = conShift) => {
@@ -79,6 +93,7 @@ export default function Affectation() {
 
   useEffect(() => {
     loadConsignes()
+    loadChecks()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -458,7 +473,7 @@ export default function Affectation() {
                           </p>
                         )
                       }
-                      const checkKey = `${c.profile_name}|${c.title}|${line.trim()}`
+                      const checkKey = `${c.profile_id || c.profile_name}|${c.title}|${line.trim()}`
                       const checked = !!conChecks[checkKey]
                       return (
                         <label
