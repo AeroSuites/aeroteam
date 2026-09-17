@@ -16,6 +16,7 @@ import {
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
+import TaskTreeSelect, { groupTasksTree } from '../components/TaskTreeSelect'
 import {
   Upload,
   FileSpreadsheet,
@@ -62,6 +63,9 @@ export default function Preparation() {
   const [renameText, setRenameText] = useState('')
   const [printPocketId, setPrintPocketId] = useState(null)
   const [selectedTasks, setSelectedTasks] = useState([])
+  const [previewSelected, setPreviewSelected] = useState({})
+  const [previewExpandedBlocks, setPreviewExpandedBlocks] = useState([])
+  const [previewExpandedZones, setPreviewExpandedZones] = useState([])
   const [transferPocketId, setTransferPocketId] = useState(null)
   const [transferTargetCode, setTransferTargetCode] = useState('')
   const [transferProfiles, setTransferProfiles] = useState([])
@@ -134,7 +138,11 @@ export default function Preparation() {
           setError('Colonne "Task_Name" introuvable. Vérifiez le format du fichier.')
           return
         }
-        setPreview(parseExcelRows(rows.slice(1), detected))
+        const parsed = parseExcelRows(rows.slice(1), detected)
+        setPreview(parsed)
+        setPreviewSelected(Object.fromEntries(parsed.map((t) => [t.id, true])))
+        setPreviewExpandedBlocks([])
+        setPreviewExpandedZones([])
       } catch (err) {
         setError(`Erreur lors de la lecture du fichier: ${err.message}`)
       }
@@ -143,10 +151,26 @@ export default function Preparation() {
   }, [])
 
   const handleImport = () => {
-    if (!preview.length) return
-    addPrepTasks(preview)
+    const list = preview.filter((t) => previewSelected[t.id])
+    if (!list.length) return
+    addPrepTasks(list)
     setPreview([])
+    setPreviewSelected({})
     setFileName('')
+  }
+
+  const togglePreviewTask = (id) =>
+    setPreviewSelected((prev) => ({ ...prev, [id]: !prev[id] }))
+
+  const togglePreviewTasks = (list) => {
+    setPreviewSelected((prev) => {
+      const allOn = list.every((t) => prev[t.id])
+      const next = { ...prev }
+      list.forEach((t) => {
+        next[t.id] = !allOn
+      })
+      return next
+    })
   }
 
   const toggleZone = (zone) => {
@@ -171,6 +195,9 @@ export default function Preparation() {
     setCollapsed((prev) => [...new Set([...prev, ...Object.keys(groupedByZone)])])
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [Object.keys(groupedByZone).join('|')])
+
+  const previewTree = useMemo(() => groupTasksTree(preview), [preview])
+  const previewSelectedCount = preview.filter((t) => previewSelected[t.id]).length
 
   const allZones = useMemo(() => {
     return [...new Set(prepTasks.map((t) => t.workArea).filter(Boolean))].sort()
@@ -467,13 +494,33 @@ export default function Preparation() {
       {preview.length > 0 && (
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <div className="px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b">
-            <h2 className="text-lg font-semibold">
-              Aperçu — {preview.length} lignes chargées
-            </h2>
-            <div className="flex gap-2">
+            <div>
+              <h2 className="text-lg font-semibold">
+                Aperçu — {previewSelectedCount} / {preview.length} ligne(s) sélectionnée(s)
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Décochez un bloc, une sous-tâche ou une ligne pour ne pas l'importer.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() =>
+                  setPreviewSelected(Object.fromEntries(preview.map((t) => [t.id, true])))
+                }
+                className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-2.5 py-1"
+              >
+                Tout cocher
+              </button>
+              <button
+                onClick={() => setPreviewSelected({})}
+                className="text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 rounded-full px-2.5 py-1"
+              >
+                Tout décocher
+              </button>
               <button
                 onClick={() => {
                   setPreview([])
+                  setPreviewSelected({})
                   setFileName('')
                 }}
                 className="px-4 py-2 rounded-md border border-slate-300 text-sm hover:bg-slate-50"
@@ -482,39 +529,25 @@ export default function Preparation() {
               </button>
               <button
                 onClick={handleImport}
-                className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
+                disabled={previewSelectedCount === 0}
+                className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold disabled:opacity-50"
               >
-                Ajouter à la préparation ({preview.length})
+                Ajouter à la préparation ({previewSelectedCount})
               </button>
             </div>
           </div>
-          <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead className="sticky top-0 bg-slate-50">
-                <tr className="text-left">
-                  <th className="px-4 py-2 border-b">N°</th>
-                  <th className="px-4 py-2 border-b">Sous-tâche</th>
-                  <th className="px-4 py-2 border-b">Bloc</th>
-                  <th className="px-4 py-2 border-b">Zone</th>
-                  <th className="px-4 py-2 border-b">Heures</th>
-                </tr>
-              </thead>
-              <tbody>
-                {preview.map((task, idx) => (
-                  <tr key={idx} style={{ backgroundColor: `${getCategoryColor(task.taskType)}12` }} className="border-b">
-                    <td className="px-4 py-2 text-slate-500">{task.seq || '-'}</td>
-                    <td className="px-4 py-2 font-medium max-w-xs truncate" title={task.description}>{task.description}</td>
-                    <td className="px-4 py-2">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: getCategoryColor(task.taskType) }}>
-                        {getCategoryLabel(task.taskType) || '-'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 max-w-[150px] truncate" title={task.workArea}>{task.workArea || '-'}</td>
-                    <td className="px-4 py-2">{task.scheduledHours ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="max-h-[440px] overflow-y-auto">
+            <TaskTreeSelect
+              tree={previewTree}
+              selected={previewSelected}
+              onToggleTask={togglePreviewTask}
+              onToggleTasks={togglePreviewTasks}
+              expandedBlocks={previewExpandedBlocks}
+              setExpandedBlocks={setPreviewExpandedBlocks}
+              expandedZones={previewExpandedZones}
+              setExpandedZones={setPreviewExpandedZones}
+              idPrefix="prep"
+            />
           </div>
         </div>
       )}
