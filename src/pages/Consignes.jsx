@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
 import { hashCodeKey, currentWeekLabel } from '../utils/helpers'
 import RichEditor from '../components/RichEditor'
+import ConsignesAvions from '../components/ConsignesAvions'
 import {
   Plus,
   X,
@@ -357,6 +358,9 @@ export default function Consignes() {
       </div>
 
       {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
+
+      {/* Consignes des avions (jour × shift) — consultables aussi depuis la page Consignes */}
+      <ConsignesAvions />
 
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         {/* Arborescence des dossiers */}

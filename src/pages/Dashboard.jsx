@@ -26,6 +26,9 @@ import {
   Printer,
   FileDown,
   Image as ImageIcon,
+  Pencil,
+  Trash2,
+  Check,
 } from 'lucide-react'
 
 function groupByZone(blockTasks) {
@@ -39,8 +42,10 @@ function groupByZone(blockTasks) {
 }
 
 export default function Dashboard() {
-  const { tasks, teams, assignments, notes } = useApp()
+  const { tasks, teams, assignments, notes, updateNote, removeNote } = useApp()
   const [selectedTeamId, setSelectedTeamId] = useState(null)
+  const [editingConsigneId, setEditingConsigneId] = useState(null)
+  const [consigneText, setConsigneText] = useState('')
 
   const consignes = useMemo(() => {
     const DAY_ORDER = {
@@ -302,12 +307,72 @@ export default function Dashboard() {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {consignes.map((n) => (
               <div key={n.id} className="border border-amber-200 bg-amber-50/40 rounded-lg p-3">
-                <p className="text-xs font-bold text-amber-800">
-                  {String(n.title).replace('[C] ', '')}
-                </p>
-                <p className="whitespace-pre-wrap text-xs text-slate-700 mt-1 leading-relaxed">
-                  {n.content || '—'}
-                </p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-bold text-amber-800">
+                    {String(n.title).replace('[C] ', '')}
+                  </p>
+                  {editingConsigneId !== n.id && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => {
+                          setEditingConsigneId(n.id)
+                          setConsigneText(n.content || '')
+                        }}
+                        className="text-slate-400 hover:text-sky-600 p-0.5"
+                        title="Modifier cette consigne"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Supprimer la consigne « ${String(n.title).replace('[C] ', '')} » ?`
+                            )
+                          ) {
+                            removeNote(n.id)
+                          }
+                        }}
+                        className="text-slate-400 hover:text-red-600 p-0.5"
+                        title="Supprimer cette consigne"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {editingConsigneId === n.id ? (
+                  <div className="mt-1 flex flex-col gap-1.5">
+                    <textarea
+                      autoFocus
+                      value={consigneText}
+                      onChange={(e) => setConsigneText(e.target.value)}
+                      rows={Math.min(14, Math.max(4, consigneText.split('\n').length + 1))}
+                      className="w-full border border-amber-300 rounded-md px-2 py-1.5 text-xs bg-white"
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          updateNote(n.id, { content: consigneText })
+                          setEditingConsigneId(null)
+                        }}
+                        className="flex items-center gap-1 bg-amber-600 text-white px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-amber-700"
+                      >
+                        <Check className="h-3.5 w-3.5" /> Enregistrer
+                      </button>
+                      <button
+                        onClick={() => setEditingConsigneId(null)}
+                        className="text-xs text-slate-500 hover:text-slate-800 px-1"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="whitespace-pre-wrap text-xs text-slate-700 mt-1 leading-relaxed">
+                    {n.content || '—'}
+                  </p>
+                )}
               </div>
             ))}
           </div>
