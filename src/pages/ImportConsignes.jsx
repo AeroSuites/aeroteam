@@ -636,18 +636,16 @@ export default function ImportConsignes() {
     return [...withEffectif].filter((immat) => !haveTasks.has(immat)).sort()
   }, [sheet, eligible, selectedShift])
 
-  // Avions réellement concernés par des consignes ce jour (tous shifts confondus,
-  // modifications manuelles comprises) — sert au masquage des avions vides.
+  // Avions concernés par des consignes sur le shift SÉLECTIONNÉ uniquement
+  // (modifications manuelles comprises) — sert au masquage des avions vides.
   const visibleBlocks = useMemo(() => {
     const blocks = sheet?.blocks || []
     if (!hideNoConsignes) return blocks
-    return blocks.filter((b) =>
-      ['matin', 'soir', 'nuit'].some((s) => {
-        const ov = overrides[`${selectedDay}::${b.immat}::${s}`]
-        return (Array.isArray(ov) ? ov : b.shifts[s] || []).length > 0
-      })
-    )
-  }, [sheet, overrides, selectedDay, hideNoConsignes])
+    return blocks.filter((b) => {
+      const ov = overrides[`${selectedDay}::${b.immat}::${selectedShift}`]
+      return (Array.isArray(ov) ? ov : b.shifts[selectedShift] || []).length > 0
+    })
+  }, [sheet, overrides, selectedDay, selectedShift, hideNoConsignes])
 
   const hiddenBlocksCount = (sheet?.blocks.length || 0) - visibleBlocks.length
 
@@ -1349,7 +1347,7 @@ export default function ImportConsignes() {
                       {sheet.blocks.length > 0 && visibleBlocks.length === 0 && (
                         <tr>
                           <td colSpan={5} className="px-3 py-6 text-center text-slate-400 text-sm">
-                            Aucun avion avec consignes ce jour — décochez « Masquer les avions
+                            Aucun avion avec consignes sur ce shift — décochez « Masquer les avions
                             sans consignes » pour tout afficher.
                           </td>
                         </tr>
