@@ -433,6 +433,16 @@ export async function getFolders() {
   return data
 }
 
+// Consignes [C] transmises aux profils avion pour un jour × shift (page Affectation)
+export async function getAircraftConsignes(day, shift) {
+  const { data, error } = await supabase.rpc('get_aircraft_consignes', {
+    p_day: day,
+    p_shift: shift,
+  })
+  if (error) throw error
+  return data?.consignes || []
+}
+
 export async function addFolder(parentId, name, couleur, createdBy) {
   const { data, error } = await supabase.rpc('add_folder', {
     p_parent_id: parentId,

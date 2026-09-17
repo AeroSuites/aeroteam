@@ -52,11 +52,30 @@ describe('buildProfileData (jour × shift)', () => {
       pockets: [],
     }
     const data = buildProfileData(existing, aircraftInfo, { day: 'MERCREDI', shift: 'soir' })
-    const soir = data.notes.find((n) => n.title === '[C] MERCREDI Soir')
+    const soir = data.notes.find((n) => n.title === '[C] F-GSQB MERCREDI Soir')
     expect(soir.content).toContain('- LEADER AIDE SPE 02')
     expect(soir.content).toContain('- WASTE')
+    // L'ancienne note du même jour/shift (format sans immat) est remplacée
     expect(data.notes.some((n) => n.content === 'ancienne liste')).toBe(false)
     expect(data.notes.some((n) => n.title === '[C] LUNDI Matin')).toBe(true)
+  })
+
+  it('conserve la consigne du même jour/shift d’un autre avion (leader multi-avions)', () => {
+    const existing = {
+      tasks: [],
+      teams: [],
+      assignments: {},
+      members: [],
+      dayMembers: [],
+      prepTasks: [],
+      notes: [
+        { id: 'n1', title: '[C] F-GSPA MERCREDI Soir', content: 'consignes avion A' },
+      ],
+      pockets: [],
+    }
+    const data = buildProfileData(existing, aircraftInfo, { day: 'MERCREDI', shift: 'soir' })
+    expect(data.notes.some((n) => n.title === '[C] F-GSPA MERCREDI Soir')).toBe(true)
+    expect(data.notes.some((n) => n.title === '[C] F-GSQB MERCREDI Soir')).toBe(true)
   })
 
   it('ajoute l’en-tête avion (entrée / OSM Config Position / sortie) aux consignes', () => {
@@ -91,7 +110,7 @@ describe('buildProfileData (jour × shift)', () => {
       },
     }
     const data = buildProfileData(existing, info, { day: 'MERCREDI', shift: 'soir' })
-    const note = data.notes.find((n) => n.title === '[C] MERCREDI Soir')
+    const note = data.notes.find((n) => n.title === '[C] F-GSQB MERCREDI Soir')
     expect(note.content).toContain("Date d'entrée : 06/09/2026 20H")
     expect(note.content).toContain('OSM : 63994878 · Config : Y148 · Position : H1-1B')
     expect(note.content).toContain("Date de sortie : 07/09/2026 12H")

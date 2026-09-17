@@ -1,10 +1,20 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
+import * as profileStore from '../lib/profileStore'
 import ManualTaskForm from '../components/ManualTaskForm'
 import LeaderPrimesForm from '../components/LeaderPrimesForm'
 import NoteCell from '../components/NoteCell'
 import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo } from '../utils/helpers'
 import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X } from 'lucide-react'
+
+const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
+
+const currentShiftNow = () => {
+  const h = new Date().getHours()
+  if (h >= 5 && h < 13) return 'matin'
+  if (h >= 13 && h < 21) return 'soir'
+  return 'nuit'
+}
 
 export default function Affectation() {
   const { tasks, teams, assignments, assignTask, unassignTask, updateTeam, addTasks, removeTasksByBlock, updateTask } = useApp()
@@ -14,6 +24,31 @@ export default function Affectation() {
   const [expandedZones, setExpandedZones] = useState([])
   const [lastAutoAssignments, setLastAutoAssignments] = useState(null)
   const [tab, setTab] = useState('affectation')
+
+  // Consignes des avions (jour × shift) — pour dispatcher la charge
+  const [conDay, setConDay] = useState(() => DAY_NAMES[new Date().getDay()])
+  const [conShift, setConShift] = useState(currentShiftNow)
+  const [conList, setConList] = useState(null)
+  const [conError, setConError] = useState('')
+  const [conLoading, setConLoading] = useState(false)
+
+  const loadConsignes = async (day = conDay, shift = conShift) => {
+    setConLoading(true)
+    setConError('')
+    try {
+      const list = await profileStore.getAircraftConsignes(day, shift)
+      setConList(Array.isArray(list) ? list : [])
+    } catch (err) {
+      setConError(err?.message || 'Erreur de chargement des consignes')
+      setConList([])
+    }
+    setConLoading(false)
+  }
+
+  useEffect(() => {
+    loadConsignes()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Équipes pouvant recevoir des tâches à la répartition automatique
   const autoTeams = useMemo(() => teams.filter((t) => !t.locked), [teams])
@@ -303,6 +338,78 @@ export default function Affectation() {
 
       {tab === 'affectation' ? (
         <>
+
+      {/* Consignes des avions — pour dispatcher la charge */}
+      <div className="bg-white rounded-xl shadow p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-amber-500" /> Consignes des avions
+          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={conDay}
+              onChange={(e) => {
+                setConDay(e.target.value)
+                loadConsignes(e.target.value, conShift)
+              }}
+              className="border border-slate-300 rounded-md px-2 py-1.5 text-xs bg-white"
+            >
+              {DAY_NAMES.map((d) => (
+                <option key={d} value={d}>
+                  {d.charAt(0) + d.slice(1).toLowerCase()}
+                </option>
+              ))}
+            </select>
+            <select
+              value={conShift}
+              onChange={(e) => {
+                setConShift(e.target.value)
+                loadConsignes(conDay, e.target.value)
+              }}
+              className="border border-slate-300 rounded-md px-2 py-1.5 text-xs bg-white"
+            >
+              {['matin', 'soir', 'nuit'].map((s) => (
+                <option key={s} value={s}>
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => loadConsignes()}
+              disabled={conLoading}
+              className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1 disabled:opacity-50"
+            >
+              {conLoading ? 'Chargement…' : 'Actualiser'}
+            </button>
+          </div>
+        </div>
+        {conError && <p className="text-xs text-red-600 mt-2">{conError}</p>}
+        {conList === null ? (
+          <p className="text-xs text-slate-400 mt-3">Chargement…</p>
+        ) : conList.length === 0 ? (
+          <p className="text-xs text-slate-400 mt-3 italic">
+            Aucune consigne transmise pour{' '}
+            {conDay.charAt(0) + conDay.slice(1).toLowerCase()} {conShift}.
+          </p>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 mt-3">
+            {conList.map((c, i) => (
+              <div key={i} className="border border-amber-200 bg-amber-50/40 rounded-lg p-3">
+                <p className="text-xs font-bold text-amber-800">
+                  {String(c.title || '').replace('[C] ', '')}
+                </p>
+                <p className="text-[10px] text-slate-400">
+                  {c.profile_name}
+                  {c.aircraft ? ` · ${c.aircraft}` : ''}
+                </p>
+                <p className="whitespace-pre-wrap text-xs text-slate-700 mt-1 leading-relaxed">
+                  {c.content || '-'}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="bg-white rounded-xl shadow p-3 flex flex-wrap items-center justify-between gap-2 border-l-4 border-l-sky-600">
         <div>

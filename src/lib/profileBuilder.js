@@ -65,13 +65,19 @@ export function buildProfileData(existing, aircraftInfo, scope) {
   const scopeMembers = shiftMembers(aircraftInfo.days, shift)
   const dayMembers = [...new Set([...(data.dayMembers || []), ...scopeMembers])]
 
-  // Notes consignes : seule la note du jour × shift visé est remplacée
+  // Notes consignes : seule la note du jour × shift visé (pour CET avion) est remplacée
+  const immat = aircraftInfo?.immat ? String(aircraftInfo.immat).trim() : ''
   const NOTE_TITLE = scope
+    ? `${NOTE_PREFIX}${immat ? `${immat} ` : ''}${String(scope.day || '').toUpperCase()} ${cap(shift)}`
+    : null
+  // Ancien format sans immatriculation (nettoyé au passage lors d'un import ciblé)
+  const LEGACY_TITLE = scope
     ? `${NOTE_PREFIX}${String(scope.day || '').toUpperCase()} ${cap(shift)}`
     : null
   const keptNotes = (data.notes || []).filter((n) => {
     if (!scope) return !String(n.title || '').startsWith(NOTE_PREFIX)
-    return String(n.title || '') !== NOTE_TITLE
+    const title = String(n.title || '')
+    return title !== NOTE_TITLE && title !== LEGACY_TITLE
   })
   const consigneNotes = []
   Object.entries(aircraftInfo.days || {}).forEach(([day, d]) => {
@@ -80,7 +86,7 @@ export function buildProfileData(existing, aircraftInfo, scope) {
       if (!Array.isArray(tasks) || tasks.length === 0) return
       consigneNotes.push({
         id: makeId('note'),
-        title: `${NOTE_PREFIX}${day.toUpperCase()} ${cap(s)}`,
+        title: `${NOTE_PREFIX}${immat ? `${immat} ` : ''}${day.toUpperCase()} ${cap(s)}`,
         content: [...header, ...tasks.map((t) => `- ${t}`)].join('\n'),
         createdAt: Date.now(),
       })

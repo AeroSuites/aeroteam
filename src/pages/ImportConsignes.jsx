@@ -730,12 +730,17 @@ export default function ImportConsignes() {
           out.push({ immat, ok: false, error: saved.error })
           continue
         }
-        if (!lookup.aircraft) {
+        // Avion(s) du profil : ajouté à la liste s'il gère déjà d'autres avions
+        const currentAircrafts = String(lookup.aircraft || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+        if (!currentAircrafts.includes(immat)) {
           try {
             await profileStore.adminSetProfileAircraft(
               activeProfile.code,
               profileCode,
-              immat
+              [...currentAircrafts, immat].join(', ')
             )
           } catch {
             // l'avion du profil sera réglé manuellement
