@@ -438,7 +438,7 @@ export default function Taches() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left bg-slate-50">
-                      <th className="px-1 py-2 border-b text-[10px] text-slate-400 font-semibold whitespace-nowrap" title="Cocher pour préparer la vacation suivante (transfert vers Préparation)">à suivre</th>
+                      <th className="px-1 py-2 border-b text-[11px] text-slate-700 font-bold whitespace-nowrap" title="Cocher pour préparer la vacation suivante (transfert vers Préparation)">à suivre</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">N°</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">Tâche</th>
                       <th className="px-0.5 py-2 border-b whitespace-nowrap">Bloc</th>
