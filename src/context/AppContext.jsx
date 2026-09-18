@@ -566,7 +566,7 @@ export function AppProvider({ children }) {
     [code, isConnected, disconnect]
   )
 
-  const { addTasks, assignTask, unassignTask, removeTask, removeTasksByBlock, removeTasksByZone, updateTask } = taskActions({
+  const { addTasks, assignTask, unassignTask, removeTask, removeTasksByBlock, removeTasksByZone, removeTasksByIds, updateTask } = taskActions({
     tasks,
     setTasks,
     setAssignments,
@@ -627,7 +627,7 @@ const value = {
     connectProfile, createProfile, requestProfile, disconnect, deleteProfile,
     changeAdminCode, updateOwnProfile,
     addTasks, addTeam, updateTeam, removeTeam, assignTask, unassignTask,
-      removeTask, removeTasksByBlock, removeTasksByZone, updateTask, addMember, addMembers, addDayMember, addDayMembers,
+      removeTask, removeTasksByBlock, removeTasksByZone, removeTasksByIds, updateTask, addMember, addMembers, addDayMember, addDayMembers,
     clearDayMembers, removeMember, resetData,
       addPrepTasks, removePrepTask, removePrepTasksByBlock, removePrepTasksByZone, updatePrepTask, clearPrepTasks,
     addPocket, renamePocket, addTasksToPocket, removeTasksFromPocket, removePocket,

@@ -102,23 +102,56 @@ export function parseBlocks(rows) {
     const info = blockHeaderInfo(rows, r)
 
     const shifts = {}
-    // Délégations : "Consignes X" définies sur plusieurs lignes
+    // Délégations : « Consignes X » définies sur plusieurs lignes.
+    // Si un libellé a été remplacé dans le fichier (ex. « MODIF SHA » à la place
+    // de « Consignes Matin »), la colonne est retrouvée grâce au marqueur
+    // « A faire/ Non réalisé / Pourquoi ? » présent au-dessus de chaque liste.
+    const labelByCol = {}
+    const labelRowByCol = {}
+    const aFaireRowByCol = {}
     for (let sr = r + 1; sr < endRow; sr++) {
       for (let sc = 0; sc < 40; sc++) {
         const v = cell(rows, sr, sc)
-        if (!/^consignes\s+(matin|soir|nuit)$/i.test(v)) continue
-        const shiftName = v.replace(/^consignes\s+/i, '').trim().toLowerCase()
-        const tasks = []
-        for (let tr = sr + 1; tr < endRow; tr++) {
-          const t = cell(rows, tr, sc)
-          if (!t) break
-          if (/^a\s*fair/i.test(t) || /^à\s*fair/i.test(t)) continue
-          if (/^consignes\s/i.test(t)) break
-          tasks.push(t)
+        if (!v) continue
+        const m = v.match(/^consignes\s+(matin|soir|nuit)$/i)
+        if (m) {
+          labelByCol[sc] = m[1].toLowerCase()
+          labelRowByCol[sc] = sr
+        } else if (/^a\s*fair/i.test(v) || /^à\s*fair/i.test(v)) {
+          if (aFaireRowByCol[sc] === undefined) aFaireRowByCol[sc] = sr
         }
-        if (tasks.length || !shifts[shiftName]) shifts[shiftName] = tasks
       }
     }
+    // Colonnes de liste sans libellé → attribuées aux shifts manquants (matin, soir, nuit)
+    const SHIFT_ORDER = ['matin', 'soir', 'nuit']
+    const usedShifts = new Set(Object.values(labelByCol))
+    const missingShifts = SHIFT_ORDER.filter((s) => !usedShifts.has(s))
+    Object.keys(aFaireRowByCol)
+      .map(Number)
+      .filter((col) => labelByCol[col] === undefined)
+      .sort((a, b) => a - b)
+      .forEach((col, i) => {
+        if (missingShifts[i]) labelByCol[col] = missingShifts[i]
+      })
+
+    Object.entries(labelByCol).forEach(([colStr, shiftName]) => {
+      const sc = Number(colStr)
+      const startRow =
+        aFaireRowByCol[sc] !== undefined
+          ? aFaireRowByCol[sc] + 1
+          : labelRowByCol[sc] !== undefined
+            ? labelRowByCol[sc] + 1
+            : r + 1
+      const tasks = []
+      for (let tr = startRow; tr < endRow; tr++) {
+        const t = cell(rows, tr, sc)
+        if (!t) break
+        if (/^a\s*fair/i.test(t) || /^à\s*fair/i.test(t)) continue
+        if (/^consignes\s/i.test(t)) break
+        tasks.push(t)
+      }
+      if (tasks.length || !shifts[shiftName]) shifts[shiftName] = tasks
+    })
     blocks.push({ immat, ...info, shifts })
   }
   return blocks

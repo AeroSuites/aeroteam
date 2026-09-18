@@ -13,6 +13,7 @@ export default function Taches() {
     removeTask,
     removeTasksByBlock,
     removeTasksByZone,
+    removeTasksByIds,
     addTasks,
     updateTask,
     prepTasks,
@@ -92,13 +93,33 @@ export default function Taches() {
     })
   }
 
+  // Ajoute toute une sous-tâche (zone) à suivre — d'un bloc précis ou tous blocs
+  const addZoneToFollow = (zone, block) => {
+    setTransferMsg('')
+    setFollowSelected((prev) => {
+      const next = { ...prev }
+      tasks
+        .filter(
+          (t) =>
+            (t.workArea || 'Autre') === zone &&
+            (!block || (t.taskType || 'AUTRE') === block)
+        )
+        .forEach((t) => {
+          next[t.id] = true
+        })
+      return next
+    })
+  }
+
   const transferToPrep = () => {
     const fresh = filterNewPrepTasks(prepTasks, followTasks)
     const ignored = followTasks.length - fresh.length
     if (fresh.length) addPrepTasks(fresh)
+    // Transfert = déplacement : les lignes quittent Tâches
+    removeTasksByIds(followTasks.map((t) => t.id))
     setTransferMsg(
-      `${fresh.length} ligne(s) transférée(s) vers Préparation vac suivante${
-        ignored ? ` · ${ignored} déjà présente(s) ignorée(s)` : ''
+      `${followTasks.length} ligne(s) transférée(s) vers Préparation vac suivante${
+        ignored ? ` · ${ignored} déjà présente(s) (mise en commun)` : ''
       }.`
     )
     setFollowSelected({})
@@ -433,21 +454,31 @@ export default function Taches() {
                     )
                   })}
                   {!group.isFF && (
-                    <button
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `Supprimer toute la sous-tâche ${zone} (${zoneTasks.length} tâche(s), tous blocs) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
-                          )
-                        ) {
-                          removeTasksByZone(zone)
-                        }
-                      }}
-                      className="bg-white/20 hover:bg-white/40 text-white p-1 rounded-full"
-                      title={`Supprimer toute la sous-tâche ${zone}`}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => addZoneToFollow(zone)}
+                        className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5"
+                        title={`Ajouter toute la sous-tâche ${zone} à suivre (préparation vac suivante)`}
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span className="text-[10px] font-bold whitespace-nowrap">à suivre</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Supprimer toute la sous-tâche ${zone} (${zoneTasks.length} tâche(s), tous blocs) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
+                            )
+                          ) {
+                            removeTasksByZone(zone)
+                          }
+                        }}
+                        className="bg-white/20 hover:bg-white/40 text-white p-1 rounded-full"
+                        title={`Supprimer toute la sous-tâche ${zone}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -501,6 +532,17 @@ export default function Taches() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation()
+                                        addZoneToFollow(subZone, 'CORR')
+                                      }}
+                                      className="ml-auto inline-flex items-center gap-0.5 rounded-full bg-white/20 hover:bg-white/40 px-1.5 py-0.5 text-white"
+                                      title={`Ajouter toute la sous-tâche ${subZone} à suivre (préparation vac suivante)`}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                      <span className="text-[10px] font-bold whitespace-nowrap">à suivre</span>
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
                                         if (
                                           window.confirm(
                                             `Supprimer toute la sous-tâche ${subZone} du bloc Found Fault (${subTasks.length} tâche(s)) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
@@ -509,7 +551,7 @@ export default function Taches() {
                                           removeTasksByZone(subZone, 'CORR')
                                         }
                                       }}
-                                      className="ml-auto text-white/80 hover:text-white"
+                                      className="text-white/80 hover:text-white"
                                       title={`Supprimer toute la sous-tâche ${subZone} (Found Fault)`}
                                     >
                                       <Trash2 className="h-4 w-4" />

@@ -148,6 +148,34 @@ describe('parseBlocks', () => {
     expect(blocks[0].dateSortie).toBe('2026-09-07')
     expect(blocks[0].heureSortie).toBe('12H')
   })
+
+  it('retrouve une colonne de consignes dont le libellé a été remplacé (ex. « MODIF SHA »)', () => {
+    const rows = []
+    rows[0] = []
+    rows[0][4] = 'Immat'
+    rows[0][5] = 'F-TEST'
+    rows[2] = []
+    rows[2][4] = 'MODIF SHA'
+    rows[2][5] = 3
+    rows[2][13] = 'Consignes Soir'
+    rows[2][14] = 2
+    rows[3] = []
+    rows[3][4] = 'A faire/ Non réalisé / Pourquoi ?'
+    rows[3][13] = 'A faire/ Non réalisé / Pourquoi ?'
+    rows[4] = []
+    rows[4][4] = 'LEADER'
+    rows[4][13] = 'LEADER SOLDE DOSSIER'
+    rows[5] = []
+    rows[5][4] = 'SPE02 + F/F'
+    rows[5][13] = 'FDV'
+    rows[6] = []
+    rows[6][4] = 'WASTE + CRUSHED ICE'
+
+    const blocks = parseBlocks(rows)
+    expect(blocks).toHaveLength(1)
+    expect(blocks[0].shifts.matin).toEqual(['LEADER', 'SPE02 + F/F', 'WASTE + CRUSHED ICE'])
+    expect(blocks[0].shifts.soir).toEqual(['LEADER SOLDE DOSSIER', 'FDV'])
+  })
 })
 
 describe('parseConsignesWorkbook + summarizeAircrafts', () => {

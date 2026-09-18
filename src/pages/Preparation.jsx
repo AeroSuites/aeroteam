@@ -35,6 +35,7 @@ import {
   FileImage,
   CheckCircle2,
   RotateCcw,
+  Undo2,
 } from 'lucide-react'
 
 export default function Preparation() {
@@ -47,6 +48,7 @@ export default function Preparation() {
     removePrepTasksByZone,
     updatePrepTask,
     clearPrepTasks,
+    addTasks,
     addPocket,
     renamePocket,
     addTasksToPocket,
@@ -159,6 +161,14 @@ export default function Preparation() {
     }
     reader.readAsArrayBuffer(file)
   }, [])
+
+  // Réintégration dans Tâches (retour arrière d'un transfert)
+  const reintegrerTasks = (list) => {
+    const tasksList = (list || []).filter(Boolean)
+    if (!tasksList.length) return
+    addTasks(tasksList)
+    tasksList.forEach((t) => removePrepTask(t.id))
+  }
 
   const handleImport = () => {
     const list = preview.filter((t) => previewSelected[t.id])
@@ -845,24 +855,37 @@ export default function Preparation() {
                         const n = zoneTasks.filter((t) => t.taskType === blk).length
                         const total = prepTasks.filter((t) => t.taskType === blk).length
                         return (
-                          <button
-                            key={blk}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (
-                                window.confirm(
-                                  `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} ligne(s) au total, toutes zones) ?`
+                          <span key={blk} className="inline-flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (
+                                  window.confirm(
+                                    `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} ligne(s) au total, toutes zones) ?`
+                                  )
+                                ) {
+                                  removePrepTasksByBlock(blk)
+                                }
+                              }}
+                              className="bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-xs font-semibold text-white flex items-center gap-1"
+                              title={`Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} lignes, toutes zones confondues)`}
+                            >
+                              {getCategoryLabel(blk)} · {n}
+                              <Trash2 className="h-3 w-3 opacity-80" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                reintegrerTasks(
+                                  prepTasks.filter((t) => (t.taskType || 'AUTRE') === blk)
                                 )
-                              ) {
-                                removePrepTasksByBlock(blk)
-                              }
-                            }}
-                            className="bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-xs font-semibold text-white flex items-center gap-1"
-                            title={`Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} lignes, toutes zones confondues)`}
-                          >
-                            {getCategoryLabel(blk)} · {n}
-                            <Trash2 className="h-3 w-3 opacity-80" />
-                          </button>
+                              }}
+                              className="bg-white/20 hover:bg-white/40 rounded-full p-1 text-white"
+                              title={`Réintégrer tout le bloc ${getCategoryLabel(blk)} dans Tâches`}
+                            >
+                              <Undo2 className="h-3 w-3" />
+                            </button>
+                          </span>
                         )
                       })}
                     </div>
@@ -918,6 +941,22 @@ export default function Preparation() {
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation()
+                                              reintegrerTasks(
+                                                prepTasks.filter(
+                                                  (t) =>
+                                                    (t.workArea || 'Autre') === subZone &&
+                                                    (t.taskType || 'AUTRE') === 'CORR'
+                                                )
+                                              )
+                                            }}
+                                            className="ml-auto text-white/80 hover:text-white"
+                                            title={`Réintégrer la sous-tâche ${subZone} dans Tâches`}
+                                          >
+                                            <Undo2 className="h-4 w-4" />
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
                                               if (
                                                 window.confirm(
                                                   `Supprimer toute la sous-tâche ${subZone} du bloc Found Fault (${subTasks.length} ligne(s)) ?`
@@ -926,7 +965,7 @@ export default function Preparation() {
                                                 removePrepTasksByZone(subZone, 'CORR')
                                               }
                                             }}
-                                            className="ml-auto text-white/80 hover:text-white"
+                                            className="text-white/80 hover:text-white"
                                             title={`Supprimer toute la sous-tâche ${subZone} (Found Fault)`}
                                           >
                                             <Trash2 className="h-4 w-4" />
@@ -1038,16 +1077,25 @@ export default function Preparation() {
                                   </div>
                                 </td>
                                 <td className="px-2 py-2">
-                                  <button
-                                    onClick={() => {
-                                      if (window.confirm('Supprimer cette ligne ?'))
-                                        removePrepTask(task.id)
-                                    }}
-                                    className="text-slate-400 hover:text-red-600"
-                                    title="Supprimer cette ligne"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      onClick={() => reintegrerTasks([task])}
+                                      className="text-slate-400 hover:text-emerald-600"
+                                      title="Réintégrer cette ligne dans Tâches (annuler le transfert)"
+                                    >
+                                      <Undo2 className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        if (window.confirm('Supprimer cette ligne ?'))
+                                          removePrepTask(task.id)
+                                      }}
+                                      className="text-slate-400 hover:text-red-600"
+                                      title="Supprimer cette ligne"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             )

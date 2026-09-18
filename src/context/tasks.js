@@ -67,6 +67,18 @@ export function taskActions({ tasks, setTasks, setAssignments }) {
     })
   }
 
+  // Supprime une liste de tâches (par ids) — sert au déplacement vers la Préparation
+  const removeTasksByIds = (ids) => {
+    const set = new Set(ids || [])
+    if (set.size === 0) return
+    setTasks((prev) => prev.filter((t) => !set.has(t.id)))
+    setAssignments((prev) => {
+      const next = { ...prev }
+      set.forEach((id) => delete next[id])
+      return next
+    })
+  }
+
   return {
     addTasks,
     assignTask,
@@ -74,6 +86,7 @@ export function taskActions({ tasks, setTasks, setAssignments }) {
     removeTask,
     removeTasksByBlock,
     removeTasksByZone,
+    removeTasksByIds,
     updateTask,
   }
 }
