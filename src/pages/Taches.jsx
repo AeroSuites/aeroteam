@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
@@ -142,14 +142,30 @@ export default function Taches() {
     })
   }, [tasks, filter, statusFilter, shownBlocks, blocks])
 
-  const groupedByZone = useMemo(() => {
+  // Regroupement : par zone/sous-tâche, SAUF les Found Fault (CORR) qui restent
+  // regroupés dans un seul bloc avec leurs sous-tâches.
+  const zoneGroups = useMemo(() => {
     const groups = {}
     filtered.forEach((t) => {
-      const zone = t.workArea || 'Autre'
-      if (!groups[zone]) groups[zone] = []
-      groups[zone].push(t)
+      const isFF = (t.taskType || '') === 'CORR'
+      const key = isFF ? '__FOUND_FAULT__' : t.workArea || 'Autre'
+      if (!groups[key]) {
+        groups[key] = {
+          key,
+          label: isFF ? getCategoryLabel('CORR') : key,
+          isFF,
+          zones: {},
+        }
+      }
+      const sub = t.workArea || 'Sans sous-tâche'
+      if (!groups[key].zones[sub]) groups[key].zones[sub] = []
+      groups[key].zones[sub].push(t)
     })
-    return groups
+    return Object.values(groups).sort((a, b) => {
+      const ca = Object.values(a.zones).reduce((n, l) => n + l.length, 0)
+      const cb = Object.values(b.zones).reduce((n, l) => n + l.length, 0)
+      return cb - ca
+    })
   }, [filtered])
 
   return (
@@ -329,16 +345,18 @@ export default function Taches() {
         </div>
       )}
 
-      {Object.keys(groupedByZone).length === 0 && (
+      {zoneGroups.length === 0 && (
         <div className="bg-white rounded-xl shadow p-10 text-center text-slate-500">
           Aucune tâche trouvée pour les critères sélectionnés.
         </div>
       )}
 
-      {Object.entries(groupedByZone)
-        .sort((a, b) => b[1].length - a[1].length)
-        .map(([zone, zoneTasks]) => {
-          const zoneColor = getZoneColor(zone, zones)
+      {zoneGroups.map((group) => {
+          const zoneTasks = Object.values(group.zones).flat()
+          const zone = group.label
+          const zoneColor = group.isFF
+            ? getCategoryColor('CORR')
+            : getZoneColor(group.label, zones)
           const assignedTeams = teams.filter((t) =>
             zoneTasks.some((task) => isAssignedTo(assignments, task.id, t.id))
           )
@@ -428,7 +446,21 @@ export default function Taches() {
                     </tr>
                   </thead>
                   <tbody>
-                    {zoneTasks.map((task) => {
+                    {Object.entries(group.zones)
+                      .sort((a, b) => a[0].localeCompare(b[0]))
+                      .map(([subZone, subTasks]) => (
+                        <Fragment key={subZone}>
+                          {group.isFF && (
+                            <tr className="bg-slate-50">
+                              <td
+                                colSpan={11}
+                                className="px-2 py-1 text-xs font-semibold text-slate-600"
+                              >
+                                📍 {subZone} ({subTasks.length})
+                              </td>
+                            </tr>
+                          )}
+                    {subTasks.map((task) => {
                       const teamIds = assignmentTeams(assignments, task.id)
                       const taskTeams = teamIds
                         .map((id) => teams.find((tm) => tm.id === id))
@@ -553,6 +585,8 @@ export default function Taches() {
                         </tr>
                       )
                     })}
+                        </Fragment>
+                      ))}
                   </tbody>
                 </table>
               </div>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -189,22 +189,37 @@ export default function Preparation() {
     )
   }
 
-  // Regrouper par zone — même mise en page que la page Tâches
-  const groupedByZone = useMemo(() => {
-    const map = {}
+  // Regroupement : par zone/sous-tâche, SAUF les Found Fault (CORR) qui restent
+  // regroupés dans un seul bloc avec leurs sous-tâches.
+  const zoneGroups = useMemo(() => {
+    const groups = {}
     prepTasks.forEach((t) => {
-      const zone = t.workArea || 'Sans zone'
-      if (!map[zone]) map[zone] = []
-      map[zone].push(t)
+      const isFF = (t.taskType || '') === 'CORR'
+      const key = isFF ? '__FOUND_FAULT__' : t.workArea || 'Sans zone'
+      if (!groups[key]) {
+        groups[key] = {
+          key,
+          label: isFF ? getCategoryLabel('CORR') : key,
+          isFF,
+          zones: {},
+        }
+      }
+      const sub = t.workArea || 'Sans sous-tâche'
+      if (!groups[key].zones[sub]) groups[key].zones[sub] = []
+      groups[key].zones[sub].push(t)
     })
-    return map
+    return Object.values(groups).sort((a, b) => {
+      const ca = Object.values(a.zones).reduce((n, l) => n + l.length, 0)
+      const cb = Object.values(b.zones).reduce((n, l) => n + l.length, 0)
+      return cb - ca
+    })
   }, [prepTasks])
 
   // Replie par défaut chaque nouvelle zone (tuiles fermées au chargement)
   useEffect(() => {
-    setCollapsed((prev) => [...new Set([...prev, ...Object.keys(groupedByZone)])])
+    setCollapsed((prev) => [...new Set([...prev, ...zoneGroups.map((g) => g.label)])])
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Object.keys(groupedByZone).join('|')])
+  }, [zoneGroups.map((g) => g.label).join('|')])
 
   const previewTree = useMemo(() => groupTasksTree(preview), [preview])
   const previewSelectedCount = preview.filter((t) => previewSelected[t.id]).length
@@ -451,7 +466,7 @@ export default function Preparation() {
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Préparation de charge</h1>
           <p className="text-slate-600 mt-1">
             Charge restante pour la vacation suivante — {prepTasks.length} lignes
-            {Object.keys(groupedByZone).length > 0 &&
+            {zoneGroups.length > 0 &&
               ` · ${[...new Set(prepTasks.map((t) => t.taskType).filter(Boolean))].length} blocs`}
           </p>
         </div>
@@ -763,12 +778,14 @@ export default function Preparation() {
       )}
 
       {/* Charge groupée par zone — même mise en page que la page Tâches */}
-      {Object.keys(groupedByZone).length > 0 && (
+      {zoneGroups.length > 0 && (
         <div className="grid gap-4">
-          {Object.entries(groupedByZone)
-            .sort((a, b) => b[1].length - a[1].length)
-            .map(([zone, zoneTasks]) => {
-              const zoneColor = getZoneColor(zone, allZones)
+          {zoneGroups.map((group) => {
+              const zoneTasks = Object.values(group.zones).flat()
+              const zone = group.label
+              const zoneColor = group.isFF
+                ? getCategoryColor('CORR')
+                : getZoneColor(group.label, allZones)
               const expanded = !collapsed.includes(zone)
               const zoneTaskIds = zoneTasks.map((t) => t.id)
               const zoneHours = zoneTasks.reduce((acc, t) => {
@@ -861,7 +878,21 @@ export default function Preparation() {
                           </tr>
                         </thead>
                         <tbody>
-                          {zoneTasks.map((task) => {
+                          {Object.entries(group.zones)
+                            .sort((a, b) => a[0].localeCompare(b[0]))
+                            .map(([subZone, subTasks]) => (
+                              <Fragment key={subZone}>
+                                {group.isFF && (
+                                  <tr className="bg-slate-50">
+                                    <td
+                                      colSpan={10}
+                                      className="px-2 py-1 text-xs font-semibold text-slate-600"
+                                    >
+                                      📍 {subZone} ({subTasks.length})
+                                    </td>
+                                  </tr>
+                                )}
+                          {subTasks.map((task) => {
                             const h = parseFloat(task.scheduledHours)
                             const inPocket = pockets.filter((p) => pocketTaskIds(p).includes(task.id))
                             return (
@@ -968,6 +999,8 @@ export default function Preparation() {
                               </tr>
                             )
                           })}
+                              </Fragment>
+                            ))}
                         </tbody>
                       </table>
                     </div>
