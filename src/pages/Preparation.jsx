@@ -873,13 +873,13 @@ export default function Preparation() {
                           <tr className="text-left bg-slate-50">
                             <th className="px-2 py-2 border-b">N°</th>
                             <th className="px-2 py-2 border-b">Tâche</th>
-                            <th className="px-1 py-2 border-b">Bloc</th>
-                            <th className="px-1 py-2 border-b">Skills</th>
-                            <th className="px-1 py-2 border-b">TRFX</th>
-                            <th className="px-1 py-2 border-b">Statut</th>
-                            <th className="px-1 py-2 border-b">Appareil</th>
-                            <th className="px-1 py-2 border-b">Note</th>
-                            <th className="px-1 py-2 border-b">Pochette</th>
+                            <th className="px-0.5 py-2 border-b">Bloc</th>
+                            <th className="px-0.5 py-2 border-b">Skills</th>
+                            <th className="px-0.5 py-2 border-b">TRFX</th>
+                            <th className="px-0.5 py-2 border-b">Statut</th>
+                            <th className="px-0.5 py-2 border-b">Appareil</th>
+                            <th className="px-0.5 py-2 border-b">Note</th>
+                            <th className="px-0.5 py-2 border-b">Pochette</th>
                             <th className="px-4 py-2 border-b"></th>
                           </tr>
                         </thead>
@@ -896,23 +896,20 @@ export default function Preparation() {
                                     onClick={() => toggleSubZone(`${group.key}::${subZone}`)}
                                     title={subOpen ? 'Replier cette sous-tâche' : 'Déplier cette sous-tâche'}
                                   >
-                                    <td
-                                      colSpan={10}
-                                      className="px-2 py-1.5 text-xs font-bold uppercase tracking-wide"
-                                      style={{ color: getZoneColor(subZone, allZones) }}
-                                    >
-                                      {subOpen ? (
-                                        <ChevronDown className="h-4 w-4 inline-block mr-1 align-middle" />
-                                      ) : (
-                                        <ChevronRight className="h-4 w-4 inline-block mr-1 align-middle" />
-                                      )}
+                                    <td colSpan={10} className="px-2 py-1.5">
                                       <span
-                                        className="inline-block w-2.5 h-2.5 rounded-full mr-2 align-middle"
+                                        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white"
                                         style={{ backgroundColor: getZoneColor(subZone, allZones) }}
-                                      />
-                                      {subZone}
-                                      <span className="ml-2 text-slate-400 font-normal normal-case">
-                                        ({subTasks.length})
+                                      >
+                                        {subOpen ? (
+                                          <ChevronDown className="h-3.5 w-3.5" />
+                                        ) : (
+                                          <ChevronRight className="h-3.5 w-3.5" />
+                                        )}
+                                        {subZone}
+                                        <span className="bg-white/25 rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                                          {subTasks.length}
+                                        </span>
                                       </span>
                                     </td>
                                   </tr>
@@ -922,7 +919,15 @@ export default function Preparation() {
                             const h = parseFloat(task.scheduledHours)
                             const inPocket = pockets.filter((p) => pocketTaskIds(p).includes(task.id))
                             return (
-                              <tr key={task.id} className="border-b hover:bg-slate-50">
+                              <tr
+                                key={task.id}
+                                className="border-b hover:bg-slate-100"
+                                style={
+                                  group.isFF && subOpen
+                                    ? { backgroundColor: `${getZoneColor(subZone, allZones)}14` }
+                                    : undefined
+                                }
+                              >
                                 <td className="px-2 py-2 font-bold text-slate-500">
                                   {task.seq || '-'}
                                 </td>
@@ -934,7 +939,7 @@ export default function Preparation() {
                                     </div>
                                   )}
                                 </td>
-                                <td className="px-1 py-2">
+                                <td className="px-0.5 py-2">
                                   <span
                                     className="px-2 py-0.5 rounded-full text-xs font-semibold text-white"
                                     style={{ backgroundColor: getCategoryColor(task.taskType) }}
@@ -942,11 +947,11 @@ export default function Preparation() {
                                     {getCategoryLabel(task.taskType) || '-'}
                                   </span>
                                 </td>
-                                <td className="px-1 py-2 text-xs">{task.skills || '-'}</td>
-                                <td className="px-1 py-2 font-mono font-bold text-xs">
+                                <td className="px-0.5 py-2 text-xs">{task.skills || '-'}</td>
+                                <td className="px-0.5 py-2 font-mono font-bold text-xs">
                                   {task.taskBarcode || '-'}
                                 </td>
-                                <td className="px-1 py-2">
+                                <td className="px-0.5 py-2">
                                   <span
                                     className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                                       task.mtxStatus === 'ACTV'
@@ -978,14 +983,14 @@ export default function Preparation() {
                                     </button>
                                   )}
                                 </td>
-                                <td className="px-1 py-2">{task.registration || '-'}</td>
-                                <td className="px-1 py-2">
+                                <td className="px-0.5 py-2">{task.registration || '-'}</td>
+                                <td className="px-0.5 py-2">
                                   <NoteCell
                                     note={task.note}
                                     onSave={(v) => updatePrepTask(task.id, { note: v })}
                                   />
                                 </td>
-                                <td className="px-1 py-2">
+                                <td className="px-0.5 py-2">
                                   <div className="flex flex-wrap items-center gap-1">
                                     {inPocket.map((p) => (
                                       <span
