@@ -101,7 +101,7 @@ export default function Layout({ children }) {
   return (
     <div className="min-h-screen bg-slate-100">
       <nav className="bg-slate-900 text-white shadow-lg">
-        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-3">
+        <div className="mx-auto max-w-[1700px] px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 shrink-0">
             <Plane className="h-7 w-7 text-sky-400" />
             <div className="leading-tight">
@@ -152,7 +152,7 @@ export default function Layout({ children }) {
           </div>
         </div>
         {saveState === 'conflict' && (
-          <div className="mx-auto max-w-7xl px-4 py-2 flex flex-wrap items-center justify-between gap-3 bg-amber-500 text-white text-sm">
+          <div className="mx-auto max-w-[1700px] px-4 py-2 flex flex-wrap items-center justify-between gap-3 bg-amber-500 text-white text-sm">
             <span className="font-semibold">
               ⚠ Conflit de sauvegarde : vos modifications locales et celles enregistrées par un autre appareil divergent.
             </span>
@@ -176,7 +176,7 @@ export default function Layout({ children }) {
             </div>
           </div>
         )}
-        <div className="mx-auto max-w-7xl px-2 pb-2 flex flex-wrap items-center gap-1">
+        <div className="mx-auto max-w-[1700px] px-2 pb-2 flex flex-wrap items-center gap-1">
           {items.map((item) => (
             <NavLink
               key={item.to}
@@ -277,7 +277,7 @@ export default function Layout({ children }) {
           )}
         </div>
       </nav>
-      <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-[1700px] px-4 py-6">{children}</main>
     </div>
   )
 }

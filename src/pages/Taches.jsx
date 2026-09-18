@@ -347,8 +347,8 @@ export default function Taches() {
                               {getCategoryLabel(task.taskType) || '-'}
                             </span>
                           </td>
-                          <td className="px-2 py-2 text-xs truncate max-w-[90px]">{task.skills || '-'}</td>
-                          <td className="px-2 py-2 font-mono font-bold text-xs truncate max-w-[90px]">{task.taskBarcode || '-'}</td>
+                          <td className="px-2 py-2 text-xs whitespace-nowrap">{task.skills || '-'}</td>
+                          <td className="px-2 py-2 font-mono font-bold text-xs whitespace-nowrap">{task.taskBarcode || '-'}</td>
                           <td className="px-2 py-2 whitespace-nowrap">
                             <span
                               className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
@@ -398,7 +398,7 @@ export default function Taches() {
                               </button>
                             )}
                           </td>
-                          <td className="px-2 py-2 truncate max-w-[80px]">{task.registration || '-'}</td>
+                          <td className="px-2 py-2 whitespace-nowrap">{task.registration || '-'}</td>
                           <td className="px-2 py-2">
                             <NoteCell
                               note={task.note}
