@@ -18,6 +18,26 @@ export function getCategoryLabel(type) {
   return CATEGORY_LABELS[type] || type || ''
 }
 
+// Sous-tâches rattachées de force à un bloc, quel que soit le Task Type du fichier
+// (ex. les lignes CAB WASTE sont parfois typées MPC alors qu'elles doivent être JIC).
+const BLOCK_BY_WORKAREA = [{ workArea: 'cabwaste', block: 'JIC' }]
+
+const normWorkAreaKey = (w) =>
+  String(w || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '')
+
+// Bloc effectif d'une tâche (après application des règles de reclassement)
+export function effectiveBlock(task) {
+  const key = normWorkAreaKey(task?.workArea)
+  for (const rule of BLOCK_BY_WORKAREA) {
+    if (key && key === rule.workArea) return rule.block
+  }
+  return task?.taskType
+}
+
 export const SHIFT_COLORS = {
   'MERCREDI MATIN': '#10b981',
   'MERCREDI SOIR': '#6366f1',
@@ -343,6 +363,13 @@ export function parseExcelRows(rows, columns) {
       zone: get('workArea') ? String(get('workArea')) : undefined,
       avion: get('registration') ? String(get('registration')) : undefined,
       category: get('taskType') ? String(get('taskType')) : undefined,
+    }
+
+    // Règles de reclassement (ex. CAB WASTE toujours en JIC)
+    const effBlock = effectiveBlock(task)
+    if (effBlock && effBlock !== task.taskType) {
+      task.taskType = effBlock
+      task.category = effBlock
     }
 
     result.push(task)
