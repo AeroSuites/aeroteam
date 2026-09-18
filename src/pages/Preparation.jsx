@@ -68,6 +68,12 @@ export default function Preparation() {
   const [previewExpandedBlocks, setPreviewExpandedBlocks] = useState([])
   const [previewExpandedZones, setPreviewExpandedZones] = useState([])
   const [importMsg, setImportMsg] = useState('')
+  const [expandedSubZones, setExpandedSubZones] = useState([])
+
+  const toggleSubZone = (key) =>
+    setExpandedSubZones((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    )
   const [transferPocketId, setTransferPocketId] = useState(null)
   const [transferTargetCode, setTransferTargetCode] = useState('')
   const [transferProfiles, setTransferProfiles] = useState([])
@@ -880,15 +886,26 @@ export default function Preparation() {
                         <tbody>
                           {Object.entries(group.zones)
                             .sort((a, b) => a[0].localeCompare(b[0]))
-                            .map(([subZone, subTasks]) => (
+                            .map(([subZone, subTasks]) => {
+                              const subOpen = expandedSubZones.includes(`${group.key}::${subZone}`)
+                              return (
                               <Fragment key={subZone}>
                                 {group.isFF && (
-                                  <tr className="border-b border-slate-100">
+                                  <tr
+                                    className="border-b border-slate-100 cursor-pointer hover:bg-slate-50"
+                                    onClick={() => toggleSubZone(`${group.key}::${subZone}`)}
+                                    title={subOpen ? 'Replier cette sous-tâche' : 'Déplier cette sous-tâche'}
+                                  >
                                     <td
                                       colSpan={10}
                                       className="px-2 py-1.5 text-xs font-bold uppercase tracking-wide"
                                       style={{ color: getZoneColor(subZone, allZones) }}
                                     >
+                                      {subOpen ? (
+                                        <ChevronDown className="h-4 w-4 inline-block mr-1 align-middle" />
+                                      ) : (
+                                        <ChevronRight className="h-4 w-4 inline-block mr-1 align-middle" />
+                                      )}
                                       <span
                                         className="inline-block w-2.5 h-2.5 rounded-full mr-2 align-middle"
                                         style={{ backgroundColor: getZoneColor(subZone, allZones) }}
@@ -900,7 +917,8 @@ export default function Preparation() {
                                     </td>
                                   </tr>
                                 )}
-                          {subTasks.map((task) => {
+                          {(!group.isFF || subOpen) &&
+                            subTasks.map((task) => {
                             const h = parseFloat(task.scheduledHours)
                             const inPocket = pockets.filter((p) => pocketTaskIds(p).includes(task.id))
                             return (
@@ -1008,7 +1026,8 @@ export default function Preparation() {
                             )
                           })}
                               </Fragment>
-                            ))}
+                              )
+                            })}
                         </tbody>
                       </table>
                     </div>

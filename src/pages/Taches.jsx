@@ -21,6 +21,12 @@ export default function Taches() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedBlocks, setSelectedBlocks] = useState([])
   const [expandedZones, setExpandedZones] = useState([])
+  const [expandedSubZones, setExpandedSubZones] = useState([])
+
+  const toggleSubZone = (key) =>
+    setExpandedSubZones((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    )
 
   // Sélection « à suivre » (préparation de la vacation suivante)
   const [followSelected, setFollowSelected] = useState({})
@@ -448,15 +454,26 @@ export default function Taches() {
                   <tbody>
                     {Object.entries(group.zones)
                       .sort((a, b) => a[0].localeCompare(b[0]))
-                      .map(([subZone, subTasks]) => (
+                      .map(([subZone, subTasks]) => {
+                        const subOpen = expandedSubZones.includes(`${group.key}::${subZone}`)
+                        return (
                         <Fragment key={subZone}>
                           {group.isFF && (
-                            <tr className="border-b border-slate-100">
+                            <tr
+                              className="border-b border-slate-100 cursor-pointer hover:bg-slate-50"
+                              onClick={() => toggleSubZone(`${group.key}::${subZone}`)}
+                              title={subOpen ? 'Replier cette sous-tâche' : 'Déplier cette sous-tâche'}
+                            >
                               <td
                                 colSpan={11}
                                 className="px-2 py-1.5 text-xs font-bold uppercase tracking-wide"
                                 style={{ color: getZoneColor(subZone, zones) }}
                               >
+                                {subOpen ? (
+                                  <ChevronDown className="h-4 w-4 inline-block mr-1 align-middle" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 inline-block mr-1 align-middle" />
+                                )}
                                 <span
                                   className="inline-block w-2.5 h-2.5 rounded-full mr-2 align-middle"
                                   style={{ backgroundColor: getZoneColor(subZone, zones) }}
@@ -468,7 +485,8 @@ export default function Taches() {
                               </td>
                             </tr>
                           )}
-                    {subTasks.map((task) => {
+                    {(!group.isFF || subOpen) &&
+                      subTasks.map((task) => {
                       const teamIds = assignmentTeams(assignments, task.id)
                       const taskTeams = teamIds
                         .map((id) => teams.find((tm) => tm.id === id))
@@ -594,7 +612,8 @@ export default function Taches() {
                       )
                     })}
                         </Fragment>
-                      ))}
+                        )
+                      })}
                   </tbody>
                 </table>
               </div>
