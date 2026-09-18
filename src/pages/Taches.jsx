@@ -139,7 +139,7 @@ export default function Taches() {
   }, [filtered])
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_290px]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_290px]">
     <div className="space-y-6 min-w-0">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Tâches par zone</h1>
@@ -312,10 +312,10 @@ export default function Taches() {
                       <th className="px-2 py-2 border-b whitespace-nowrap">N°</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">Tâche</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">Bloc</th>
-                      <th className="px-2 py-2 border-b whitespace-nowrap">Skills</th>
+                      <th className="hidden lg:table-cell px-2 py-2 border-b whitespace-nowrap">Skills</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">TRFX</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">Statut</th>
-                      <th className="px-2 py-2 border-b whitespace-nowrap">Appareil</th>
+                      <th className="hidden md:table-cell px-2 py-2 border-b whitespace-nowrap">Appareil</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">Note</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">Équipe</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap"></th>
@@ -347,7 +347,7 @@ export default function Taches() {
                               {getCategoryLabel(task.taskType) || '-'}
                             </span>
                           </td>
-                          <td className="px-2 py-2 text-xs whitespace-nowrap">{task.skills || '-'}</td>
+                          <td className="hidden lg:table-cell px-2 py-2 text-xs whitespace-nowrap">{task.skills || '-'}</td>
                           <td className="px-2 py-2 font-mono font-bold text-xs whitespace-nowrap">{task.taskBarcode || '-'}</td>
                           <td className="px-2 py-2 whitespace-nowrap">
                             <span
@@ -398,7 +398,7 @@ export default function Taches() {
                               </button>
                             )}
                           </td>
-                          <td className="px-2 py-2 whitespace-nowrap">{task.registration || '-'}</td>
+                          <td className="hidden md:table-cell px-2 py-2 whitespace-nowrap">{task.registration || '-'}</td>
                           <td className="px-2 py-2">
                             <NoteCell
                               note={task.note}
@@ -448,7 +448,7 @@ export default function Taches() {
         </div>
 
         {/* Carte « À suivre » → transfert vers la préparation de vac suivante */}
-        <div className="lg:sticky lg:top-4 h-fit">
+        <div className="xl:sticky xl:top-4 h-fit">
           <div className="bg-white rounded-xl shadow p-4">
             <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
               <ListChecks className="h-4 w-4 text-sky-500" /> À suivre
