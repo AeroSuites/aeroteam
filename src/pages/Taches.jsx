@@ -435,13 +435,13 @@ export default function Taches() {
                       <th className="px-1 py-2 border-b text-[10px] text-slate-400 font-semibold whitespace-nowrap" title="Cocher pour préparer la vacation suivante (transfert vers Préparation)">à suivre</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">N°</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">Tâche</th>
-                      <th className="px-2 py-2 border-b whitespace-nowrap">Bloc</th>
-                      <th className="hidden lg:table-cell px-2 py-2 border-b whitespace-nowrap">Skills</th>
-                      <th className="px-2 py-2 border-b whitespace-nowrap">TRFX</th>
-                      <th className="px-2 py-2 border-b whitespace-nowrap">Statut</th>
-                      <th className="hidden md:table-cell px-2 py-2 border-b whitespace-nowrap">Appareil</th>
-                      <th className="px-2 py-2 border-b whitespace-nowrap">Note</th>
-                      <th className="px-2 py-2 border-b whitespace-nowrap">Équipe</th>
+                      <th className="px-1 py-2 border-b whitespace-nowrap">Bloc</th>
+                      <th className="hidden lg:table-cell px-1 py-2 border-b whitespace-nowrap">Skills</th>
+                      <th className="px-1 py-2 border-b whitespace-nowrap">TRFX</th>
+                      <th className="px-1 py-2 border-b whitespace-nowrap">Statut</th>
+                      <th className="hidden md:table-cell px-1 py-2 border-b whitespace-nowrap">Appareil</th>
+                      <th className="px-1 py-2 border-b whitespace-nowrap">Note</th>
+                      <th className="px-1 py-2 border-b whitespace-nowrap">Équipe</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap"></th>
                     </tr>
                   </thead>
@@ -451,12 +451,20 @@ export default function Taches() {
                       .map(([subZone, subTasks]) => (
                         <Fragment key={subZone}>
                           {group.isFF && (
-                            <tr className="bg-slate-50">
+                            <tr className="border-b border-slate-100">
                               <td
                                 colSpan={11}
-                                className="px-2 py-1 text-xs font-semibold text-slate-600"
+                                className="px-2 py-1.5 text-xs font-bold uppercase tracking-wide"
+                                style={{ color: getZoneColor(subZone, zones) }}
                               >
-                                📍 {subZone} ({subTasks.length})
+                                <span
+                                  className="inline-block w-2.5 h-2.5 rounded-full mr-2 align-middle"
+                                  style={{ backgroundColor: getZoneColor(subZone, zones) }}
+                                />
+                                {subZone}
+                                <span className="ml-2 text-slate-400 font-normal normal-case">
+                                  ({subTasks.length})
+                                </span>
                               </td>
                             </tr>
                           )}
@@ -489,14 +497,14 @@ export default function Taches() {
                           <td className="px-2 py-2 font-medium max-w-md truncate" title={task.description}>
                             {task.description}
                           </td>
-                          <td className="px-2 py-2 whitespace-nowrap">
+                          <td className="px-1 py-2 whitespace-nowrap">
                             <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: getCategoryColor(task.taskType) }}>
                               {getCategoryLabel(task.taskType) || '-'}
                             </span>
                           </td>
-                          <td className="hidden lg:table-cell px-2 py-2 text-xs whitespace-nowrap">{task.skills || '-'}</td>
-                          <td className="px-2 py-2 font-mono font-bold text-xs whitespace-nowrap">{task.taskBarcode || '-'}</td>
-                          <td className="px-2 py-2 whitespace-nowrap">
+                          <td className="hidden lg:table-cell px-1 py-2 text-xs whitespace-nowrap">{task.skills || '-'}</td>
+                          <td className="px-1 py-2 font-mono font-bold text-xs whitespace-nowrap">{task.taskBarcode || '-'}</td>
+                          <td className="px-1 py-2 whitespace-nowrap">
                             <span
                               className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                                 task.mtxStatus === 'ACTV'
@@ -545,14 +553,14 @@ export default function Taches() {
                               </button>
                             )}
                           </td>
-                          <td className="hidden md:table-cell px-2 py-2 whitespace-nowrap">{task.registration || '-'}</td>
-                          <td className="px-2 py-2">
+                          <td className="hidden md:table-cell px-1 py-2 whitespace-nowrap">{task.registration || '-'}</td>
+                          <td className="px-1 py-2">
                             <NoteCell
                               note={task.note}
                               onSave={(v) => updateTask(task.id, { note: v })}
                             />
                           </td>
-                          <td className="px-2 py-2">
+                          <td className="px-1 py-2">
                             {taskTeams.length > 0 ? (
                               <div className="flex flex-wrap gap-1">
                                 {taskTeams.map((tm) => (

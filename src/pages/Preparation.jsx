@@ -865,15 +865,15 @@ export default function Preparation() {
                       <table className="w-full text-sm min-w-[760px]">
                         <thead>
                           <tr className="text-left bg-slate-50">
-                            <th className="px-4 py-2 border-b">N°</th>
-                            <th className="px-4 py-2 border-b">Tâche</th>
-                            <th className="px-4 py-2 border-b">Bloc</th>
-                            <th className="px-4 py-2 border-b">Skills</th>
-                            <th className="px-4 py-2 border-b">TRFX</th>
-                            <th className="px-4 py-2 border-b">Statut</th>
-                            <th className="px-4 py-2 border-b">Appareil</th>
-                            <th className="px-4 py-2 border-b">Note</th>
-                            <th className="px-4 py-2 border-b">Pochette</th>
+                            <th className="px-2 py-2 border-b">N°</th>
+                            <th className="px-2 py-2 border-b">Tâche</th>
+                            <th className="px-1 py-2 border-b">Bloc</th>
+                            <th className="px-1 py-2 border-b">Skills</th>
+                            <th className="px-1 py-2 border-b">TRFX</th>
+                            <th className="px-1 py-2 border-b">Statut</th>
+                            <th className="px-1 py-2 border-b">Appareil</th>
+                            <th className="px-1 py-2 border-b">Note</th>
+                            <th className="px-1 py-2 border-b">Pochette</th>
                             <th className="px-4 py-2 border-b"></th>
                           </tr>
                         </thead>
@@ -883,12 +883,20 @@ export default function Preparation() {
                             .map(([subZone, subTasks]) => (
                               <Fragment key={subZone}>
                                 {group.isFF && (
-                                  <tr className="bg-slate-50">
+                                  <tr className="border-b border-slate-100">
                                     <td
                                       colSpan={10}
-                                      className="px-2 py-1 text-xs font-semibold text-slate-600"
+                                      className="px-2 py-1.5 text-xs font-bold uppercase tracking-wide"
+                                      style={{ color: getZoneColor(subZone, allZones) }}
                                     >
-                                      📍 {subZone} ({subTasks.length})
+                                      <span
+                                        className="inline-block w-2.5 h-2.5 rounded-full mr-2 align-middle"
+                                        style={{ backgroundColor: getZoneColor(subZone, allZones) }}
+                                      />
+                                      {subZone}
+                                      <span className="ml-2 text-slate-400 font-normal normal-case">
+                                        ({subTasks.length})
+                                      </span>
                                     </td>
                                   </tr>
                                 )}
@@ -897,10 +905,10 @@ export default function Preparation() {
                             const inPocket = pockets.filter((p) => pocketTaskIds(p).includes(task.id))
                             return (
                               <tr key={task.id} className="border-b hover:bg-slate-50">
-                                <td className="px-4 py-2 font-bold text-slate-500">
+                                <td className="px-2 py-2 font-bold text-slate-500">
                                   {task.seq || '-'}
                                 </td>
-                                <td className="px-4 py-2 font-medium max-w-md" title={task.description}>
+                                <td className="px-2 py-2 font-medium max-w-md truncate" title={task.description}>
                                   {task.description}
                                   {!isNaN(h) && (
                                     <div className="text-[11px] text-slate-400 font-normal">
@@ -908,7 +916,7 @@ export default function Preparation() {
                                     </div>
                                   )}
                                 </td>
-                                <td className="px-4 py-2">
+                                <td className="px-1 py-2">
                                   <span
                                     className="px-2 py-0.5 rounded-full text-xs font-semibold text-white"
                                     style={{ backgroundColor: getCategoryColor(task.taskType) }}
@@ -916,11 +924,11 @@ export default function Preparation() {
                                     {getCategoryLabel(task.taskType) || '-'}
                                   </span>
                                 </td>
-                                <td className="px-4 py-2 text-xs">{task.skills || '-'}</td>
-                                <td className="px-4 py-2 font-mono font-bold text-xs">
+                                <td className="px-1 py-2 text-xs">{task.skills || '-'}</td>
+                                <td className="px-1 py-2 font-mono font-bold text-xs">
                                   {task.taskBarcode || '-'}
                                 </td>
-                                <td className="px-4 py-2">
+                                <td className="px-1 py-2">
                                   <span
                                     className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                                       task.mtxStatus === 'ACTV'
@@ -952,14 +960,14 @@ export default function Preparation() {
                                     </button>
                                   )}
                                 </td>
-                                <td className="px-4 py-2">{task.registration || '-'}</td>
-                                <td className="px-4 py-2">
+                                <td className="px-1 py-2">{task.registration || '-'}</td>
+                                <td className="px-1 py-2">
                                   <NoteCell
                                     note={task.note}
                                     onSave={(v) => updatePrepTask(task.id, { note: v })}
                                   />
                                 </td>
-                                <td className="px-4 py-2">
+                                <td className="px-1 py-2">
                                   <div className="flex flex-wrap items-center gap-1">
                                     {inPocket.map((p) => (
                                       <span
@@ -984,7 +992,7 @@ export default function Preparation() {
                                     />
                                   </div>
                                 </td>
-                                <td className="px-4 py-2">
+                                <td className="px-2 py-2">
                                   <button
                                     onClick={() => {
                                       if (window.confirm('Supprimer cette ligne ?'))
