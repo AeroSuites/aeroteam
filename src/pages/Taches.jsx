@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
-import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X } from 'lucide-react'
+import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play } from 'lucide-react'
 
 export default function Taches() {
   const {
@@ -144,6 +144,10 @@ export default function Taches() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Tâches par zone</h1>
         <p className="text-slate-600 mt-1">{filtered.length} tâches — groupées par zone de travail</p>
+        <p className="text-xs text-slate-400 mt-1">
+          Case <strong>Suivi</strong> : prépare la vacation suivante (transfert vers Préparation) —
+          le bouton <strong>+ suivi</strong> d'un bloc l'ajoute en entier.
+        </p>
       </div>
 
       {/* Ajout manuel — bien visible */}
@@ -288,10 +292,11 @@ export default function Taches() {
                         </button>
                         <button
                           onClick={() => addBlockToFollow(blk)}
-                          className="bg-white/20 hover:bg-white/50 rounded-full p-1 text-white"
+                          className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5"
                           title={`Ajouter tout le bloc ${getCategoryLabel(blk)} à suivre (préparation vac suivante)`}
                         >
                           <Plus className="h-3 w-3" />
+                          <span className="text-[9px] font-semibold">suivi</span>
                         </button>
                       </span>
                     )
@@ -303,7 +308,7 @@ export default function Taches() {
                 <table className="w-full text-sm min-w-[640px]">
                   <thead>
                     <tr className="text-left bg-slate-50">
-                      <th className="px-2 py-2 border-b" title="À suivre (préparation vac suivante)"></th>
+                      <th className="px-1 py-2 border-b text-[10px] text-slate-400 font-semibold" title="Cocher pour préparer la vacation suivante (transfert vers Préparation)">Suivi</th>
                       <th className="px-4 py-2 border-b">N°</th>
                       <th className="px-4 py-2 border-b">Tâche</th>
                       <th className="px-4 py-2 border-b">Bloc</th>
@@ -324,17 +329,17 @@ export default function Taches() {
                         .filter(Boolean)
                       return (
                         <tr key={task.id} className="border-b hover:bg-slate-50">
-                          <td className="px-2 py-2">
+                          <td className="px-1 py-2 text-center">
                             <input
                               type="checkbox"
                               checked={!!followSelected[task.id]}
                               onChange={() => toggleFollow(task.id)}
-                              className="h-4 w-4 accent-sky-600"
-                              title="Ajouter à suivre (préparation vac suivante)"
+                              className="h-3.5 w-3.5 accent-sky-600"
+                              title="Cocher pour préparer la vacation suivante"
                             />
                           </td>
                           <td className="px-4 py-2 font-bold text-slate-500">{task.seq || '-'}</td>
-                          <td className="px-4 py-2 font-medium max-w-md" title={task.description}>
+                          <td className="px-4 py-2 font-medium max-w-md truncate" title={task.description}>
                             {task.description}
                           </td>
                           <td className="px-4 py-2">
@@ -373,6 +378,23 @@ export default function Taches() {
                                 title="Rétablir la tâche ACTV"
                               >
                                 <RotateCcw className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            {task.mtxStatus !== 'PAUSE' ? (
+                              <button
+                                onClick={() => updateTask(task.id, { mtxStatus: 'PAUSE' })}
+                                className="text-slate-300 hover:text-amber-600 ml-1"
+                                title="Mettre la tâche en PAUSE"
+                              >
+                                <Pause className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => updateTask(task.id, { mtxStatus: 'ACTV' })}
+                                className="text-slate-300 hover:text-green-600 ml-1"
+                                title="Reprendre la tâche (ACTV)"
+                              >
+                                <Play className="h-3.5 w-3.5" />
                               </button>
                             )}
                           </td>
