@@ -3,7 +3,7 @@ import { assignmentTeams, isAssignedTo } from './helpers'
 
 export function exportToExcel({ tasks, teams, assignments }) {
   const wsData = [
-    ['N°', 'Tâche', 'Zone', 'Bloc', 'Skills', 'Heures prévues', 'Statut', 'Appareil', 'Équipe(s)', 'Membres'],
+    ['N°', 'Tâche', 'Zone', 'Bloc', 'Skills', 'TRFX', 'Heures prévues', 'Statut', 'Appareil', 'Équipe(s)', 'Membres'],
   ]
 
   const sorted = [...tasks].sort((a, b) => {
@@ -26,6 +26,7 @@ export function exportToExcel({ tasks, teams, assignments }) {
       task.workArea ?? '',
       task.taskType ?? '',
       task.skills ?? '',
+      task.taskBarcode ?? '',
       task.scheduledHours ?? '',
       task.mtxStatus ?? '',
       task.registration ?? '',
@@ -35,7 +36,7 @@ export function exportToExcel({ tasks, teams, assignments }) {
   })
 
   const ws = XLSX.utils.aoa_to_sheet(wsData)
-  const colWidths = [6, 55, 22, 10, 18, 12, 10, 12, 26, 40]
+  const colWidths = [6, 55, 22, 10, 18, 22, 12, 10, 12, 26, 40]
   ws['!cols'] = colWidths.map((wch) => ({ wch }))
 
   const wb = XLSX.utils.book_new()

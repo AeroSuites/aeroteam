@@ -202,6 +202,23 @@ export function dedupeAndMerge(prev, newTasks) {
   return [...prev, ...fresh]
 }
 
+// Clé de contenu d'une ligne (n° + description + bloc + zone) pour repérer les doublons
+export function taskContentKey(t) {
+  return [
+    t.seq ?? '',
+    String(t.description || '').trim().toLowerCase(),
+    t.taskType || '',
+    t.workArea || '',
+  ].join('|')
+}
+
+// Lignes entrantes qui ne sont PAS déjà présentes (par id et par contenu)
+export function filterNewPrepTasks(existing, incoming) {
+  const ids = new Set(existing.map((t) => t.id))
+  const keys = new Set(existing.map(taskContentKey))
+  return incoming.filter((t) => !ids.has(t.id) && !keys.has(taskContentKey(t)))
+}
+
 export function normalizeHeader(header) {
   if (!header) return ''
   return header

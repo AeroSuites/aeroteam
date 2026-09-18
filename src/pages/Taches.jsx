@@ -1,16 +1,87 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams } from '../utils/helpers'
+import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
-import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw } from 'lucide-react'
+import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X } from 'lucide-react'
 
 export default function Taches() {
-  const { tasks, teams, assignments, removeTask, removeTasksByBlock, addTasks, updateTask } = useApp()
+  const {
+    tasks,
+    teams,
+    assignments,
+    removeTask,
+    removeTasksByBlock,
+    addTasks,
+    updateTask,
+    prepTasks,
+    addPrepTasks,
+  } = useApp()
   const [filter, setFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedBlocks, setSelectedBlocks] = useState([])
   const [expandedZones, setExpandedZones] = useState([])
+
+  // Sélection « à suivre » (préparation de la vacation suivante)
+  const [followSelected, setFollowSelected] = useState({})
+  const [transferMsg, setTransferMsg] = useState('')
+
+  const followTasks = useMemo(
+    () => tasks.filter((t) => followSelected[t.id]),
+    [tasks, followSelected]
+  )
+
+  const followGrouped = useMemo(() => {
+    const map = {}
+    followTasks.forEach((t) => {
+      const b = t.taskType || 'AUTRE'
+      const z = t.workArea || 'Autre'
+      if (!map[b]) map[b] = {}
+      if (!map[b][z]) map[b][z] = []
+      map[b][z].push(t)
+    })
+    return Object.entries(map)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([blk, zonesMap]) => [
+        blk,
+        Object.entries(zonesMap).sort((a, b) => a[0].localeCompare(b[0])),
+      ])
+  }, [followTasks])
+
+  const toggleFollow = (id) => {
+    setTransferMsg('')
+    setFollowSelected((prev) => {
+      const next = { ...prev }
+      if (next[id]) delete next[id]
+      else next[id] = true
+      return next
+    })
+  }
+
+  const addBlockToFollow = (blk) => {
+    setTransferMsg('')
+    setFollowSelected((prev) => {
+      const next = { ...prev }
+      tasks
+        .filter((t) => (t.taskType || 'AUTRE') === blk)
+        .forEach((t) => {
+          next[t.id] = true
+        })
+      return next
+    })
+  }
+
+  const transferToPrep = () => {
+    const fresh = filterNewPrepTasks(prepTasks, followTasks)
+    const ignored = followTasks.length - fresh.length
+    if (fresh.length) addPrepTasks(fresh)
+    setTransferMsg(
+      `${fresh.length} ligne(s) transférée(s) vers Préparation vac suivante${
+        ignored ? ` · ${ignored} déjà présente(s) ignorée(s)` : ''
+      }.`
+    )
+    setFollowSelected({})
+  }
 
   const toggleZone = (zone) => {
     setExpandedZones((prev) =>
@@ -68,7 +139,8 @@ export default function Taches() {
   }, [filtered])
 
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6 lg:grid-cols-[1fr_330px]">
+    <div className="space-y-6 min-w-0">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Tâches par zone</h1>
         <p className="text-slate-600 mt-1">{filtered.length} tâches — groupées par zone de travail</p>
@@ -197,23 +269,31 @@ export default function Taches() {
                     const n = zoneTasks.filter((t) => t.taskType === blk).length
                     const total = tasks.filter((t) => t.taskType === blk).length
                     return (
-                      <button
-                        key={blk}
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} tâche(s) au total, toutes zones) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
-                            )
-                          ) {
-                            removeTasksByBlock(blk)
-                          }
-                        }}
-                        className="bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-xs font-semibold text-white flex items-center gap-1"
-                        title={`Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} tâches, toutes zones confondues)`}
-                      >
-                        {getCategoryLabel(blk)} · {n}
-                        <Trash2 className="h-3 w-3 opacity-80" />
-                      </button>
+                      <span key={blk} className="inline-flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} tâche(s) au total, toutes zones) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
+                              )
+                            ) {
+                              removeTasksByBlock(blk)
+                            }
+                          }}
+                          className="bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-xs font-semibold text-white flex items-center gap-1"
+                          title={`Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} tâches, toutes zones confondues)`}
+                        >
+                          {getCategoryLabel(blk)} · {n}
+                          <Trash2 className="h-3 w-3 opacity-80" />
+                        </button>
+                        <button
+                          onClick={() => addBlockToFollow(blk)}
+                          className="bg-white/20 hover:bg-white/50 rounded-full p-1 text-white"
+                          title={`Ajouter tout le bloc ${getCategoryLabel(blk)} à suivre (préparation vac suivante)`}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </span>
                     )
                   })}
                 </div>
@@ -223,6 +303,7 @@ export default function Taches() {
                 <table className="w-full text-sm min-w-[640px]">
                   <thead>
                     <tr className="text-left bg-slate-50">
+                      <th className="px-2 py-2 border-b" title="À suivre (préparation vac suivante)"></th>
                       <th className="px-4 py-2 border-b">N°</th>
                       <th className="px-4 py-2 border-b">Tâche</th>
                       <th className="px-4 py-2 border-b">Bloc</th>
@@ -243,6 +324,15 @@ export default function Taches() {
                         .filter(Boolean)
                       return (
                         <tr key={task.id} className="border-b hover:bg-slate-50">
+                          <td className="px-2 py-2">
+                            <input
+                              type="checkbox"
+                              checked={!!followSelected[task.id]}
+                              onChange={() => toggleFollow(task.id)}
+                              className="h-4 w-4 accent-sky-600"
+                              title="Ajouter à suivre (préparation vac suivante)"
+                            />
+                          </td>
                           <td className="px-4 py-2 font-bold text-slate-500">{task.seq || '-'}</td>
                           <td className="px-4 py-2 font-medium max-w-md" title={task.description}>
                             {task.description}
@@ -333,6 +423,84 @@ export default function Taches() {
             </div>
           )
         })}
+        </div>
+
+        {/* Carte « À suivre » → transfert vers la préparation de vac suivante */}
+        <div className="lg:sticky lg:top-4 h-fit">
+          <div className="bg-white rounded-xl shadow p-4">
+            <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+              <ListChecks className="h-4 w-4 text-sky-500" /> À suivre
+              <span className="text-xs font-normal text-slate-400">({followTasks.length})</span>
+            </h2>
+            {followTasks.length === 0 ? (
+              <p className="text-xs text-slate-400 italic mt-2">
+                Cochez des lignes — ou le <strong>+</strong> d'un bloc — pour préparer la vacation
+                suivante.
+              </p>
+            ) : (
+              <>
+                <div className="mt-2 max-h-[52vh] overflow-y-auto pr-1 space-y-2">
+                  {followGrouped.map(([blk, zonesList]) => (
+                    <div key={blk}>
+                      <p
+                        className="text-[10px] font-bold uppercase tracking-wide"
+                        style={{ color: getCategoryColor(blk) }}
+                      >
+                        {getCategoryLabel(blk)} ({zonesList.reduce((a, [, l]) => a + l.length, 0)})
+                      </p>
+                      {zonesList.map(([zone, list]) => (
+                        <div key={zone} className="mt-0.5">
+                          <p className="text-[10px] text-slate-500 font-semibold">📍 {zone}</p>
+                          <ul className="space-y-0.5">
+                            {list.map((t) => (
+                              <li key={t.id} className="flex items-start gap-1.5 text-xs text-slate-700">
+                                <span className="font-mono text-slate-400 shrink-0 w-8">
+                                  {t.seq || '—'}
+                                </span>
+                                <span className="flex-1 min-w-0 truncate" title={t.description}>
+                                  {t.description}
+                                </span>
+                                {t.note && (
+                                  <span className="shrink-0 text-amber-600" title={`Note : ${t.note}`}>
+                                    ✎
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => toggleFollow(t.id)}
+                                  className="shrink-0 text-slate-300 hover:text-red-600"
+                                  title="Retirer de la liste"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                {transferMsg && <p className="text-[11px] text-emerald-700 mt-2">{transferMsg}</p>}
+                <div className="flex items-center gap-2 mt-3">
+                  <button
+                    onClick={transferToPrep}
+                    className="flex-1 bg-sky-600 text-white px-3 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
+                    title="Ajouter ces lignes à la préparation de la vac suivante (classement et notes conservés, doublons ignorés)"
+                  >
+                    Transférer vers Préparation ({followTasks.length})
+                  </button>
+                  <button
+                    onClick={() => setFollowSelected({})}
+                    className="text-xs text-slate-500 hover:text-red-600 border border-slate-200 rounded-md px-2 py-2"
+                    title="Vider la sélection"
+                  >
+                    Vider
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
     </div>
   )
 }

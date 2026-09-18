@@ -13,6 +13,7 @@ import {
   getCategoryLabel,
   hexToRgb,
   makeId,
+  filterNewPrepTasks,
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
@@ -66,6 +67,7 @@ export default function Preparation() {
   const [previewSelected, setPreviewSelected] = useState({})
   const [previewExpandedBlocks, setPreviewExpandedBlocks] = useState([])
   const [previewExpandedZones, setPreviewExpandedZones] = useState([])
+  const [importMsg, setImportMsg] = useState('')
   const [transferPocketId, setTransferPocketId] = useState(null)
   const [transferTargetCode, setTransferTargetCode] = useState('')
   const [transferProfiles, setTransferProfiles] = useState([])
@@ -140,6 +142,7 @@ export default function Preparation() {
         }
         const parsed = parseExcelRows(rows.slice(1), detected)
         setPreview(parsed)
+        setImportMsg('')
         setPreviewSelected(Object.fromEntries(parsed.map((t) => [t.id, true])))
         setPreviewExpandedBlocks([])
         setPreviewExpandedZones([])
@@ -153,7 +156,14 @@ export default function Preparation() {
   const handleImport = () => {
     const list = preview.filter((t) => previewSelected[t.id])
     if (!list.length) return
-    addPrepTasks(list)
+    const fresh = filterNewPrepTasks(prepTasks, list)
+    const ignored = list.length - fresh.length
+    if (fresh.length) addPrepTasks(fresh)
+    setImportMsg(
+      `${fresh.length} ligne(s) ajoutée(s)${
+        ignored ? ` · ${ignored} déjà présente(s) ignorée(s)` : ''
+      }.`
+    )
     setPreview([])
     setPreviewSelected({})
     setFileName('')
@@ -737,6 +747,12 @@ export default function Preparation() {
           <FolderClock className="h-10 w-10 mx-auto text-slate-300 mb-2" />
           Aucune charge de préparation. Chargez le fichier de charge restante ci-dessus.
         </div>
+      )}
+
+      {importMsg && (
+        <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+          {importMsg}
+        </p>
       )}
 
       {prepTasks.length > 0 && (

@@ -11,7 +11,27 @@ import {
   groupTasksByCategory,
   getZoneColor,
   hashCodeKey,
+  taskContentKey,
+  filterNewPrepTasks,
 } from './helpers'
+
+describe('taskContentKey / filterNewPrepTasks', () => {
+  it('ignore les lignes déjà présentes (même id ou même contenu importé)', () => {
+    const existing = [
+      { id: 'a1', seq: '10', description: 'Tâche A', taskType: 'JIC', workArea: 'ZL1' },
+      { id: 'b1', seq: '11', description: 'Tâche B', taskType: 'CORR', workArea: 'ZL2' },
+    ]
+    const incoming = [
+      { id: 'a1', seq: '10', description: 'Tâche A', taskType: 'JIC', workArea: 'ZL1' },
+      { id: 'c9', seq: '10', description: 'tâche a', taskType: 'JIC', workArea: 'ZL1' },
+      { id: 'd1', seq: '12', description: 'Tâche C', taskType: 'MPC', workArea: 'ZL3' },
+    ]
+    const fresh = filterNewPrepTasks(existing, incoming)
+    expect(fresh).toHaveLength(1)
+    expect(fresh[0].description).toBe('Tâche C')
+    expect(taskContentKey(existing[0])).toBe(taskContentKey(incoming[1]))
+  })
+})
 
 describe('makeId', () => {
   it('préfixe les identifiants', () => {
