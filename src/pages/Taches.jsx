@@ -464,20 +464,19 @@ export default function Taches() {
                               onClick={() => toggleSubZone(`${group.key}::${subZone}`)}
                               title={subOpen ? 'Replier cette sous-tâche' : 'Déplier cette sous-tâche'}
                             >
-                              <td colSpan={11} className="px-2 py-1.5">
-                                <span
-                                  className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white"
-                                  style={{ backgroundColor: getZoneColor(subZone, zones) }}
-                                >
+                              <td
+                                colSpan={11}
+                                className="px-2 py-1.5"
+                                style={{ backgroundColor: getZoneColor(subZone, zones) }}
+                              >
+                                <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-white">
                                   {subOpen ? (
-                                    <ChevronDown className="h-3.5 w-3.5" />
+                                    <ChevronDown className="h-4 w-4" />
                                   ) : (
-                                    <ChevronRight className="h-3.5 w-3.5" />
+                                    <ChevronRight className="h-4 w-4" />
                                   )}
-                                  {subZone}
-                                  <span className="bg-white/25 rounded-full px-2 py-0.5 text-[10px] font-semibold">
-                                    {subTasks.length}
-                                  </span>
+                                  📍 {subZone}
+                                  <span className="opacity-90 font-normal">({subTasks.length})</span>
                                 </span>
                               </td>
                             </tr>
