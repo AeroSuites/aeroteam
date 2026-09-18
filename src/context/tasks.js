@@ -51,5 +51,29 @@ export function taskActions({ tasks, setTasks, setAssignments }) {
     })
   }
 
-  return { addTasks, assignTask, unassignTask, removeTask, removeTasksByBlock, updateTask }
+  // Supprime toutes les tâches d'une sous-tâche (zone).
+  // Si `block` est fourni, seule cette sous-tâche DU bloc est supprimée
+  // (ex. Found Fault > CAB WASTE sans toucher au JIC > CAB WASTE).
+  const removeTasksByZone = (zone, block) => {
+    const match = (t) =>
+      (t.workArea || 'Autre') === zone &&
+      (!block || (t.taskType || 'AUTRE') === block)
+    const idsToRemove = tasks.filter(match).map((t) => t.id)
+    setTasks((prev) => prev.filter((t) => !match(t)))
+    setAssignments((prev) => {
+      const next = { ...prev }
+      idsToRemove.forEach((id) => delete next[id])
+      return next
+    })
+  }
+
+  return {
+    addTasks,
+    assignTask,
+    unassignTask,
+    removeTask,
+    removeTasksByBlock,
+    removeTasksByZone,
+    updateTask,
+  }
 }

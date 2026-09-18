@@ -44,6 +44,7 @@ export default function Preparation() {
     addPrepTasks,
     removePrepTask,
     removePrepTasksByBlock,
+    removePrepTasksByZone,
     updatePrepTask,
     clearPrepTasks,
     addPocket,
@@ -902,7 +903,7 @@ export default function Preparation() {
                                     >
                                       <td colSpan={10} className="px-2 py-0.5">
                                         <span
-                                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide text-white"
+                                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold uppercase tracking-wide text-white"
                                           style={{ backgroundColor: getZoneColor(subZone, allZones) }}
                                         >
                                           {subOpen ? (
@@ -914,6 +915,22 @@ export default function Preparation() {
                                           <span className="opacity-90 font-normal">
                                             ({subTasks.length})
                                           </span>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              if (
+                                                window.confirm(
+                                                  `Supprimer toute la sous-tâche ${subZone} du bloc Found Fault (${subTasks.length} ligne(s)) ?`
+                                                )
+                                              ) {
+                                                removePrepTasksByZone(subZone, 'CORR')
+                                              }
+                                            }}
+                                            className="ml-auto text-white/80 hover:text-white"
+                                            title={`Supprimer toute la sous-tâche ${subZone} (Found Fault)`}
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </button>
                                         </span>
                                       </td>
                                     </tr>

@@ -12,6 +12,7 @@ export default function Taches() {
     assignments,
     removeTask,
     removeTasksByBlock,
+    removeTasksByZone,
     addTasks,
     updateTask,
     prepTasks,
@@ -431,6 +432,23 @@ export default function Taches() {
                       </span>
                     )
                   })}
+                  {!group.isFF && (
+                    <button
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Supprimer toute la sous-tâche ${zone} (${zoneTasks.length} tâche(s), tous blocs) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
+                          )
+                        ) {
+                          removeTasksByZone(zone)
+                        }
+                      }}
+                      className="bg-white/20 hover:bg-white/40 text-white p-1 rounded-full"
+                      title={`Supprimer toute la sous-tâche ${zone}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
               {expanded && (
@@ -470,7 +488,7 @@ export default function Taches() {
                               >
                                 <td colSpan={11} className="px-2 py-0.5">
                                   <span
-                                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide text-white"
+                                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold uppercase tracking-wide text-white"
                                     style={{ backgroundColor: getZoneColor(subZone, zones) }}
                                   >
                                     {subOpen ? (
@@ -480,6 +498,22 @@ export default function Taches() {
                                     )}
                                     📍 {subZone}
                                     <span className="opacity-90 font-normal">({subTasks.length})</span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        if (
+                                          window.confirm(
+                                            `Supprimer toute la sous-tâche ${subZone} du bloc Found Fault (${subTasks.length} tâche(s)) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
+                                          )
+                                        ) {
+                                          removeTasksByZone(subZone, 'CORR')
+                                        }
+                                      }}
+                                      className="ml-auto text-white/80 hover:text-white"
+                                      title={`Supprimer toute la sous-tâche ${subZone} (Found Fault)`}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
                                   </span>
                                 </td>
                               </tr>
