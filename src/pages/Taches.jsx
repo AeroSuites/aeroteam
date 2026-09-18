@@ -53,19 +53,6 @@ export default function Taches() {
   const isTransferred = (task) =>
     prepMarks.ids.has(task.id) || prepMarks.keys.has(taskContentKey(task))
 
-  // Nombre de sous-tâches (zones) distinctes par bloc : le badge « + à suivre »
-  // du bloc n'est affiché que si le bloc contient plusieurs sous-tâches.
-  const zonesByBlock = useMemo(() => {
-    const map = {}
-    tasks.forEach((t) => {
-      const blk = t.taskType || 'AUTRE'
-      const z = t.workArea || 'Autre'
-      if (!map[blk]) map[blk] = new Set()
-      map[blk].add(z)
-    })
-    return map
-  }, [tasks])
-
   const followGrouped = useMemo(() => {
     const map = {}
     followTasks.forEach((t) => {
@@ -374,6 +361,13 @@ export default function Taches() {
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
+                  <button
+                    onClick={() => addBlockToFollow(block)}
+                    className="inline-flex items-center gap-0.5 text-[10px] font-bold text-sky-700 border border-sky-300 hover:bg-sky-50 rounded-full px-1.5 py-0.5"
+                    title={`Ajouter tout le bloc ${getCategoryLabel(block)} à suivre (préparation vac suivante)`}
+                  >
+                    <Plus className="h-3 w-3" /> à suivre
+                  </button>
                 </div>
               )
             })}
@@ -455,16 +449,6 @@ export default function Taches() {
                           {getCategoryLabel(blk)} · {n}
                           <Trash2 className="h-3 w-3 opacity-80" />
                         </button>
-                        {zonesByBlock[blk]?.size > 1 && (
-                          <button
-                            onClick={() => addBlockToFollow(blk)}
-                            className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5"
-                            title={`Ajouter tout le bloc ${getCategoryLabel(blk)} à suivre (préparation vac suivante)`}
-                          >
-                            <Plus className="h-3 w-3" />
-                            <span className="text-[10px] font-bold whitespace-nowrap">à suivre</span>
-                          </button>
-                        )}
                       </span>
                     )
                   })}
