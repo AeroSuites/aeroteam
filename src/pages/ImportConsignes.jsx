@@ -31,6 +31,7 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardList,
+  RefreshCw,
 } from 'lucide-react'
 
 const SHIFT_COLORS = {
@@ -129,6 +130,42 @@ export default function ImportConsignes() {
     if (!prof) return null
     return profileStore.getProfile(prof.identifiant, prof.code)
   }
+
+  // Mise à jour automatique (raccourci iPad / Power Automate) — stockage admin
+  const [autoInfo, setAutoInfo] = useState(null)
+  const [autoBusy, setAutoBusy] = useState(false)
+  const [autoError, setAutoError] = useState('')
+
+  const loadAutoImport = async (apply) => {
+    setAutoBusy(true)
+    setAutoError('')
+    try {
+      const imp = await profileStore.getConsignesImport()
+      setAutoInfo(imp)
+      if (apply && imp?.report) {
+        setReport(imp.report)
+        const days = Object.keys(imp.report)
+        setSelectedDay(days[0] || '')
+        setSelectedShift('matin')
+        setFileName(imp.file_name || 'Mise à jour automatique')
+        setSessionInfo(
+          `Mise à jour automatique du ${new Date(imp.at).toLocaleString('fr-FR')} chargée${
+            imp.file_name ? ` (${imp.file_name})` : ''
+          }.`
+        )
+        setError('')
+      }
+    } catch (err) {
+      setAutoError(err?.message || 'Erreur de chargement de la mise à jour automatique')
+    }
+    setAutoBusy(false)
+  }
+
+  useEffect(() => {
+    // Applique la mise à jour auto seulement s'il n'y a pas de session d'import locale en cours
+    loadAutoImport(!localStorage.getItem(STATE_KEY))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Restauration de la dernière session d'import
   useEffect(() => {
@@ -632,6 +669,33 @@ export default function ImportConsignes() {
         <p className="text-slate-600 mt-1">
           Analyse du fichier de consignes : choisissez le jour et le shift à consulter.
         </p>
+      </div>
+
+      {/* Mise à jour automatique (raccourci iPad / Power Automate) */}
+      <div className="bg-white rounded-xl shadow p-4 flex flex-wrap items-center justify-between gap-3 border-l-4 border-l-emerald-500">
+        <div>
+          <p className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+            <RefreshCw className="h-4 w-4 text-emerald-600" /> Mise à jour automatique des consignes
+          </p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {autoInfo
+              ? `Dernière réception : ${new Date(autoInfo.at).toLocaleString('fr-FR')} · ${
+                  autoInfo.file_name || 'fichier'
+                } · ${autoInfo.aircraft_count} avion(s)`
+              : autoError
+                ? autoError
+                : 'Aucune réception automatique pour le moment (envoie le fichier depuis l’iPad).'}
+          </p>
+        </div>
+        <button
+          onClick={() => loadAutoImport(true)}
+          disabled={autoBusy}
+          className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:opacity-50 text-sm font-semibold"
+          title="Charger les consignes et l'effectif de la dernière réception automatique (sans fichier Excel)"
+        >
+          <RefreshCw className={`h-4 w-4 ${autoBusy ? 'animate-spin' : ''}`} />
+          {autoBusy ? 'Chargement…' : autoInfo ? 'Charger la mise à jour' : 'Rechercher une mise à jour'}
+        </button>
       </div>
 
       <div className="flex flex-wrap gap-3">

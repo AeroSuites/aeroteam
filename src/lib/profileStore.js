@@ -443,6 +443,20 @@ export async function getAircraftConsignes(day, shift) {
   return data?.consignes || []
 }
 
+// Dernière réception automatique du fichier consignes (stockage admin)
+export async function getConsignesImport() {
+  const { data, error } = await supabase.rpc('get_consignes_import')
+  if (error) throw error
+  return data?.import || null
+}
+
+// Statut de la dernière lecture automatique
+export async function getLastImport() {
+  const { data, error } = await supabase.rpc('get_last_import')
+  if (error) throw error
+  return data?.last || null
+}
+
 // Coches des lignes de consignes (partagées entre appareils)
 export async function getConsigneChecks() {
   const { data, error } = await supabase.rpc('get_consigne_checks')

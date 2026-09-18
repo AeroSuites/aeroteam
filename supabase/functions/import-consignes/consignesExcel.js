@@ -1,0 +1,226 @@
+// Lecteur du fichier CONSIGNES S37 : effectif par jour/shift + blocs charge par avion.
+// Détection 100 % par contenu (libellés), jamais par positions fixes.
+
+import * as XLSX from 'npm:xlsx'
+
+const DAY_SHEET_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
+const SHIFT_RE = /^\s*(matin|soir|nuit)\s*$/i
+
+function cell(rows, r, c) {
+  const v = rows[r] ? rows[r][c] : undefined
+  if (v === undefined || v === null) return ''
+  if (v instanceof Date) return v.toISOString().slice(0, 10)
+  if (typeof v === 'number') return String(v)
+  return String(v).trim()
+}
+
+function norm(s) {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’'`]/g, '')
+    .replace(/\s+/g, '')
+}
+
+export function toDateString(v) {
+  if (v instanceof Date) {
+    const s = v.toISOString().slice(0, 10)
+    return s === '1970-01-01' && v.getTime() < 1000000000 ? '' : s
+  }
+  if (typeof v === 'number' && v > 20000 && v < 80000) {
+    // Numéro de série Excel (jours depuis le 30/12/1899)
+    return new Date(Math.round((v - 25569) * 86400000)).toISOString().slice(0, 10)
+  }
+  return String(v == null ? '' : v)
+}
+
+export function findSheetDate(rows) {
+  for (let r = 0; r < Math.min(rows.length, 8); r++) {
+    for (let c = 0; c < 8; c++) {
+      if (norm(cell(rows, r, c)) === 'date') {
+        const v = toDateString(rows[r] ? rows[r][c + 1] : undefined)
+        if (v) return v
+      }
+    }
+  }
+  return ''
+}
+
+export function parseEffectif(rows) {
+  // Cherche la ligne des libellés de shifts ("Matin" / "Soir" / "Nuit")
+  const shifts = []
+  for (let r = 1; r < Math.min(rows.length, 8); r++) {
+    for (let c = 0; c < 40; c++) {
+      const raw = cell(rows, r, c)
+      if (!SHIFT_RE.test(raw)) continue
+      const shiftName = raw.trim().toLowerCase()
+      const memberCol =
+        r + 1 < rows.length
+          ? Math.min(
+              41,
+              (rows[r + 1] || []).findIndex((v, idx) => idx >= c && norm(v) === 'nom')
+            )
+          : -1
+      if (memberCol === -1 || memberCol >= 41) continue
+      const affectCols = []
+      for (let ac = memberCol + 1; ac < 41; ac++) {
+        const h = norm(cell(rows, r + 1, ac))
+        if (h === 'affectation') affectCols.push(ac)
+        else if (h === 'remarque' || h === 'hangar') break
+      }
+      const members = []
+      for (let dr = r + 2; dr < Math.min(r + 70, rows.length); dr++) {
+        const name = cell(rows, dr, memberCol)
+        if (!name) break
+        const aircrafts = [...new Set(affectCols.map((ac) => cell(rows, dr, ac)).filter((v) => /^F-[\w-]+$/i.test(v)))]
+        if (!aircrafts.length) continue // ABSENT / MANAGER / TSP etc.
+        members.push({ name, aircrafts })
+      }
+      shifts.push({ shift: shiftName, members })
+      // Les autres shifts sont ailleurs dans la ligne : on continue la boucle
+    }
+  }
+  return shifts
+}
+
+export function parseBlocks(rows) {
+  const blocks = []
+  const immatRows = []
+  for (let r = 0; r < rows.length; r++) {
+    for (let c = 0; c < 40; c++) {
+      if (cell(rows, r, c) === 'Immat') immatRows.push({ r, c })
+    }
+  }
+  for (let i = 0; i < immatRows.length; i++) {
+    const { r, c } = immatRows[i]
+    const immat = cell(rows, r, c + 1)
+    if (!/^F-[\w-]+$/i.test(immat)) continue
+    const endRow = i + 1 < immatRows.length ? immatRows[i + 1].r : rows.length
+
+    // En-tête du bloc : libellés sur la ligne au-dessus et la ligne d'immat
+    const info = blockHeaderInfo(rows, r)
+
+    const shifts = {}
+    // Délégations : "Consignes X" définies sur plusieurs lignes
+    for (let sr = r + 1; sr < endRow; sr++) {
+      for (let sc = 0; sc < 40; sc++) {
+        const v = cell(rows, sr, sc)
+        if (!/^consignes\s+(matin|soir|nuit)$/i.test(v)) continue
+        const shiftName = v.replace(/^consignes\s+/i, '').trim().toLowerCase()
+        const tasks = []
+        for (let tr = sr + 1; tr < endRow; tr++) {
+          const t = cell(rows, tr, sc)
+          if (!t) break
+          if (/^a\s*fair/i.test(t) || /^à\s*fair/i.test(t)) continue
+          if (/^consignes\s/i.test(t)) break
+          tasks.push(t)
+        }
+        if (tasks.length || !shifts[shiftName]) shifts[shiftName] = tasks
+      }
+    }
+    blocks.push({ immat, ...info, shifts })
+  }
+  return blocks
+}
+
+// Lit les cases d'en-tête d'un bloc avion :
+// « Type de visite », « Date/Heure d'entrée », « OSM », « Config »,
+// « Position », « Date/Heure de sortie » (libellés détectés par contenu,
+// valeurs à droite du libellé — ou en dessous pour OSM/Config/Position).
+export function blockHeaderInfo(rows, r) {
+  const info = {
+    typeVisite: '',
+    dateEntree: '',
+    heureEntree: '',
+    osm: '',
+    config: '',
+    position: '',
+    dateSortie: '',
+    heureSortie: '',
+  }
+  for (const hr of [r - 1, r]) {
+    if (hr < 0 || hr >= rows.length) continue
+    for (let c = 0; c < 40; c++) {
+      const n = norm(cell(rows, hr, c))
+      if (!n) continue
+      if (n === 'typedevisite') info.typeVisite = info.typeVisite || cell(rows, hr, c + 1)
+      else if (n === 'datedentree') info.dateEntree = info.dateEntree || toDateString(rows[hr] ? rows[hr][c + 1] : undefined)
+      else if (n === 'heuredentree') info.heureEntree = info.heureEntree || cell(rows, hr, c + 1)
+      else if (n === 'datedesortie') info.dateSortie = info.dateSortie || toDateString(rows[hr] ? rows[hr][c + 1] : undefined)
+      else if (n === 'heuredesortie') info.heureSortie = info.heureSortie || cell(rows, hr, c + 1)
+      else if (n === 'osm') info.osm = info.osm || cell(rows, hr + 1, c)
+      else if (n === 'config') info.config = info.config || cell(rows, hr + 1, c)
+      else if (n === 'position') info.position = info.position || cell(rows, hr + 1, c)
+    }
+  }
+  return info
+}
+
+export function parseConsignesSheet(ws) {
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true })
+  return {
+    date: findSheetDate(rows),
+    effectif: parseEffectif(rows),
+    blocks: parseBlocks(rows),
+  }
+}
+
+export function parseConsignesWorkbook(workbook) {
+  const results = {}
+  workbook.SheetNames.forEach((name) => {
+    if (!DAY_SHEET_NAMES.includes(name.toUpperCase())) return
+    try {
+      results[name] = parseConsignesSheet(workbook.Sheets[name])
+    } catch {
+      results[name] = { date: '', effectif: [], blocks: [], error: 'Feuille illisible' }
+    }
+  })
+  return results
+}
+
+// Résumé agrégé par avion pour la création des profils
+export function summarizeAircrafts(results) {
+  const byAircraft = {}
+  Object.entries(results).forEach(([day, sheet]) => {
+    sheet.effectif.forEach(({ shift, members }) => {
+      members.forEach((m) => {
+        m.aircrafts.forEach((immat) => {
+          if (!byAircraft[immat]) byAircraft[immat] = { days: {} }
+          if (!byAircraft[immat].days[day]) byAircraft[immat].days[day] = {}
+          if (!byAircraft[immat].days[day][shift]) byAircraft[immat].days[day][shift] = []
+          byAircraft[immat].days[day][shift].push(m.name)
+        })
+      })
+    })
+    sheet.blocks.forEach((b) => {
+      if (!byAircraft[b.immat]) byAircraft[b.immat] = { days: {} }
+      if (!byAircraft[b.immat].days[day]) byAircraft[b.immat].days[day] = {}
+      byAircraft[b.immat].days[day].infos = {
+        typeVisite: b.typeVisite || '',
+        dateEntree: b.dateEntree || '',
+        heureEntree: b.heureEntree || '',
+        osm: b.osm || '',
+        config: b.config || '',
+        position: b.position || '',
+        dateSortie: b.dateSortie || '',
+        heureSortie: b.heureSortie || '',
+      }
+      if (!byAircraft[b.immat].days[day].consignes) byAircraft[b.immat].days[day].consignes = {}
+      Object.entries(b.shifts).forEach(([shift, tasks]) => {
+        byAircraft[b.immat].days[day].consignes[shift] = tasks
+      })
+    })
+  })
+  const list = Object.entries(byAircraft).map(([immat, info]) => ({
+    immat,
+    days: info.days,
+    totalTasks: Object.values(info.days).reduce(
+      (acc, d) =>
+        acc +
+        Object.values(d.consignes || {}).reduce((a, tasks) => a + tasks.length, 0),
+      0
+    ),
+  }))
+  return list.sort((a, b) => a.immat.localeCompare(b.immat))
+}
