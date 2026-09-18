@@ -139,14 +139,14 @@ export default function Taches() {
   }, [filtered])
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_330px]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_290px]">
     <div className="space-y-6 min-w-0">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Tâches par zone</h1>
         <p className="text-slate-600 mt-1">{filtered.length} tâches — groupées par zone de travail</p>
         <p className="text-xs text-slate-400 mt-1">
-          Case <strong>Suivi</strong> : prépare la vacation suivante (transfert vers Préparation) —
-          le bouton <strong>+ suivi</strong> d'un bloc l'ajoute en entier.
+          Case <strong>« à suivre »</strong> : prépare la vacation suivante (transfert vers
+          Préparation) — le bouton <strong>+ à suivre</strong> d'un bloc l'ajoute en entier.
         </p>
       </div>
 
@@ -296,7 +296,7 @@ export default function Taches() {
                           title={`Ajouter tout le bloc ${getCategoryLabel(blk)} à suivre (préparation vac suivante)`}
                         >
                           <Plus className="h-3 w-3" />
-                          <span className="text-[9px] font-semibold">suivi</span>
+                          <span className="text-[9px] font-semibold whitespace-nowrap">à suivre</span>
                         </button>
                       </span>
                     )
@@ -305,20 +305,20 @@ export default function Taches() {
               </div>
               {expanded && (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[640px]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left bg-slate-50">
-                      <th className="px-1 py-2 border-b text-[10px] text-slate-400 font-semibold" title="Cocher pour préparer la vacation suivante (transfert vers Préparation)">Suivi</th>
-                      <th className="px-4 py-2 border-b">N°</th>
-                      <th className="px-4 py-2 border-b">Tâche</th>
-                      <th className="px-4 py-2 border-b">Bloc</th>
-                      <th className="px-4 py-2 border-b">Skills</th>
-                      <th className="px-4 py-2 border-b">TRFX</th>
-                      <th className="px-4 py-2 border-b">Statut</th>
-                      <th className="px-4 py-2 border-b">Appareil</th>
-                      <th className="px-4 py-2 border-b">Note</th>
-                      <th className="px-4 py-2 border-b">Équipe</th>
-                      <th className="px-4 py-2 border-b"></th>
+                      <th className="px-1 py-2 border-b text-[10px] text-slate-400 font-semibold whitespace-nowrap" title="Cocher pour préparer la vacation suivante (transfert vers Préparation)">à suivre</th>
+                      <th className="px-4 py-2 border-b whitespace-nowrap">N°</th>
+                      <th className="px-4 py-2 border-b whitespace-nowrap">Tâche</th>
+                      <th className="px-4 py-2 border-b whitespace-nowrap">Bloc</th>
+                      <th className="px-4 py-2 border-b whitespace-nowrap">Skills</th>
+                      <th className="px-4 py-2 border-b whitespace-nowrap">TRFX</th>
+                      <th className="px-4 py-2 border-b whitespace-nowrap">Statut</th>
+                      <th className="px-4 py-2 border-b whitespace-nowrap">Appareil</th>
+                      <th className="px-4 py-2 border-b whitespace-nowrap">Note</th>
+                      <th className="px-4 py-2 border-b whitespace-nowrap">Équipe</th>
+                      <th className="px-4 py-2 border-b whitespace-nowrap"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -342,14 +342,14 @@ export default function Taches() {
                           <td className="px-4 py-2 font-medium max-w-md truncate" title={task.description}>
                             {task.description}
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 whitespace-nowrap">
                             <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: getCategoryColor(task.taskType) }}>
                               {getCategoryLabel(task.taskType) || '-'}
                             </span>
                           </td>
-                          <td className="px-4 py-2 text-xs">{task.skills || '-'}</td>
-                          <td className="px-4 py-2 font-mono font-bold text-xs">{task.taskBarcode || '-'}</td>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 text-xs whitespace-nowrap">{task.skills || '-'}</td>
+                          <td className="px-4 py-2 font-mono font-bold text-xs whitespace-nowrap">{task.taskBarcode || '-'}</td>
+                          <td className="px-4 py-2 whitespace-nowrap">
                             <span
                               className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                                 task.mtxStatus === 'ACTV'
@@ -398,7 +398,7 @@ export default function Taches() {
                               </button>
                             )}
                           </td>
-                          <td className="px-4 py-2">{task.registration || '-'}</td>
+                          <td className="px-4 py-2 whitespace-nowrap">{task.registration || '-'}</td>
                           <td className="px-4 py-2">
                             <NoteCell
                               note={task.note}
