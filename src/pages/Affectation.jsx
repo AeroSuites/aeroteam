@@ -11,8 +11,6 @@ export default function Affectation() {
   const { tasks, teams, assignments, assignTask, unassignTask, updateTeam, addTasks, removeTasksByBlock, updateTask } = useApp()
   const [dragTask, setDragTask] = useState(null)
   const [selectedBlocks, setSelectedBlocks] = useState([])
-  const [expandedBlocks, setExpandedBlocks] = useState([])
-  const [expandedZones, setExpandedZones] = useState([])
   const [lastAutoAssignments, setLastAutoAssignments] = useState(null)
   const [tab, setTab] = useState('affectation')
 
@@ -157,18 +155,6 @@ export default function Affectation() {
     setLastAutoAssignments(null)
   }
 
-  const toggleBlockCollapse = (block) => {
-    setExpandedBlocks((prev) =>
-      prev.includes(block) ? prev.filter((b) => b !== block) : [...prev, block]
-    )
-  }
-
-  const toggleZoneCollapse = (key) => {
-    setExpandedZones((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    )
-  }
-
   const zones = useMemo(() => {
     return [...new Set(tasks.map((t) => t.workArea).filter(Boolean))].sort()
   }, [tasks])
@@ -187,26 +173,56 @@ export default function Affectation() {
   // selectedBlocks = blocs masqués. Vide => tout affiché.
   const visibleBlocksList = blocks.filter((b) => !selectedBlocks.includes(b))
 
-  // Grouper par bloc
-  const groupedByBlock = useMemo(() => {
-    const groups = {}
-    tasks.forEach((t) => {
-      const block = t.taskType || 'AUTRE'
-      if (!groups[block]) groups[block] = []
-      groups[block].push(t)
-    })
-    return groups
-  }, [tasks])
+  // Regroupement par sous-tâche/zone (comme la page Tâches) :
+  // Found Fault reste regroupé dans un bloc avec ses sous-tâches.
+  const [expandedZoneCards, setExpandedZoneCards] = useState([])
+  const [expandedSubZones, setExpandedSubZones] = useState([])
 
-  // Grouper les tâches d'un bloc par work area
-  const groupByZone = (blockTasks) => {
+  const toggleZoneCard = (key) =>
+    setExpandedZoneCards((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    )
+
+  const toggleSubZone = (key) =>
+    setExpandedSubZones((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    )
+
+  // Blocs masqués (selectedBlocks) => tâches filtrées avant regroupement
+  const filteredTasks = useMemo(
+    () => tasks.filter((t) => !selectedBlocks.includes(t.taskType || 'AUTRE')),
+    [tasks, selectedBlocks]
+  )
+
+  const zoneGroups = useMemo(() => {
     const groups = {}
-    blockTasks.forEach((t) => {
-      const zone = t.workArea || 'Autre'
-      if (!groups[zone]) groups[zone] = []
-      groups[zone].push(t)
+    filteredTasks.forEach((t) => {
+      const isFF = (t.taskType || '') === 'CORR'
+      const key = isFF ? '__FOUND_FAULT__' : t.workArea || 'Autre'
+      if (!groups[key]) {
+        groups[key] = {
+          key,
+          label: isFF ? getCategoryLabel('CORR') : key,
+          isFF,
+          zones: {},
+        }
+      }
+      const sub = t.workArea || 'Sans sous-tâche'
+      if (!groups[key].zones[sub]) groups[key].zones[sub] = []
+      groups[key].zones[sub].push(t)
     })
-    return groups
+    return Object.values(groups).sort((a, b) => {
+      const ca = Object.values(a.zones).reduce((n, l) => n + l.length, 0)
+      const cb = Object.values(b.zones).reduce((n, l) => n + l.length, 0)
+      return cb - ca
+    })
+  }, [filteredTasks])
+
+  // Affecter à une équipe toutes les tâches d'une sous-tâche (tous blocs confondus)
+  const assignZoneAll = (zone, teamId) => {
+    tasks
+      .filter((t) => (t.workArea || 'Autre') === zone)
+      .forEach((t) => manualAssign(t.id, teamId))
   }
 
   const manualAssign = (taskId, teamId) => {
@@ -256,19 +272,6 @@ export default function Affectation() {
     )
     unassigned.forEach((t) => manualAssign(t.id, teamId))
   }
-
-  // Affecter toutes les tâches d'un bloc ET d'une zone à une équipe
-  const assignWholeZone = (block, zone, teamId) => {
-    const unassigned = tasks.filter(
-      (t) =>
-        t.taskType === block &&
-        (t.workArea || 'Autre') === zone &&
-        assignmentTeams(assignments, t.id).length === 0
-    )
-    unassigned.forEach((t) => manualAssign(t.id, teamId))
-  }
-
-  const bulkSelectValue = ''
 
   return (
     <div className="space-y-6">
@@ -505,233 +508,264 @@ export default function Affectation() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
         <div className="space-y-4">
-          {visibleBlocksList.length === 0 && (
+          {zoneGroups.length === 0 && (
             <div className="bg-white rounded-xl shadow p-8 text-center text-slate-500">
               <ClipboardList className="h-12 w-12 mx-auto text-slate-300 mb-3" />
               Aucun bloc n'est affiché. Sélectionnez des blocs ci-dessus, ou importez votre fichier Excel.
             </div>
           )}
 
-          {visibleBlocksList.map((block) => {
-            const blockTasks = groupedByBlock[block] || []
-            const blockColor = getCategoryColor(block)
-            const unassignedInBlock = blockTasks.filter(
+          {zoneGroups.map((group) => {
+            const groupTasks = Object.values(group.zones).flat()
+            const cardColor = group.isFF
+              ? getCategoryColor('CORR')
+              : getZoneColor(group.label, zones)
+            const unassignedInGroup = groupTasks.filter(
               (t) => assignmentTeams(assignments, t.id).length === 0
             )
-            const blockExpanded = expandedBlocks.includes(block)
+            const cardOpen = expandedZoneCards.includes(group.key)
+            const groupBlocks = [...new Set(groupTasks.map((t) => t.taskType || 'AUTRE'))].sort()
             return (
-              <div key={block} className="bg-white rounded-xl shadow overflow-hidden">
-                <div className="px-4 py-2 flex flex-wrap items-center justify-between gap-2" style={{ backgroundColor: blockColor }}>
-                  <div className="flex items-center gap-2 cursor-pointer" onClick={() => toggleBlockCollapse(block)}>
-                    {blockExpanded ? (
+              <div key={group.key} className="bg-white rounded-xl shadow overflow-hidden">
+                <div
+                  className="px-4 py-2 flex flex-wrap items-center justify-between gap-2"
+                  style={{ backgroundColor: cardColor }}
+                >
+                  <div
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => toggleZoneCard(group.key)}
+                  >
+                    {cardOpen ? (
                       <ChevronDown className="h-5 w-5 text-white" />
                     ) : (
                       <ChevronRight className="h-5 w-5 text-white" />
                     )}
                     <h3 className="font-bold text-white text-sm">
-                      Bloc {getCategoryLabel(block)} <span className="font-normal opacity-80">({blockTasks.length})</span>
+                      {group.isFF ? 'Bloc Found Fault' : `📍 ${group.label}`}{' '}
+                      <span className="font-normal opacity-80">({groupTasks.length})</span>
                     </h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-white/90 text-xs">
-                      {unassignedInBlock.length} non assignée(s)
+                      {unassignedInGroup.length} non assignée(s)
                     </span>
-                    {teams.length > 0 && (
+                    {teams.length > 0 && unassignedInGroup.length > 0 && (
                       <select
-                        value={bulkSelectValue}
+                        value=""
                         onChange={(e) => {
-                          if (e.target.value) {
-                            assignWholeBlock(block, e.target.value)
-                            e.target.value = ''
-                          }
+                          if (!e.target.value) return
+                          if (group.isFF) assignWholeBlock('CORR', e.target.value)
+                          else assignZoneAll(group.label, e.target.value)
                         }}
-                        className="border-none rounded-md px-2 py-1 text-xs bg-white text-slate-800 cursor-pointer font-semibold flex items-center gap-1"
-                        title="Affecter tout le bloc"
+                        className="border-none rounded-md px-2 py-1 text-xs bg-white text-slate-800 cursor-pointer font-semibold"
+                        title={group.isFF ? 'Affecter tout le bloc' : 'Affecter toute la sous-tâche'}
                       >
-                        <option value="">— Affecter tout le bloc —</option>
+                        <option value="">{group.isFF ? '— Tout le bloc —' : '— Toute la sous-tâche —'}</option>
                         {teams.map((t) => (
-                          <option key={t.id} value={t.id}>À {t.name} ({unassignedInBlock.length} tâches)</option>
+                          <option key={t.id} value={t.id}>À {t.name}</option>
                         ))}
                       </select>
                     )}
-                    <button
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `Supprimer tout le bloc ${getCategoryLabel(block)} (${blockTasks.length} tâches) ?\n\nToutes ces tâches disparaîtront du planning.`
-                          )
-                        ) {
-                          removeTasksByBlock(block)
-                        }
-                      }}
-                      className="bg-white/10 hover:bg-white/25 text-white p-1.5 rounded"
-                      title={`Supprimer tout le bloc ${getCategoryLabel(block)}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {groupBlocks.map((blk) => {
+                      const n = groupTasks.filter((t) => (t.taskType || 'AUTRE') === blk).length
+                      return (
+                        <span
+                          key={blk}
+                          className="inline-flex items-center gap-1 rounded-full pl-2 pr-1 py-0.5 bg-white/25"
+                        >
+                          <span className="text-[10px] font-bold text-white whitespace-nowrap">
+                            {getCategoryLabel(blk)} · {n}
+                          </span>
+                          <button
+                            onClick={() => {
+                              const total = tasks.filter((t) => (t.taskType || 'AUTRE') === blk).length
+                              if (
+                                window.confirm(
+                                  `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} tâches, toutes zones) ?\n\nToutes ces tâches disparaîtront du planning.`
+                                )
+                              ) {
+                                removeTasksByBlock(blk)
+                              }
+                            }}
+                            className="text-white/80 hover:text-white"
+                            title={`Supprimer tout le bloc ${getCategoryLabel(blk)}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </span>
+                      )
+                    })}
                   </div>
                 </div>
 
-                {blockExpanded && (
-                <div className="p-4 space-y-3">
-                  {Object.entries(groupByZone(blockTasks))
-                    .sort((a, b) => b[1].length - a[1].length)
-                    .map(([zone, zoneTasks]) => {
-                      const zoneColor = getZoneColor(zone, zones)
-                      const unassignedInZone = zoneTasks.filter(
-                        (t) => assignmentTeams(assignments, t.id).length === 0
-                      )
-                      const zoneKey = `${block}::${zone}`
-                      const zoneExpanded = expandedZones.includes(zoneKey)
-                      return (
-                        <div
-                          key={zone}
-                          className="rounded-lg border bg-white overflow-hidden"
-                          style={{ borderColor: zoneColor, borderWidth: 2 }}
-                        >
+                {cardOpen && (
+                  <div className="p-4 space-y-3">
+                    {Object.entries(group.zones)
+                      .sort((a, b) => a[0].localeCompare(b[0]))
+                      .map(([subZone, subTasks]) => {
+                        const zoneColor = getZoneColor(subZone, zones)
+                        const subKey = `${group.key}::${subZone}`
+                        const subOpen = !group.isFF || expandedSubZones.includes(subKey)
+                        const unassignedInZone = subTasks.filter(
+                          (t) => assignmentTeams(assignments, t.id).length === 0
+                        )
+                        return (
                           <div
-                            className="px-4 py-2 flex items-center justify-between gap-2"
-                            style={{ backgroundColor: zoneColor }}
+                            key={subZone}
+                            className="rounded-lg border bg-white overflow-hidden"
+                            style={{ borderColor: zoneColor, borderWidth: 2 }}
                           >
-                            <div className="flex items-center gap-2 cursor-pointer" onClick={() => toggleZoneCollapse(zoneKey)}>
-                              {zoneExpanded ? (
-                                <ChevronDown className="h-5 w-5 text-white" />
-                              ) : (
-                                <ChevronRight className="h-5 w-5 text-white" />
-                              )}
-                              <span className="text-sm font-bold text-white">
-                                📍 {zone}{' '}
-                                <span className="font-normal opacity-90">({zoneTasks.length})</span>
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-white/90 text-xs">
-                                {unassignedInZone.length} non assignée(s)
-                              </span>
-                              {teams.length > 0 && unassignedInZone.length > 0 && (
-                                <select
-                                  defaultValue=""
-                                  onChange={(e) => {
-                                    if (e.target.value) {
-                                      assignWholeZone(block, zone, e.target.value)
-                                      e.target.value = ''
-                                    }
-                                  }}
-                                  className="border-none rounded-md px-2 py-1 text-xs bg-white text-slate-800 cursor-pointer font-semibold"
-                                  title="Affecter toute la zone"
-                                >
-                                  <option value="">— Toute la zone —</option>
-                                  {teams.map((t) => (
-                                    <option key={t.id} value={t.id}>À {t.name}</option>
-                                  ))}
-                                </select>
-                              )}
-                            </div>
-                          </div>
-                          {zoneExpanded && (
-                          <ul className="divide-y divide-slate-100">
-                            {zoneTasks.map((task) => {
-                              const assignedTeams = assignmentTeams(assignments, task.id)
-                                .map((tid) => teams.find((tm) => tm.id === tid))
-                                .filter(Boolean)
-                              const assigned = assignedTeams.length > 0
-                              return (
-                                <li
-                                  key={task.id}
-                                  draggable={!assigned}
-                                  onDragStart={() => setDragTask(task.id)}
-                                  onDragEnd={() => setDragTask(null)}
-                                  className="px-4 py-2 hover:bg-slate-50 flex items-center gap-3 cursor-grab"
-                                >
-                                  <span className="w-10 shrink-0 text-center bg-slate-100 rounded-md px-2 py-1 text-xs font-bold text-slate-600">
-                                    {task.seq || '—'}
+                            {group.isFF && (
+                              <div
+                                className="px-4 py-2 flex items-center justify-between gap-2 cursor-pointer"
+                                style={{ backgroundColor: zoneColor }}
+                                onClick={() => toggleSubZone(subKey)}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {subOpen ? (
+                                    <ChevronDown className="h-5 w-5 text-white" />
+                                  ) : (
+                                    <ChevronRight className="h-5 w-5 text-white" />
+                                  )}
+                                  <span className="text-sm font-bold text-white">
+                                    📍 {subZone}{' '}
+                                    <span className="font-normal opacity-90">({subTasks.length})</span>
                                   </span>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate" title={task.description}>
-                                      {task.description}
-                                    </p>
-                                    <p className="text-xs text-slate-400">
-                                      {task.taskBarcode && (
-                                        <span className="font-mono font-bold text-slate-500">
-                                          {task.taskBarcode}  {' '}
-                                        </span>
-                                      )}
-                                      {task.registration && `✈ ${task.registration}  `}
-                                      {task.skills && `🔧 ${task.skills}  `}
-                                    </p>
-                                  </div>
-
-                                   <NoteCell
-                                     note={task.note}
-                                     onSave={(v) => updateTask(task.id, { note: v })}
-                                   />
-
-                                   {assigned ? (
-                                    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-                                      {assignedTeams.map((teamChip) => (
-                                        <span
-                                          key={teamChip.id}
-                                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white"
-                                          style={{ backgroundColor: teamChip.color }}
-                                        >
-                                          {teamChip.name}
-                                          <button
-                                            onClick={() => manualUnassign(task.id, teamChip.id)}
-                                            className="text-white/70 hover:text-white"
-                                            title={`Retirer de ${teamChip.name}`}
-                                          >
-                                            <X className="h-3 w-3" />
-                                          </button>
-                                        </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-white/90 text-xs">
+                                    {unassignedInZone.length} non assignée(s)
+                                  </span>
+                                  {teams.length > 0 && unassignedInZone.length > 0 && (
+                                    <select
+                                      defaultValue=""
+                                      onChange={(e) => {
+                                        if (e.target.value) assignZoneAll(subZone, e.target.value)
+                                        e.target.value = ''
+                                      }}
+                                      className="border-none rounded-md px-2 py-1 text-xs bg-white text-slate-800 cursor-pointer font-semibold"
+                                      title="Affecter toute la sous-tâche"
+                                    >
+                                      <option value="">— Toute la sous-tâche —</option>
+                                      {teams.map((t) => (
+                                        <option key={t.id} value={t.id}>À {t.name}</option>
                                       ))}
-                                      {teams.some(
-                                        (tm) => !assignedTeams.some((c) => c.id === tm.id)
-                                      ) && (
+                                    </select>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {subOpen && (
+                              <ul className="divide-y divide-slate-100">
+                                {subTasks.map((task) => {
+                                  const assignedTeams = assignmentTeams(assignments, task.id)
+                                    .map((tid) => teams.find((tm) => tm.id === tid))
+                                    .filter(Boolean)
+                                  const assigned = assignedTeams.length > 0
+                                  return (
+                                    <li
+                                      key={task.id}
+                                      draggable={!assigned}
+                                      onDragStart={() => setDragTask(task.id)}
+                                      onDragEnd={() => setDragTask(null)}
+                                      className="px-4 py-2 hover:bg-slate-50 flex items-center gap-3 cursor-grab"
+                                    >
+                                      <span
+                                        className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+                                        style={{ backgroundColor: getCategoryColor(task.taskType) }}
+                                        title={`Bloc ${getCategoryLabel(task.taskType)}`}
+                                      >
+                                        {getCategoryLabel(task.taskType) || '—'}
+                                      </span>
+                                      <span className="w-10 shrink-0 text-center bg-slate-100 rounded-md px-2 py-1 text-xs font-bold text-slate-600">
+                                        {task.seq || '—'}
+                                      </span>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium truncate" title={task.description}>
+                                          {task.description}
+                                        </p>
+                                        <p className="text-xs text-slate-400">
+                                          {task.taskBarcode && (
+                                            <span className="font-mono font-bold text-slate-500">
+                                              {task.taskBarcode}  {' '}
+                                            </span>
+                                          )}
+                                          {task.registration && `✈ ${task.registration}  `}
+                                          {task.skills && `🔧 ${task.skills}  `}
+                                        </p>
+                                      </div>
+
+                                      <NoteCell
+                                        note={task.note}
+                                        onSave={(v) => updateTask(task.id, { note: v })}
+                                      />
+
+                                      {assigned ? (
+                                        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                                          {assignedTeams.map((teamChip) => (
+                                            <span
+                                              key={teamChip.id}
+                                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white"
+                                              style={{ backgroundColor: teamChip.color }}
+                                            >
+                                              {teamChip.name}
+                                              <button
+                                                onClick={() => manualUnassign(task.id, teamChip.id)}
+                                                className="text-white/70 hover:text-white"
+                                                title={`Retirer de ${teamChip.name}`}
+                                              >
+                                                <X className="h-3 w-3" />
+                                              </button>
+                                            </span>
+                                          ))}
+                                          {teams.some(
+                                            (tm) => !assignedTeams.some((c) => c.id === tm.id)
+                                          ) && (
+                                            <select
+                                              defaultValue=""
+                                              onChange={(e) => {
+                                                if (e.target.value) manualAssign(task.id, e.target.value)
+                                              }}
+                                              className="border border-slate-300 rounded-md px-2 py-1 text-xs shrink-0"
+                                              title="Ajouter une autre équipe"
+                                            >
+                                              <option value="">+ équipe</option>
+                                              {teams
+                                                .filter(
+                                                  (tm) => !assignedTeams.some((c) => c.id === tm.id)
+                                                )
+                                                .map((tm) => (
+                                                  <option key={tm.id} value={tm.id}>
+                                                    {tm.name}
+                                                  </option>
+                                                ))}
+                                            </select>
+                                          )}
+                                        </div>
+                                      ) : (
                                         <select
                                           defaultValue=""
                                           onChange={(e) => {
                                             if (e.target.value) manualAssign(task.id, e.target.value)
                                           }}
                                           className="border border-slate-300 rounded-md px-2 py-1 text-xs shrink-0"
-                                          title="Ajouter une autre équipe"
+                                          title="Affecter cette ligne"
                                         >
-                                          <option value="">+ équipe</option>
-                                          {teams
-                                            .filter(
-                                              (tm) => !assignedTeams.some((c) => c.id === tm.id)
-                                            )
-                                            .map((tm) => (
-                                              <option key={tm.id} value={tm.id}>
-                                                {tm.name}
-                                              </option>
-                                            ))}
+                                          <option value="">— Ligne —</option>
+                                          {teams.map((t) => (
+                                            <option key={t.id} value={t.id}>{t.name}</option>
+                                          ))}
                                         </select>
                                       )}
-                                    </div>
-                                  ) : (
-                                    <select
-                                      defaultValue=""
-                                      onChange={(e) => {
-                                        if (e.target.value) manualAssign(task.id, e.target.value)
-                                      }}
-                                      className="border border-slate-300 rounded-md px-2 py-1 text-xs shrink-0"
-                                      title="Affecter cette ligne"
-                                    >
-                                      <option value="">— Ligne —</option>
-                                      {teams.map((t) => (
-                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                      ))}
-                                    </select>
-                                  )}
-                                </li>
-                              )
-                            })}
-                          </ul>
-                          )}
-                        </div>
-                      )
-                    })}
-                </div>
+                                    </li>
+                                  )
+                                })}
+                              </ul>
+                            )}
+                          </div>
+                        )
+                      })}
+                  </div>
                 )}
               </div>
             )
