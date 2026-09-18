@@ -900,12 +900,13 @@ export default function Preparation() {
                                       onClick={() => toggleSubZone(`${group.key}::${subZone}`)}
                                       title={subOpen ? 'Replier cette sous-tâche' : 'Déplier cette sous-tâche'}
                                     >
-                                      <td
-                                        colSpan={10}
-                                        className="px-3 py-2"
-                                        style={{ backgroundColor: getZoneColor(subZone, allZones) }}
-                                      >
-                                        <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-white">
+                                      <td colSpan={10} className="px-2 py-0.5">
+                                        <span
+                                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide text-white cursor-pointer hover:brightness-110"
+                                          style={{ backgroundColor: getZoneColor(subZone, allZones) }}
+                                          onClick={() => toggleSubZone(`${group.key}::${subZone}`)}
+                                          title={subOpen ? 'Replier cette sous-tâche' : 'Déplier cette sous-tâche'}
+                                        >
                                           {subOpen ? (
                                             <ChevronDown className="h-4 w-4" />
                                           ) : (
