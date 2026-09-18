@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks } from '../utils/helpers'
+import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
-import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play } from 'lucide-react'
+import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check } from 'lucide-react'
 
 export default function Taches() {
   const {
@@ -30,6 +30,20 @@ export default function Taches() {
     () => tasks.filter((t) => followSelected[t.id]),
     [tasks, followSelected]
   )
+
+  // Lignes déjà présentes dans la préparation (transfert ou import)
+  const prepMarks = useMemo(() => {
+    const ids = new Set()
+    const keys = new Set()
+    ;(prepTasks || []).forEach((t) => {
+      ids.add(t.id)
+      keys.add(taskContentKey(t))
+    })
+    return { ids, keys }
+  }, [prepTasks])
+
+  const isTransferred = (task) =>
+    prepMarks.ids.has(task.id) || prepMarks.keys.has(taskContentKey(task))
 
   const followGrouped = useMemo(() => {
     const map = {}
@@ -145,7 +159,11 @@ export default function Taches() {
         <p className="text-slate-600 mt-1">{filtered.length} tâches — groupées par zone de travail</p>
         <p className="text-xs text-slate-400 mt-1">
           Case <strong>« à suivre »</strong> : prépare la vacation suivante (transfert vers
-          Préparation) — le bouton <strong>+ à suivre</strong> d'un bloc l'ajoute en entier.
+          Préparation) — le bouton <strong>+ à suivre</strong> d'un bloc l'ajoute en entier. Un{' '}
+          <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-emerald-100 text-emerald-700 align-middle">
+            <Check className="h-2.5 w-2.5" />
+          </span>{' '}
+          vert signale une ligne déjà transférée.
         </p>
       </div>
 
@@ -326,6 +344,7 @@ export default function Taches() {
           )
           const memberNames = [...new Set(assignedTeams.flatMap((t) => t.members))]
           const expanded = expandedZones.includes(zone)
+          const transferredCount = zoneTasks.filter((t) => isTransferred(t)).length
           return (
             <div key={zone} className="bg-white rounded-xl shadow overflow-hidden">
               <div className="px-3 sm:px-5 py-2 sm:py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: zoneColor }}>
@@ -348,6 +367,14 @@ export default function Taches() {
                   </div>
                 </div>
                 <div className="flex gap-1.5">
+                  {transferredCount > 0 && (
+                    <span
+                      className="bg-emerald-500/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white whitespace-nowrap self-center"
+                      title="Lignes de cette zone déjà transférées vers Préparation vac suivante"
+                    >
+                      ✓ {transferredCount} transférée{transferredCount > 1 ? 's' : ''}
+                    </span>
+                  )}
                   {[...new Set(zoneTasks.map((t) => t.taskType).filter(Boolean))].map((blk) => {
                     const n = zoneTasks.filter((t) => t.taskType === blk).length
                     const total = tasks.filter((t) => t.taskType === blk).length
@@ -409,13 +436,22 @@ export default function Taches() {
                       return (
                         <tr key={task.id} className="border-b hover:bg-slate-50">
                           <td className="px-1 py-2 text-center">
-                            <input
-                              type="checkbox"
-                              checked={!!followSelected[task.id]}
-                              onChange={() => toggleFollow(task.id)}
-                              className="h-3.5 w-3.5 accent-sky-600"
-                              title="Cocher pour préparer la vacation suivante"
-                            />
+                            {isTransferred(task) ? (
+                              <span
+                                className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-emerald-100 text-emerald-700"
+                                title="Déjà transférée vers Préparation vac suivante"
+                              >
+                                <Check className="h-3 w-3" />
+                              </span>
+                            ) : (
+                              <input
+                                type="checkbox"
+                                checked={!!followSelected[task.id]}
+                                onChange={() => toggleFollow(task.id)}
+                                className="h-3.5 w-3.5 accent-sky-600"
+                                title="Cocher pour préparer la vacation suivante"
+                              />
+                            )}
                           </td>
                           <td className="px-2 py-2 font-bold text-slate-500">{task.seq || '-'}</td>
                           <td className="px-2 py-2 font-medium max-w-md truncate" title={task.description}>
