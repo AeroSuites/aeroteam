@@ -139,8 +139,7 @@ export default function Taches() {
   }, [filtered])
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_290px]">
-    <div className="space-y-6 min-w-0">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Tâches par zone</h1>
         <p className="text-slate-600 mt-1">{filtered.length} tâches — groupées par zone de travail</p>
@@ -148,6 +147,86 @@ export default function Taches() {
           Case <strong>« à suivre »</strong> : prépare la vacation suivante (transfert vers
           Préparation) — le bouton <strong>+ à suivre</strong> d'un bloc l'ajoute en entier.
         </p>
+      </div>
+
+      {/* Carte « À suivre » → transfert vers la préparation de vac suivante */}
+      <div className="bg-white rounded-xl shadow p-4 border-l-4 border-l-sky-600">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+            <ListChecks className="h-4 w-4 text-sky-500" /> À suivre
+            <span className="text-xs font-normal text-slate-400">({followTasks.length})</span>
+          </h2>
+          {followTasks.length > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={transferToPrep}
+                className="bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 text-xs font-semibold"
+                title="Ajouter ces lignes à la préparation de la vac suivante (classement et notes conservés, doublons ignorés)"
+              >
+                Transférer vers Préparation ({followTasks.length})
+              </button>
+              <button
+                onClick={() => setFollowSelected({})}
+                className="text-xs text-slate-500 hover:text-red-600 border border-slate-200 rounded-md px-2 py-1.5"
+                title="Vider la sélection"
+              >
+                Vider
+              </button>
+            </div>
+          )}
+        </div>
+        {transferMsg && <p className="text-[11px] text-emerald-700 mt-2">{transferMsg}</p>}
+        {followTasks.length === 0 ? (
+          <p className="text-xs text-slate-400 italic mt-2">
+            Cochez des lignes — ou le <strong>+ à suivre</strong> d'un bloc — pour préparer la
+            vacation suivante.
+          </p>
+        ) : (
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3 mt-2">
+            {followGrouped.map(([blk, zonesList]) => (
+              <div
+                key={blk}
+                className="border border-slate-100 rounded-lg p-2 max-h-56 overflow-y-auto"
+              >
+                <p
+                  className="text-[10px] font-bold uppercase tracking-wide"
+                  style={{ color: getCategoryColor(blk) }}
+                >
+                  {getCategoryLabel(blk)} ({zonesList.reduce((a, [, l]) => a + l.length, 0)})
+                </p>
+                {zonesList.map(([zone, list]) => (
+                  <div key={zone} className="mt-0.5">
+                    <p className="text-[10px] text-slate-500 font-semibold">📍 {zone}</p>
+                    <ul className="space-y-0.5">
+                      {list.map((t) => (
+                        <li key={t.id} className="flex items-start gap-1.5 text-xs text-slate-700">
+                          <span className="font-mono text-slate-400 shrink-0 w-8">
+                            {t.seq || '—'}
+                          </span>
+                          <span className="flex-1 min-w-0 truncate" title={t.description}>
+                            {t.description}
+                          </span>
+                          {t.note && (
+                            <span className="shrink-0 text-amber-600" title={`Note : ${t.note}`}>
+                              ✎
+                            </span>
+                          )}
+                          <button
+                            onClick={() => toggleFollow(t.id)}
+                            className="shrink-0 text-slate-300 hover:text-red-600"
+                            title="Retirer de la liste"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Ajout manuel — bien visible */}
@@ -444,85 +523,7 @@ export default function Taches() {
               )}
             </div>
           )
-        })}
-        </div>
-
-        {/* Carte « À suivre » → transfert vers la préparation de vac suivante */}
-        <div className="xl:sticky xl:top-4 h-fit">
-          <div className="bg-white rounded-xl shadow p-4">
-            <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-              <ListChecks className="h-4 w-4 text-sky-500" /> À suivre
-              <span className="text-xs font-normal text-slate-400">({followTasks.length})</span>
-            </h2>
-            {followTasks.length === 0 ? (
-              <p className="text-xs text-slate-400 italic mt-2">
-                Cochez des lignes — ou le <strong>+</strong> d'un bloc — pour préparer la vacation
-                suivante.
-              </p>
-            ) : (
-              <>
-                <div className="mt-2 max-h-[52vh] overflow-y-auto pr-1 space-y-2">
-                  {followGrouped.map(([blk, zonesList]) => (
-                    <div key={blk}>
-                      <p
-                        className="text-[10px] font-bold uppercase tracking-wide"
-                        style={{ color: getCategoryColor(blk) }}
-                      >
-                        {getCategoryLabel(blk)} ({zonesList.reduce((a, [, l]) => a + l.length, 0)})
-                      </p>
-                      {zonesList.map(([zone, list]) => (
-                        <div key={zone} className="mt-0.5">
-                          <p className="text-[10px] text-slate-500 font-semibold">📍 {zone}</p>
-                          <ul className="space-y-0.5">
-                            {list.map((t) => (
-                              <li key={t.id} className="flex items-start gap-1.5 text-xs text-slate-700">
-                                <span className="font-mono text-slate-400 shrink-0 w-8">
-                                  {t.seq || '—'}
-                                </span>
-                                <span className="flex-1 min-w-0 truncate" title={t.description}>
-                                  {t.description}
-                                </span>
-                                {t.note && (
-                                  <span className="shrink-0 text-amber-600" title={`Note : ${t.note}`}>
-                                    ✎
-                                  </span>
-                                )}
-                                <button
-                                  onClick={() => toggleFollow(t.id)}
-                                  className="shrink-0 text-slate-300 hover:text-red-600"
-                                  title="Retirer de la liste"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-                {transferMsg && <p className="text-[11px] text-emerald-700 mt-2">{transferMsg}</p>}
-                <div className="flex items-center gap-2 mt-3">
-                  <button
-                    onClick={transferToPrep}
-                    className="flex-1 bg-sky-600 text-white px-3 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
-                    title="Ajouter ces lignes à la préparation de la vac suivante (classement et notes conservés, doublons ignorés)"
-                  >
-                    Transférer vers Préparation ({followTasks.length})
-                  </button>
-                  <button
-                    onClick={() => setFollowSelected({})}
-                    className="text-xs text-slate-500 hover:text-red-600 border border-slate-200 rounded-md px-2 py-2"
-                    title="Vider la sélection"
-                  >
-                    Vider
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+      })}
     </div>
   )
 }
