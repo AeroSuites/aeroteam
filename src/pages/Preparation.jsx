@@ -891,29 +891,34 @@ export default function Preparation() {
                               return (
                               <Fragment key={subZone}>
                                 {group.isFF && (
-                                  <tr
-                                    className="border-b border-slate-100 cursor-pointer hover:bg-slate-50"
-                                    onClick={() => toggleSubZone(`${group.key}::${subZone}`)}
-                                    title={subOpen ? 'Replier cette sous-tâche' : 'Déplier cette sous-tâche'}
-                                  >
-                                    <td
-                                      colSpan={10}
-                                      className="px-2 py-1.5"
-                                      style={{ backgroundColor: getZoneColor(subZone, allZones) }}
+                                  <>
+                                    <tr>
+                                      <td colSpan={10} style={{ height: 10 }} className="p-0" />
+                                    </tr>
+                                    <tr
+                                      className="border-b border-slate-100 cursor-pointer hover:brightness-110"
+                                      onClick={() => toggleSubZone(`${group.key}::${subZone}`)}
+                                      title={subOpen ? 'Replier cette sous-tâche' : 'Déplier cette sous-tâche'}
                                     >
-                                      <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-white">
-                                        {subOpen ? (
-                                          <ChevronDown className="h-4 w-4" />
-                                        ) : (
-                                          <ChevronRight className="h-4 w-4" />
-                                        )}
-                                        📍 {subZone}
-                                        <span className="opacity-90 font-normal">
-                                          ({subTasks.length})
+                                      <td
+                                        colSpan={10}
+                                        className="px-3 py-2"
+                                        style={{ backgroundColor: getZoneColor(subZone, allZones) }}
+                                      >
+                                        <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-white">
+                                          {subOpen ? (
+                                            <ChevronDown className="h-4 w-4" />
+                                          ) : (
+                                            <ChevronRight className="h-4 w-4" />
+                                          )}
+                                          📍 {subZone}
+                                          <span className="opacity-90 font-normal">
+                                            ({subTasks.length})
+                                          </span>
                                         </span>
-                                      </span>
-                                    </td>
-                                  </tr>
+                                      </td>
+                                    </tr>
+                                  </>
                                 )}
                           {(!group.isFF || subOpen) &&
                             subTasks.map((task) => {
