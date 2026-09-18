@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import * as profileStore from '../lib/profileStore'
-import { effectiveBlock } from '../utils/helpers'
 import { taskActions } from './tasks'
 import { teamActions } from './teams'
 import { prepActions } from './preparation'
@@ -122,18 +121,12 @@ export function AppProvider({ children }) {
       normalizedAssignments[k] = Array.isArray(v) ? v : v ? [v] : []
     })
     const cleaned = {
-      tasks: toArray(data.tasks).map((t) => {
-        const eff = effectiveBlock(t)
-        return eff && eff !== t.taskType ? { ...t, taskType: eff } : t
-      }),
+      tasks: toArray(data.tasks),
       teams: toArray(data.teams),
       assignments: normalizedAssignments,
       members: toArray(data.members),
       dayMembers: toArray(data.dayMembers),
-      prepTasks: toArray(data.prepTasks).map((t) => {
-        const eff = effectiveBlock(t)
-        return eff && eff !== t.taskType ? { ...t, taskType: eff } : t
-      }),
+      prepTasks: toArray(data.prepTasks),
       notes: toArray(data.notes),
       pockets: toArray(data.pockets),
       primeRequests: toArray(data.primeRequests),

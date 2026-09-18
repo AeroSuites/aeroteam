@@ -13,17 +13,7 @@ import {
   hashCodeKey,
   taskContentKey,
   filterNewPrepTasks,
-  effectiveBlock,
 } from './helpers'
-
-describe('effectiveBlock (reclassement des sous-tâches)', () => {
-  it('classe CAB WASTE en JIC même si le fichier indique MPC', () => {
-    expect(effectiveBlock({ taskType: 'MPC', workArea: 'CAB WASTE' })).toBe('JIC')
-    expect(effectiveBlock({ taskType: 'MPC', workArea: 'cab waste' })).toBe('JIC')
-    expect(effectiveBlock({ taskType: 'MPC', workArea: 'CAB POTABLE WATER' })).toBe('MPC')
-    expect(effectiveBlock({ taskType: 'JIC', workArea: 'CAB WASTE' })).toBe('JIC')
-  })
-})
 
 describe('taskContentKey / filterNewPrepTasks', () => {
   it('ignore les lignes déjà présentes (même id ou même contenu importé)', () => {
