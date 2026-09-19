@@ -1,9 +1,15 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { StickyNote, Plus, Trash2, Pencil, X, Check } from 'lucide-react'
 
 export default function BlocNotes() {
   const { notes, addNote, updateNote, removeNote } = useApp()
+  // Les consignes transmises ([C]) ne sont pas des notes : elles restent visibles
+  // dans le Tableau de bord et les panneaux Consignes, mais pas ici.
+  const visibleNotes = useMemo(
+    () => notes.filter((n) => !String(n.title || '').startsWith('[C] ')),
+    [notes]
+  )
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
@@ -47,7 +53,7 @@ export default function BlocNotes() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Bloc-notes</h1>
-          <p className="text-slate-600 mt-1">{notes.length} note(s) — conservées même après réinitialisation</p>
+          <p className="text-slate-600 mt-1">{visibleNotes.length} note(s) — conservées même après réinitialisation</p>
         </div>
         {!creating && (
           <button
@@ -92,7 +98,7 @@ export default function BlocNotes() {
         </div>
       )}
 
-      {notes.length === 0 && !creating && (
+      {visibleNotes.length === 0 && !creating && (
         <div className="bg-white rounded-xl shadow p-10 text-center text-slate-500">
           <StickyNote className="h-10 w-10 mx-auto text-slate-300 mb-2" />
           Aucune note. Cliquez sur « Nouvelle note » pour commencer.
@@ -100,7 +106,7 @@ export default function BlocNotes() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {notes.map((note) => (
+        {visibleNotes.map((note) => (
           <div key={note.id} className="bg-amber-50 border border-amber-200 rounded-xl shadow-sm p-4 flex flex-col">
             {editingId === note.id ? (
               <>
