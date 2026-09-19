@@ -810,7 +810,10 @@ export default function Preparation() {
                 return acc + (isNaN(h) ? 0 : h)
               }, 0)
               return (
-                <div key={zone} className="bg-white rounded-xl shadow overflow-hidden">
+                <div
+                  key={zone}
+                  className={`bg-white rounded-xl shadow overflow-hidden${expanded ? ' ring-2 ring-black' : ''}`}
+                >
                   <div
                     className="px-3 sm:px-5 py-2 sm:py-3 flex items-center justify-between flex-wrap gap-2"
                     style={{ backgroundColor: zoneColor }}

@@ -526,7 +526,10 @@ export default function Affectation() {
             const cardOpen = expandedZoneCards.includes(group.key)
             const groupBlocks = [...new Set(groupTasks.map((t) => t.taskType || 'AUTRE'))].sort()
             return (
-              <div key={group.key} className="bg-white rounded-xl shadow overflow-hidden">
+              <div
+                key={group.key}
+                className={`bg-white rounded-xl shadow overflow-hidden${cardOpen ? ' ring-2 ring-black' : ''}`}
+              >
                 <div
                   className="px-4 py-2 flex flex-wrap items-center justify-between gap-2"
                   style={{ backgroundColor: cardColor }}
