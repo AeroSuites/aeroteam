@@ -143,11 +143,24 @@ export function parseBlocks(rows) {
             ? labelRowByCol[sc] + 1
             : r + 1
       const tasks = []
+      let emptyRun = 0
       for (let tr = startRow; tr < endRow; tr++) {
         const t = cell(rows, tr, sc)
-        if (!t) break
+        if (!t) {
+          // Tolère les lignes vides (avant et entre les consignes d'une même liste)
+          emptyRun += 1
+          if (emptyRun > 2) break
+          continue
+        }
+        emptyRun = 0
         if (/^a\s*fair/i.test(t) || /^à\s*fair/i.test(t)) continue
         if (/^consignes\s/i.test(t)) break
+        // En-tête du bloc suivant : on s'arrête
+        if (
+          /^(type|immat|position|osm|config|date|heure)$/i.test(t) ||
+          /^consignes\s+g[ée]n[ée]rales/i.test(t)
+        )
+          break
         tasks.push(t)
       }
       if (tasks.length || !shifts[shiftName]) shifts[shiftName] = tasks
