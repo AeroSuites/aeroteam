@@ -61,6 +61,9 @@ end;
 $$;
 
 -- 4) Supprimer tout l'historique d'une personne : p_ref = identifiant OU nom
+--    (drop necessaire : l'ancienne version nommait le parametre p_identifiant)
+drop function if exists public.admin_delete_agent_declarations(text, text);
+
 create or replace function public.admin_delete_agent_declarations(
   p_admin_code text,
   p_ref text
