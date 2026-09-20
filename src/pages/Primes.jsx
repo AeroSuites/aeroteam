@@ -14,6 +14,8 @@ import {
   Trash2,
   Mail,
   Link2,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
 
 // Normalisation des noms (mêmes règles que côté SQL) : minuscules, sans accents,
@@ -563,29 +565,46 @@ export default function Primes() {
     [detailItems]
   )
 
-  const detailGroups = useMemo(() => {
-    const list = [...detailItems.filter((d) => d.statut !== 'soumise')].sort((a, b) =>
-      primeDay(b).localeCompare(primeDay(a))
+  const detailMonths = useMemo(() => {
+    const map = {}
+    ;(detailItems || [])
+      .filter((d) => d.statut !== 'soumise')
+      .forEach((d) => {
+        const key = primeDay(d).slice(0, 7)
+        if (!map[key]) map[key] = { key, label: formatMonth(key), items: [], count: 0, valid: 0 }
+        map[key].items.push(d)
+        map[key].count += 1
+        if (d.statut === 'validee') map[key].valid += 1
+      })
+    const list = Object.values(map).sort((a, b) => b.key.localeCompare(a.key))
+    list.forEach((m) =>
+      m.items.sort((a, b) => primeDay(b).localeCompare(primeDay(a)))
     )
-    const out = []
-    let month = null
-    let day = null
-    for (const d of list) {
-      const pd = primeDay(d)
-      const mKey = pd.slice(0, 7)
-      if (mKey !== month) {
-        month = mKey
-        out.push({ type: 'month', key: `m-${mKey}`, label: formatMonth(mKey) })
-        day = null
-      }
-      if (pd !== day) {
-        day = pd
-        out.push({ type: 'day', key: `d-${pd}`, label: formatDay(pd) })
-      }
-      out.push({ type: 'row', key: d.id, data: d })
-    }
-    return out
+    return list
   }, [detailItems])
+
+  const [expandedDetailMonths, setExpandedDetailMonths] = useState([])
+
+  const toggleDetailMonth = (key) =>
+    setExpandedDetailMonths((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    )
+
+  // À l'ouverture d'un détail : mois en cours déplié (sinon le plus récent)
+  useEffect(() => {
+    if (!detailAgent) {
+      setExpandedDetailMonths([])
+      return
+    }
+    const keys = detailMonths.map((m) => m.key)
+    if (!keys.length) {
+      setExpandedDetailMonths([])
+      return
+    }
+    const nowKey = new Date().toISOString().slice(0, 7)
+    setExpandedDetailMonths(keys.includes(nowKey) ? [nowKey] : [keys[0]])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailAgent])
 
   const detailInfo = agentStats.find((a) => a.key === detailAgent) || null
 
@@ -1249,10 +1268,10 @@ export default function Primes() {
 
               <div>
                 <h3 className="font-semibold text-slate-700 mb-2">Historique</h3>
-                {detailGroups.length === 0 && (
+                {detailMonths.length === 0 && (
                   <p className="text-sm text-slate-400 italic">Aucun historique pour le moment.</p>
                 )}
-                {detailGroups.length > 0 && (
+                {detailMonths.length > 0 && (
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-left bg-slate-50">
@@ -1266,84 +1285,109 @@ export default function Primes() {
                       </tr>
                     </thead>
                     <tbody>
-                      {detailGroups.map((g) => {
-                        if (g.type === 'month')
-                          return (
-                            <tr key={g.key} className="bg-slate-100">
-                              <td
-                                colSpan={7}
-                                className="px-3 py-1.5 font-bold text-slate-700 text-[13px] uppercase tracking-wide"
-                              >
-                                {g.label}
-                              </td>
-                            </tr>
-                          )
-                        if (g.type === 'day')
-                          return (
-                            <tr key={g.key} className="bg-slate-50">
-                              <td
-                                colSpan={7}
-                                className="px-3 py-1 font-semibold text-slate-500 text-xs"
-                              >
-                                {g.label}
-                              </td>
-                            </tr>
-                          )
-                        const d = g.data
+                      {detailMonths.map((m) => {
+                        const open = expandedDetailMonths.includes(m.key)
+                        let lastDay = null
                         return (
-                          <tr key={g.key} className="border-b hover:bg-slate-50 align-top">
-                            <td className="px-3 py-2 font-mono font-bold text-sky-700 whitespace-nowrap">
-                              {d.avion || '—'}
-                            </td>
-                            <td className="px-3 py-2 font-mono text-sm text-slate-600 text-center whitespace-nowrap">
-                              {d.trfx || '—'}
-                            </td>
-                            <td className="px-3 py-2">{d.element || '—'}</td>
-                            <td className="px-3 py-2 max-w-[240px]">
-                              <span className="truncate block" title={d.description}>
-                                {d.description}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2">
-                              {d.statut === 'validee' && d.categorie ? (
-                                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                                  {catLabel(d.categorie)}
+                          <Fragment key={m.key}>
+                            <tr
+                              className="bg-slate-100 cursor-pointer hover:bg-slate-200"
+                              onClick={() => toggleDetailMonth(m.key)}
+                              title={open ? 'Replier ce mois' : 'Déplier ce mois'}
+                            >
+                              <td colSpan={7} className="px-3 py-1.5">
+                                <span className="flex items-center gap-2 font-bold text-slate-700 text-[13px] uppercase tracking-wide">
+                                  {open ? (
+                                    <ChevronDown className="h-4 w-4 text-slate-500" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4 text-slate-500" />
+                                  )}
+                                  {m.label}
+                                  <span className="ml-2 text-[11px] font-bold normal-case bg-sky-100 text-sky-800 rounded-full px-2 py-0.5">
+                                    {m.count} prime{m.count > 1 ? 's' : ''}
+                                  </span>
+                                  {m.valid > 0 && (
+                                    <span className="text-[11px] font-bold normal-case bg-emerald-100 text-emerald-800 rounded-full px-2 py-0.5">
+                                      {m.valid} validée{m.valid > 1 ? 's' : ''}
+                                    </span>
+                                  )}
                                 </span>
-                              ) : (
-                                <span className="text-slate-400">—</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2">
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-xs font-bold ${statutBadge(
-                                  d.statut
-                                )}`}
-                              >
-                                {d.statut === 'validee'
-                                  ? 'Validée'
-                                  : d.statut === 'refusee'
-                                  ? 'Refusée'
-                                  : 'Soumise'}
-                              </span>
-                              {d.statut === 'refusee' && d.motif_refus && (
-                                <span
-                                  className="block text-[11px] text-red-600 mt-0.5"
-                                  title={d.motif_refus}
+                              </td>
+                            </tr>
+                            {open &&
+                              m.items.map((d) => {
+                                const pd = primeDay(d)
+                                const newDay = pd !== lastDay
+                                lastDay = pd
+                                return (
+                                  <Fragment key={d.id}>
+                                    {newDay && (
+                                      <tr className="bg-slate-50">
+                                        <td
+                                          colSpan={7}
+                                          className="px-3 py-1 font-semibold text-slate-500 text-xs"
+                                        >
+                                          {formatDay(pd)}
+                                        </td>
+                                      </tr>
+                                    )}
+                                    <tr className="border-b hover:bg-slate-50 align-top">
+                                      <td className="px-3 py-2 font-mono font-bold text-sky-700 whitespace-nowrap">
+                                        {d.avion || '—'}
+                                      </td>
+                                      <td className="px-3 py-2 font-mono text-sm text-slate-600 text-center whitespace-nowrap">
+                                        {d.trfx || '—'}
+                                      </td>
+                                      <td className="px-3 py-2">{d.element || '—'}</td>
+                                      <td className="px-3 py-2 max-w-[240px]">
+                                        <span className="truncate block" title={d.description}>
+                                          {d.description}
+                                        </span>
+                                      </td>
+                                      <td className="px-3 py-2">
+                                        {d.statut === 'validee' && d.categorie ? (
+                                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                                            {catLabel(d.categorie)}
+                                          </span>
+                                        ) : (
+                                          <span className="text-slate-400">—</span>
+                                        )}
+                                      </td>
+                                      <td className="px-3 py-2">
+                                        <span
+                                          className={`px-2 py-0.5 rounded-full text-xs font-bold ${statutBadge(
+                                            d.statut
+                                          )}`}
+                                        >
+                                          {d.statut === 'validee'
+                                            ? 'Validée'
+                                            : d.statut === 'refusee'
+                                            ? 'Refusée'
+                                            : 'Soumise'}
+                                        </span>
+                                        {d.statut === 'refusee' && d.motif_refus && (
+                                          <span
+                                            className="block text-[11px] text-red-600 mt-0.5"
+                                            title={d.motif_refus}
+                                          >
+                                            {d.motif_refus}
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="px-3 py-2 text-right">
+                                <button
+                                  onClick={() => handleDeleteDeclaration(d)}
+                                  className="text-slate-400 hover:text-red-600"
+                                  title="Supprimer cette demande"
                                 >
-                                  {d.motif_refus}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 text-right">
-                              <button
-                                onClick={() => handleDeleteDeclaration(d)}
-                                className="text-slate-400 hover:text-red-600"
-                                title="Supprimer cette demande"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </td>
-                          </tr>
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          </Fragment>
+                                )
+                              })}
+                          </Fragment>
                         )
                       })}
                     </tbody>
