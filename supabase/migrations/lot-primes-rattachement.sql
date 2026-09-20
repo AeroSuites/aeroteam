@@ -2,13 +2,21 @@
 -- Primes - rattachement des declarations a un compte AeroPrimes
 -- A executer (ou RE-executer) UNE SEULE FOIS dans Supabase > SQL Editor
 --
--- Cas d'usage : un leader declare des primes pour une personne qui
--- n'a pas encore de compte AeroPrimes. Les declarations sont alors
--- stockees avec un identifiant genere depuis le nom (slug) qui ne
--- correspond a aucun compte. Quand la personne cree son compte, le
--- manager le rattache : toutes ses declarations passees sont
--- enregistrees sous son identifiant et elle retrouve son historique.
+-- Les declarations faites par un leader arrivent avec un identifiant
+-- genere depuis le nom (ex. « fabrice.sauce ») qui peut differer du
+-- compte AeroPrimes. On fait donc concorder les NOMS (normalises).
 -- ============================================================
+
+-- Normalisation des noms : minuscules, espaces compactes
+create or replace function public.norm_prime_name(p text)
+returns text
+language sql
+immutable
+as $$
+  select lower(regexp_replace(trim(coalesce(p, '')), '\s+', ' ', 'g'))
+$$;
+
+grant execute on function public.norm_prime_name(text) to anon, authenticated;
 
 create or replace function public.admin_link_agent_declarations(
   p_admin_code text,
@@ -45,11 +53,11 @@ begin
     return jsonb_build_object('error', 'agent_inconnu');
   end if;
 
-  -- Declarations du meme nom qui ne sont rattachees a AUCUN compte existant
-  -- (identifiant vide ou slug genere a partir du nom), dans le perimetre du manager
+  -- Declarations du meme nom (normalise) qui ne sont rattachees a AUCUN compte,
+  -- dans le perimetre du manager
   update public.declarations d
   set agent_identifiant = v_ident
-  where lower(trim(d.agent_nom)) = lower(trim(p_nom))
+  where public.norm_prime_name(d.agent_nom) = public.norm_prime_name(p_nom)
     and not exists (
       select 1
       from public.agents ag

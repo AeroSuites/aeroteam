@@ -16,6 +16,22 @@ import {
   Link2,
 } from 'lucide-react'
 
+// Normalisation des noms (mêmes règles que côté SQL) : minuscules, sans accents, espaces compactés
+const normPrimeName = (s) =>
+  String(s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+// Clé de regroupement d'une déclaration : par NOM (les déclarations leader
+// arrivent avec un identifiant généré depuis le nom, qui peut différer du compte)
+const declKey = (d) =>
+  d?.agent_nom
+    ? `nom:${normPrimeName(d.agent_nom)}`
+    : `id:${String(d.agent_identifiant || '—').toLowerCase()}`
+
 const CATEGORIES = {
   V034: 'Toilette T1 (V034)',
   V035: 'Toilette T2 (V035)',
@@ -82,23 +98,25 @@ export default function Primes() {
     const accountIds = new Set(
       (agents || []).map((a) => String(a.identifiant || '').toLowerCase())
     )
-    const names = new Set()
+    const byName = {}
     ;(declarations || []).forEach((d) => {
       if (!d?.agent_nom) return
       const id = String(d.agent_identifiant || '').toLowerCase()
       if (accountIds.has(id)) return
-      names.add(String(d.agent_nom).trim())
+      const key = normPrimeName(d.agent_nom)
+      if (key && !byName[key]) byName[key] = String(d.agent_nom).trim()
     })
-    return [...names].sort((a, b) => a.localeCompare(b))
+    return Object.values(byName).sort((a, b) => a.localeCompare(b))
   }, [declarations, agents])
 
   const orphanCount = (nom) => {
     const accountIds = new Set(
       (agents || []).map((a) => String(a.identifiant || '').toLowerCase())
     )
+    const key = normPrimeName(nom)
     return (declarations || []).filter(
       (d) =>
-        String(d.agent_nom || '').trim() === nom &&
+        normPrimeName(d.agent_nom) === key &&
         !accountIds.has(String(d.agent_identifiant || '').toLowerCase())
     ).length
   }
@@ -391,7 +409,7 @@ export default function Primes() {
     try {
       const res = await profileStore.adminDeleteAgentDeclarations(
         activeProfile?.code,
-        detailAgent
+        detailInfo?.nom || detailInfo?.identifiant || detailAgent
       )
       if (res?.error) setError('Échec de la suppression.')
       else {
@@ -477,15 +495,17 @@ export default function Primes() {
     return list.sort((a, b) => primeDay(b).localeCompare(primeDay(a)))
   }, [declarations])
 
-  // Synthèse : 1 agent = 1 ligne (compteurs cumulés)
+  // Synthèse : 1 personne = 1 ligne, regroupée par nom (les déclarations leader
+  // arrivent avec un identifiant généré depuis le nom, qui peut différer du compte).
   const agentStats = useMemo(() => {
     const by = {}
     ;(declarations || []).forEach((d) => {
-      const key = d.agent_identifiant || d.agent_nom || '—'
+      const key = declKey(d)
       if (!by[key]) {
         by[key] = {
-          identifiant: key,
-          nom: d.agent_nom || '',
+          key,
+          identifiant: '',
+          nom: '',
           pending: 0,
           refused: 0,
           total: 0,
@@ -493,6 +513,14 @@ export default function Primes() {
         }
       }
       const a = by[key]
+      if (!a.nom && d.agent_nom) a.nom = String(d.agent_nom).trim()
+      if (d.agent_identifiant) {
+        const id = String(d.agent_identifiant)
+        const linked = (agents || []).some(
+          (ag) => String(ag.identifiant || '').toLowerCase() === id.toLowerCase()
+        )
+        if (linked || !a.identifiant) a.identifiant = id
+      }
       a.total += 1
       if (d.statut === 'soumise') a.pending += 1
       else if (d.statut === 'refusee') a.refused += 1
@@ -506,13 +534,11 @@ export default function Primes() {
     return Object.values(by).sort((a, b) =>
       (a.nom || a.identifiant).localeCompare(b.nom || b.identifiant)
     )
-  }, [declarations])
+  }, [declarations, agents])
 
   const detailItems = useMemo(() => {
     if (!detailAgent) return []
-    return (declarations || []).filter(
-      (d) => (d.agent_identifiant || d.agent_nom || '—') === detailAgent
-    )
+    return (declarations || []).filter((d) => declKey(d) === detailAgent)
   }, [detailAgent, declarations])
 
   const detailPending = useMemo(
@@ -544,22 +570,16 @@ export default function Primes() {
     return out
   }, [detailItems])
 
-  const detailInfo = agentStats.find((a) => a.identifiant === detailAgent) || null
+  const detailInfo = agentStats.find((a) => a.key === detailAgent) || null
 
-  const pendingFor = (identifiant) =>
+  const pendingFor = (key) =>
     (declarations || [])
-      .filter(
-        (d) =>
-          (d.agent_identifiant || d.agent_nom || '—') === identifiant &&
-          d.statut === 'soumise'
-      )
+      .filter((d) => declKey(d) === key && d.statut === 'soumise')
       .sort((a, b) => primeDay(a).localeCompare(primeDay(b)))
 
-  const toggleExpandedAgent = (identifiant) =>
+  const toggleExpandedAgent = (key) =>
     setExpandedAgents((prev) =>
-      prev.includes(identifiant)
-        ? prev.filter((i) => i !== identifiant)
-        : [...prev, identifiant]
+      prev.includes(key) ? prev.filter((i) => i !== key) : [...prev, key]
     )
 
   const exportExcel = () => {
@@ -668,7 +688,7 @@ export default function Primes() {
               </thead>
               <tbody>
                 {agentStats.map((a) => (
-                  <Fragment key={a.identifiant}>
+                  <Fragment key={a.key}>
                   <tr className="border-b hover:bg-slate-50">
                     <td className="px-3 py-2">
                       <span className="font-medium">{a.nom || '—'}</span>
@@ -677,9 +697,9 @@ export default function Primes() {
                     <td className="px-3 py-2 text-center">
                       {a.pending > 0 ? (
                         <button
-                          onClick={() => toggleExpandedAgent(a.identifiant)}
+                          onClick={() => toggleExpandedAgent(a.key)}
                           className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                            expandedAgents.includes(a.identifiant)
+                            expandedAgents.includes(a.key)
                               ? 'bg-amber-300 text-amber-900'
                               : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
                           }`}
@@ -701,7 +721,7 @@ export default function Primes() {
                       <td className="px-3 py-2 text-center font-semibold">{a.total}</td>
                       <td className="px-3 py-2 text-right">
                         <button
-                          onClick={() => setDetailAgent(a.identifiant)}
+                          onClick={() => setDetailAgent(a.key)}
                           className="text-sky-600 hover:underline text-xs font-semibold"
                           title="Voir l'historique complet et valider"
                         >
@@ -709,11 +729,11 @@ export default function Primes() {
                         </button>
                       </td>
                   </tr>
-                  {expandedAgents.includes(a.identifiant) && (
+                  {expandedAgents.includes(a.key) && (
                     <tr className="bg-amber-50/40">
                       <td colSpan={7} className="px-3 pb-3 pt-1">
                         <div className="space-y-1.5">
-                          {pendingFor(a.identifiant).map((d) => (
+                          {pendingFor(a.key).map((d) => (
                             <div
                               key={d.id}
                               className="flex flex-wrap items-center gap-2 border border-amber-200 bg-white rounded-lg px-3 py-2"
@@ -1103,7 +1123,12 @@ export default function Primes() {
             <div className="px-5 py-4 border-b flex items-center justify-between gap-2 bg-slate-900 text-white rounded-t-xl">
               <h2 className="font-bold truncate">
                 {detailInfo?.nom || detailAgent}
-                <span className="text-slate-400 font-normal text-sm"> · {detailAgent}</span>
+                {detailInfo?.identifiant && (
+                <span className="text-slate-400 font-normal text-sm">
+                  {' '}
+                  · {detailInfo.identifiant}
+                </span>
+              )}
               </h2>
               <div className="flex items-center gap-3 shrink-0 text-xs">
                 <span className="bg-amber-500/20 text-amber-200 border border-amber-400/40 rounded-full px-2.5 py-1 font-bold">
