@@ -78,17 +78,29 @@ export default function Primes() {
   const [linkMsg, setLinkMsg] = useState('')
 
   const orphanNames = useMemo(() => {
+    const accountIds = new Set(
+      (agents || []).map((a) => String(a.identifiant || '').toLowerCase())
+    )
     const names = new Set()
     ;(declarations || []).forEach((d) => {
-      if (!d.agent_identifiant && d.agent_nom) names.add(String(d.agent_nom).trim())
+      if (!d?.agent_nom) return
+      const id = String(d.agent_identifiant || '').toLowerCase()
+      if (accountIds.has(id)) return
+      names.add(String(d.agent_nom).trim())
     })
     return [...names].sort((a, b) => a.localeCompare(b))
-  }, [declarations])
+  }, [declarations, agents])
 
-  const orphanCount = (nom) =>
-    (declarations || []).filter(
-      (d) => !d.agent_identifiant && String(d.agent_nom || '').trim() === nom
+  const orphanCount = (nom) => {
+    const accountIds = new Set(
+      (agents || []).map((a) => String(a.identifiant || '').toLowerCase())
+    )
+    return (declarations || []).filter(
+      (d) =>
+        String(d.agent_nom || '').trim() === nom &&
+        !accountIds.has(String(d.agent_identifiant || '').toLowerCase())
     ).length
+  }
 
   const linkAgent = async () => {
     if (!linkNom || !linkIdentifiant) return

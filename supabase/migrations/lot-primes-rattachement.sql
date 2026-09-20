@@ -1,12 +1,13 @@
 -- ============================================================
 -- Primes - rattachement des declarations a un compte AeroPrimes
--- A executer UNE SEULE FOIS dans Supabase > SQL Editor
+-- A executer (ou RE-executer) UNE SEULE FOIS dans Supabase > SQL Editor
 --
 -- Cas d'usage : un leader declare des primes pour une personne qui
--- n'a pas encore de compte AeroPrimes (les declarations sont stockees
--- avec son nom seulement). Quand la personne cree son compte, le
--- manager rattache ce compte : toutes ses declarations passees sont
--- enregistrees au meme identifiant et elle retrouve son historique.
+-- n'a pas encore de compte AeroPrimes. Les declarations sont alors
+-- stockees avec un identifiant genere depuis le nom (slug) qui ne
+-- correspond a aucun compte. Quand la personne cree son compte, le
+-- manager le rattache : toutes ses declarations passees sont
+-- enregistrees sous son identifiant et elle retrouve son historique.
 -- ============================================================
 
 create or replace function public.admin_link_agent_declarations(
@@ -35,7 +36,7 @@ begin
   where crypt(p_admin_code, code_hash) = code_hash
   limit 1;
 
-  -- Le compte AeroPrimes doit exister
+  -- Le compte AeroPrimes cible doit exister
   select identifiant into v_ident
   from public.agents
   where lower(identifiant) = lower(trim(p_identifiant))
@@ -44,11 +45,16 @@ begin
     return jsonb_build_object('error', 'agent_inconnu');
   end if;
 
-  -- Declarations sans identifiant dont le nom correspond (dans le perimetre du manager)
+  -- Declarations du meme nom qui ne sont rattachees a AUCUN compte existant
+  -- (identifiant vide ou slug genere a partir du nom), dans le perimetre du manager
   update public.declarations d
   set agent_identifiant = v_ident
-  where coalesce(trim(d.agent_identifiant), '') = ''
-    and lower(trim(d.agent_nom)) = lower(trim(p_nom))
+  where lower(trim(d.agent_nom)) = lower(trim(p_nom))
+    and not exists (
+      select 1
+      from public.agents ag
+      where lower(ag.identifiant) = lower(coalesce(d.agent_identifiant, ''))
+    )
     and (
       d.manager_id is null
       or d.manager_id = v_admin_id
