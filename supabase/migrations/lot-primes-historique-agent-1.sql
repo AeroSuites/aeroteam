@@ -54,6 +54,27 @@ begin
   where crypt(p_admin_code, code_hash) = code_hash
   limit 1;
 
+  -- Auto-concordance (si le lot lot-primes-concordance-auto.sql est installe) :
+  -- rattache les declarations orphelines dont le nom correspond a UN SEUL compte.
+  -- Auto-reparation a chaque affichage de la page Primes cote manager.
+  if to_regprocedure('public.norm_prime_nom(text)') is not null then
+    update public.declarations d
+    set agent_identifiant = a.identifiant
+    from public.agents a
+    where public.norm_prime_nom(d.agent_nom) = public.norm_prime_nom(a.nom)
+      and public.norm_prime_nom(d.agent_nom) <> ''
+      and not exists (
+        select 1
+        from public.agents x
+        where lower(x.identifiant) = lower(coalesce(d.agent_identifiant, ''))
+      )
+      and (
+        select count(*)
+        from public.agents a2
+        where public.norm_prime_nom(a2.nom) = public.norm_prime_nom(d.agent_nom)
+      ) = 1;
+  end if;
+
   if p_statut = '' then
     select coalesce(jsonb_agg(t order by t.created_at desc), '[]'::jsonb)
     into list
