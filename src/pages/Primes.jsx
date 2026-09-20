@@ -16,13 +16,30 @@ import {
   Link2,
 } from 'lucide-react'
 
-// Normalisation des noms (mêmes règles que côté SQL) : minuscules, sans accents, espaces compactés
+// Normalisation des noms (mêmes règles que côté SQL) : minuscules, sans accents,
+// mots triés, civilités ignorées (MR, MME, M., DR...)
+const PRIME_CIVILITIES = new Set([
+  'mr',
+  'mme',
+  'mlle',
+  'm',
+  'monsieur',
+  'madame',
+  'mademoiselle',
+  'dr',
+  'docteur',
+])
+
 const normPrimeName = (s) =>
   String(s || '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .split(' ')
+    .filter((t) => t && !PRIME_CIVILITIES.has(t))
+    .sort()
+    .join(' ')
     .trim()
 
 // Clé de regroupement d'une déclaration : par NOM (les déclarations leader

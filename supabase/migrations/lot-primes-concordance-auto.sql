@@ -23,8 +23,9 @@
 --   4) rattrapage immédiat des déclarations orphelines existantes.
 -- ============================================================
 
--- 0) Clé de comparaison des noms : minuscules, sans accents, mots triés.
---    « Jean DUPONT », « dupont jean » et « Jean  Dupont » donnent la même clé.
+-- 0) Clé de comparaison des noms : minuscules, sans accents, mots triés,
+--    civilités ignorées (MR, MME, M., DR...).
+--    « MR DOUNDOUJI BA », « DOUNDOUJI BA » et « BA Doundouji » donnent la même clé.
 create or replace function public.norm_prime_nom(p_nom text)
 returns text
 language sql
@@ -45,7 +46,8 @@ as $$
       ' '
     ) as tok
   ) s
-  where tok <> '';
+  where tok <> ''
+    and tok not in ('mr', 'mme', 'mlle', 'm', 'monsieur', 'madame', 'mademoiselle', 'dr', 'docteur');
 $$;
 
 -- 1) Correspondances nom -> compte mémorisées par les rattachements manuels
