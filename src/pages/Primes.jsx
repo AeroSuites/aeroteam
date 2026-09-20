@@ -66,6 +66,7 @@ export default function Primes() {
   const [detailAgent, setDetailAgent] = useState(null)
   const [expandedAgents, setExpandedAgents] = useState([])
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [busyId, setBusyId] = useState(null)
 
   const [agents, setAgents] = useState(null)
@@ -348,16 +349,24 @@ export default function Primes() {
   const handleDeleteDeclaration = async (d) => {
     if (
       !window.confirm(
-        `Supprimer cette demande de prime ?\n\n${d.avion || '—'} · ${d.element || '—'}\nCette action est irréversible.`
+        `Supprimer cette demande de prime ?\n\n${d.avion || '—'} · ${d.element || '—'}\n${
+          d.agent_identifiant ? `Si « ${d.agent_nom || d.agent_identifiant} » a un compte AeroPrimes, elle disparaîtra seulement de votre vue : la personne conservera ses déclarations dans son historique.` : 'Cette action est irréversible.'
+        }`
       )
     )
       return
     setBusyId(d.id)
     setError('')
+    setInfo('')
     try {
       const res = await profileStore.adminDeleteDeclaration(activeProfile?.code, d.id)
       if (res?.error) setError('Échec de la suppression.')
-      else afterDecision()
+      else if (res?.hidden) {
+        setInfo(
+          `Retirée de votre vue manager — la personne conserve ses déclarations dans son historique AeroPrimes.`
+        )
+        afterDecision()
+      } else afterDecision()
     } catch {
       setError('Échec de la suppression (hors ligne ?).')
     }
@@ -368,12 +377,17 @@ export default function Primes() {
     if (!detailAgent) return
     if (
       !window.confirm(
-        `Supprimer TOUT l'historique de primes de « ${detailInfo?.nom || detailAgent} » ?\n\nCette action est irréversible.`
+        `Supprimer TOUT l'historique de primes de « ${detailInfo?.nom || detailAgent} » ?\n\n${
+          detailInfo?.identifiant
+            ? "Comme cette personne a un compte AeroPrimes, l'historique disparaîtra seulement de votre vue : elle conservera tout dans AeroPrimes."
+            : 'Cette action est irréversible.'
+        }`
       )
     )
       return
     setBusyId('all')
     setError('')
+    setInfo('')
     try {
       const res = await profileStore.adminDeleteAgentDeclarations(
         activeProfile?.code,
@@ -381,6 +395,11 @@ export default function Primes() {
       )
       if (res?.error) setError('Échec de la suppression.')
       else {
+        if (res?.hidden) {
+          setInfo(
+            'Historique retiré de votre vue manager — la personne conserve ses déclarations dans AeroPrimes.'
+          )
+        }
         setDetailAgent(null)
         afterDecision()
       }
@@ -620,6 +639,11 @@ export default function Primes() {
         </div>
 
         {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+      {info && (
+        <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2 mb-3">
+          {info}
+        </p>
+      )}
         {declarations === null && <p className="text-sm text-slate-400">Chargement…</p>}
         {declarations && declarations.length === 0 && (
           <p className="text-sm text-slate-400 italic">Aucune demande pour le moment.</p>
