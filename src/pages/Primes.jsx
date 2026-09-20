@@ -107,42 +107,46 @@ export default function Primes() {
   const [agents, setAgents] = useState(null)
   const [agentsError, setAgentsError] = useState('')
 
-  // Rattachement de déclarations orphelines (personne sans compte) à un compte AeroPrimes
+  // Rattachement manuel : liste de TOUS les noms (les orphelins sont signalés)
   const [linkNom, setLinkNom] = useState('')
   const [linkIdentifiant, setLinkIdentifiant] = useState('')
   const [linkBusy, setLinkBusy] = useState(false)
   const [linkMsg, setLinkMsg] = useState('')
 
-  const orphanNames = useMemo(() => {
+  const nameOptions = useMemo(() => {
     const accountIds = new Set(
       (agents || []).map((a) => String(a.identifiant || '').toLowerCase())
     )
-    const byName = {}
+    const by = {}
     ;(declarations || []).forEach((d) => {
-      if (!d?.agent_nom) return
-      const id = String(d.agent_identifiant || '').toLowerCase()
-      if (accountIds.has(id)) return
-      const key = normPrimeName(d.agent_nom)
-      if (key && !byName[key]) byName[key] = String(d.agent_nom).trim()
+      const raw = String(d.agent_nom || '').trim()
+      if (!raw) return
+      const key = normPrimeName(raw)
+      if (!key) return
+      if (!by[key]) by[key] = { key, label: raw, count: 0, orphan: 0 }
+      by[key].count += 1
+      if (!accountIds.has(String(d.agent_identifiant || '').toLowerCase())) {
+        by[key].orphan += 1
+      }
     })
-    return Object.values(byName).sort((a, b) => a.localeCompare(b))
+    return Object.values(by).sort((a, b) => a.label.localeCompare(b.label))
   }, [declarations, agents])
 
   const orphanCount = (nom) => {
-    const accountIds = new Set(
-      (agents || []).map((a) => String(a.identifiant || '').toLowerCase())
-    )
     const key = normPrimeName(nom)
-    return (declarations || []).filter(
-      (d) =>
-        normPrimeName(d.agent_nom) === key &&
-        !accountIds.has(String(d.agent_identifiant || '').toLowerCase())
-    ).length
+    const found = nameOptions.find((n) => n.key === key)
+    return found ? found.orphan : 0
   }
 
   const linkAgent = async () => {
     if (!linkNom || !linkIdentifiant) return
     const n = orphanCount(linkNom)
+    if (n === 0) {
+      setLinkMsg(
+        'Aucune déclaration à rattacher pour ce nom (déjà liées à un compte, ou aucune déclaration).'
+      )
+      return
+    }
     if (
       !window.confirm(
         `Rattacher ${n} déclaration(s) de « ${linkNom} » au compte AeroPrimes ${linkIdentifiant} ?\n\nLa personne retrouvera tout son historique de primes.`
@@ -845,16 +849,17 @@ export default function Primes() {
         )}
       </div>
 
-      {/* Rattachement : déclarations d'une personne sans compte → compte AeroPrimes */}
-      {orphanNames.length > 0 && agents && agents.length > 0 && (
+      {/* Rattachement manuel : n'importe quelle personne → compte AeroPrimes */}
+      {nameOptions.length > 0 && agents && agents.length > 0 && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6 border-l-4 border-l-amber-500">
           <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-1">
             <Link2 className="h-5 w-5 text-amber-500" /> Rattacher des déclarations à un compte
             AeroPrimes
           </h2>
           <p className="text-xs text-slate-400 mb-3">
-            Des déclarations existent pour des personnes sans compte AeroPrimes. Quand la personne
-            crée son compte, rattachez-le ici : elle retrouvera tout son historique de primes.
+            Choisissez une personne puis son compte AeroPrimes : toutes ses déclarations passeront
+            sous son identifiant et elle les retrouvera dans son historique. Les personnes « non
+            rattachées » sont signalées (utile quand le nom saisi diffère du compte).
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <select
@@ -862,10 +867,11 @@ export default function Primes() {
               onChange={(e) => setLinkNom(e.target.value)}
               className="border border-slate-300 rounded-md px-3 py-2 text-sm bg-white min-w-[220px]"
             >
-              <option value="">— Personne (sans compte) —</option>
-              {orphanNames.map((n) => (
-                <option key={n} value={n}>
-                  {n} ({orphanCount(n)} décl.)
+              <option value="">— Personne —</option>
+              {nameOptions.map((n) => (
+                <option key={n.key} value={n.label}>
+                  {n.label} ({n.count} décl.
+                  {n.orphan > 0 ? ` · ${n.orphan} non rattachée(s)` : ' · rattachée'})
                 </option>
               ))}
             </select>
