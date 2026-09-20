@@ -360,6 +360,17 @@ export async function adminDeleteAgentDeclarations(adminCode, identifiant) {
   return data
 }
 
+// Rattache les déclarations d'une personne (sans compte) à un compte AeroPrimes
+export async function adminLinkAgentDeclarations(adminCode, nom, identifiant) {
+  const { data, error } = await supabase.rpc('admin_link_agent_declarations', {
+    p_admin_code: adminCode,
+    p_nom: nom,
+    p_identifiant: identifiant,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function leaderSubmitPrimes(leaderCode, managerId, items) {
   const { data, error } = await supabase.rpc('leader_submit_primes', {
     p_leader_code: leaderCode,

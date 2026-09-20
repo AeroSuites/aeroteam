@@ -13,6 +13,7 @@ import {
   UserCog,
   Trash2,
   Mail,
+  Link2,
 } from 'lucide-react'
 
 const CATEGORIES = {
@@ -69,6 +70,65 @@ export default function Primes() {
 
   const [agents, setAgents] = useState(null)
   const [agentsError, setAgentsError] = useState('')
+
+  // Rattachement de déclarations orphelines (personne sans compte) à un compte AeroPrimes
+  const [linkNom, setLinkNom] = useState('')
+  const [linkIdentifiant, setLinkIdentifiant] = useState('')
+  const [linkBusy, setLinkBusy] = useState(false)
+  const [linkMsg, setLinkMsg] = useState('')
+
+  const orphanNames = useMemo(() => {
+    const names = new Set()
+    ;(declarations || []).forEach((d) => {
+      if (!d.agent_identifiant && d.agent_nom) names.add(String(d.agent_nom).trim())
+    })
+    return [...names].sort((a, b) => a.localeCompare(b))
+  }, [declarations])
+
+  const orphanCount = (nom) =>
+    (declarations || []).filter(
+      (d) => !d.agent_identifiant && String(d.agent_nom || '').trim() === nom
+    ).length
+
+  const linkAgent = async () => {
+    if (!linkNom || !linkIdentifiant) return
+    const n = orphanCount(linkNom)
+    if (
+      !window.confirm(
+        `Rattacher ${n} déclaration(s) de « ${linkNom} » au compte AeroPrimes ${linkIdentifiant} ?\n\nLa personne retrouvera tout son historique de primes.`
+      )
+    )
+      return
+    setLinkBusy(true)
+    setLinkMsg('')
+    try {
+      const res = await profileStore.adminLinkAgentDeclarations(
+        activeProfile.code,
+        linkNom,
+        linkIdentifiant
+      )
+      if (res?.error) {
+        setLinkMsg(
+          res.error === 'agent_inconnu'
+            ? 'Compte AeroPrimes introuvable.'
+            : 'Échec du rattachement.'
+        )
+      } else {
+        setLinkMsg(
+          `${res?.count ?? n} déclaration(s) rattachée(s) au compte ${
+            res?.identifiant || linkIdentifiant
+          }.`
+        )
+        setLinkNom('')
+        setLinkIdentifiant('')
+        await loadPrimes()
+        await loadAgents()
+      }
+    } catch {
+      setLinkMsg('Échec du rattachement.')
+    }
+    setLinkBusy(false)
+  }
   const [agentBusy, setAgentBusy] = useState(null)
   const [managersList, setManagersList] = useState(null)
   const [assignId, setAssignId] = useState(null)
@@ -692,6 +752,56 @@ export default function Primes() {
           </div>
         )}
       </div>
+
+      {/* Rattachement : déclarations d'une personne sans compte → compte AeroPrimes */}
+      {orphanNames.length > 0 && agents && agents.length > 0 && (
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6 border-l-4 border-l-amber-500">
+          <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-1">
+            <Link2 className="h-5 w-5 text-amber-500" /> Rattacher des déclarations à un compte
+            AeroPrimes
+          </h2>
+          <p className="text-xs text-slate-400 mb-3">
+            Des déclarations existent pour des personnes sans compte AeroPrimes. Quand la personne
+            crée son compte, rattachez-le ici : elle retrouvera tout son historique de primes.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={linkNom}
+              onChange={(e) => setLinkNom(e.target.value)}
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm bg-white min-w-[220px]"
+            >
+              <option value="">— Personne (sans compte) —</option>
+              {orphanNames.map((n) => (
+                <option key={n} value={n}>
+                  {n} ({orphanCount(n)} décl.)
+                </option>
+              ))}
+            </select>
+            <span className="text-slate-400 font-bold">→</span>
+            <select
+              value={linkIdentifiant}
+              onChange={(e) => setLinkIdentifiant(e.target.value)}
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm bg-white min-w-[220px]"
+            >
+              <option value="">— Compte AeroPrimes —</option>
+              {agents.map((a) => (
+                <option key={a.identifiant} value={a.identifiant}>
+                  {a.identifiant} · {a.nom}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={linkAgent}
+              disabled={!linkNom || !linkIdentifiant || linkBusy}
+              className="flex items-center gap-2 bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700 disabled:opacity-50 text-sm font-semibold"
+            >
+              <Link2 className="h-4 w-4" />
+              {linkBusy ? 'Rattachement…' : 'Rattacher'}
+            </button>
+          </div>
+          {linkMsg && <p className="text-sm text-emerald-700 mt-2">{linkMsg}</p>}
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow p-4 sm:p-6">
         <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-1">
