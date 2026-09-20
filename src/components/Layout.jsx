@@ -100,19 +100,22 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <nav className="bg-slate-900 text-white shadow-lg">
-        <div className="mx-auto max-w-[1700px] px-4 py-3 flex items-center justify-between gap-3">
+      <nav className="bg-gradient-to-br from-[#001a45] via-[#002157] to-[#003a8c] text-white border-b-4 border-[#e4002b] shadow-lg">
+        <div className="relative mx-auto max-w-[1700px] px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 shrink-0">
-            <Plane className="h-7 w-7 text-sky-400" />
-            <div className="leading-tight">
-              <span className="text-xl font-bold">AeroTeam</span>
-              {typeof __APP_VERSION__ !== 'undefined' && (
-                <p className="text-[10px] text-slate-500 font-mono">
-                  version {__APP_VERSION__}
-                </p>
-              )}
-            </div>
+            <Plane className="h-7 w-7 text-sky-300" />
+            {typeof __APP_VERSION__ !== 'undefined' && (
+              <p className="text-[10px] text-slate-400 font-mono hidden sm:block">
+                version {__APP_VERSION__}
+              </p>
+            )}
           </div>
+          <h1 className="hidden sm:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl lg:text-3xl font-extrabold tracking-[0.25em] text-white pointer-events-none">
+            AEROTEAM
+          </h1>
+          <h1 className="sm:hidden flex-1 text-center text-lg font-extrabold tracking-[0.15em] text-white">
+            AEROTEAM
+          </h1>
           <div className="flex items-center gap-2 shrink-0">
             {consignesCount > 0 && (
               <NavLink
