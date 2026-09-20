@@ -351,10 +351,10 @@ export async function adminDeleteDeclaration(adminCode, id) {
   return data
 }
 
-export async function adminDeleteAgentDeclarations(adminCode, identifiant) {
+export async function adminDeleteAgentDeclarations(adminCode, ref) {
   const { data, error } = await supabase.rpc('admin_delete_agent_declarations', {
     p_admin_code: adminCode,
-    p_identifiant: identifiant,
+    p_ref: ref,
   })
   if (error) throw error
   return data
