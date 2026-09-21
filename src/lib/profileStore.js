@@ -210,6 +210,26 @@ export async function adminRemoveAdmin(adminCode, targetCode) {
   return data
 }
 
+// Promotion d'un profil en administrateur (sans saisir son code)
+export async function adminAddAdminById(adminCode, profileId) {
+  const { data, error } = await supabase.rpc('admin_add_admin_by_id', {
+    p_admin_code: adminCode,
+    p_profile_id: profileId,
+  })
+  if (error) throw error
+  return data
+}
+
+// Retrait d'un administrateur par identifiant (sans son code)
+export async function adminRemoveAdminById(adminCode, targetId) {
+  const { data, error } = await supabase.rpc('admin_remove_admin_by_id', {
+    p_admin_code: adminCode,
+    p_target_id: targetId,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function adminPurgeConsignes(adminCode, profileId) {
   const { data, error } = await supabase.rpc('admin_purge_consignes', {
     p_admin_code: adminCode,

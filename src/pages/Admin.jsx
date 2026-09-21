@@ -30,8 +30,7 @@ export default function Admin() {
   const [success, setSuccess] = useState('')
 
   const [admins, setAdmins] = useState(null)
-  const [addAdminName, setAddAdminName] = useState('')
-  const [addAdminCode, setAddAdminCode] = useState('')
+  const [addAdminProfileId, setAddAdminProfileId] = useState('')
   const [adminMsg, setAdminMsg] = useState('')
   const [adminBusy, setAdminBusy] = useState(false)
 
@@ -46,34 +45,23 @@ export default function Admin() {
       .catch(() => {})
   }
 
+  // Promotion d'un profil en administrateur — par sélection (aucun code à saisir)
   const handleAddAdmin = async () => {
-    const name = addAdminName.trim()
-    const code = addAdminCode.trim()
-    if (!name || !code) {
-      setAdminMsg('Le nom et le code sont obligatoires.')
+    if (!addAdminProfileId) {
+      setAdminMsg('Choisissez le profil à promouvoir.')
       return
     }
     setAdminBusy(true)
     setAdminMsg('')
     try {
-      const exists = await profileStore.adminProfileLookup(activeProfile?.code, code)
-      if (exists?.error === 'not_found') {
-        setAdminMsg('Aucun profil existant avec ce code — créez d’abord le profil normal.')
-        setAdminBusy(false)
-        return
-      }
-      if (exists?.error) {
-        setAdminMsg("Votre code administrateur n'est plus valide.")
-        setAdminBusy(false)
-        return
-      }
-      const res = await profileStore.adminAddAdmin(activeProfile?.code, code, name)
-      if (res?.error === 'deja_admin') setAdminMsg('Ce code est déjà administrateur.')
+      const res = await profileStore.adminAddAdminById(activeProfile?.code, addAdminProfileId)
+      if (res?.error === 'deja_admin') setAdminMsg('Ce profil est déjà administrateur.')
+      else if (res?.error === 'profil_introuvable') setAdminMsg('Profil introuvable.')
       else if (res?.error === 'not_admin') setAdminMsg("Votre code administrateur n'est plus valide.")
       else if (res?.ok) {
-        setAdminMsg(`Administrateur « ${name} » ajouté.`)
-        setAddAdminName('')
-        setAddAdminCode('')
+        const prof = (profiles || []).find((p) => p.id === addAdminProfileId)
+        setAdminMsg(`Profil « ${prof?.name || ''} » promu administrateur.`)
+        setAddAdminProfileId('')
         loadAdmins()
       } else setAdminMsg('Échec de l’ajout.')
     } catch {
@@ -101,18 +89,21 @@ export default function Admin() {
     setAdminBusy(false)
   }
 
-  const handleRemoveAdmin = async (name) => {
-    const code = window.prompt(
-      `Retirer l'administrateur « ${name} » ?\nSaisissez le code de cet administrateur pour confirmer.`
+  const handleRemoveAdmin = async (entry) => {
+    if (!entry?.id) return
+    if (
+      !window.confirm(
+        `Retirer l'administrateur « ${entry.name} » ?\n\nAucun code n'est nécessaire : la promotion/le retrait se font par sélection du profil.`
+      )
     )
-    if (!code) return
+      return
     setAdminMsg('')
     try {
-      const res = await profileStore.adminRemoveAdmin(activeProfile?.code, code)
+      const res = await profileStore.adminRemoveAdminById(activeProfile?.code, entry.id)
       if (res?.error === 'dernier_admin') setAdminMsg('Impossible de retirer le dernier administrateur.')
-      else if (res?.error === 'not_found') setAdminMsg('Code incorrect pour cet administrateur.')
+      else if (res?.error === 'not_found') setAdminMsg('Administrateur introuvable.')
       else if (res?.ok) {
-        setAdminMsg(`Administrateur « ${name} » retiré.`)
+        setAdminMsg(`Administrateur « ${entry.name} » retiré.`)
         loadAdmins()
       }
     } catch {
@@ -648,17 +639,18 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
         />
       )}
 
-      {admins && (admins.length > 0 || addAdminName || addAdminCode || adminMsg) && (
+      {admins && (admins.length > 0 || addAdminProfileId || adminMsg) && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6 max-w-xl">
           <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-4">
             <KeyRound className="h-5 w-5 text-sky-500" /> Administrateurs
             <span className="text-sm font-normal text-slate-400">({admins.length})</span>
           </h2>
           <p className="text-xs text-slate-500 mb-3">
-            Un administrateur est un profil dont le code est inscrit ici (vérifié côté serveur, le
-            code n'est jamais affiché). Le dernier administrateur ne peut pas être retiré. Le
-            bouton <strong>Inscription / Masqué</strong> choisit les administrateurs proposés comme
-            managers lors des inscriptions (AeroTeam et AeroPrimes).
+            Un administrateur est un profil promu ici (vérifié côté serveur —{' '}
+            <strong>aucun code personnel n'est demandé ni affiché</strong>). Le dernier
+            administrateur ne peut pas être retiré. Le bouton <strong>Inscription / Masqué</strong>{' '}
+            choisit les administrateurs proposés comme managers lors des inscriptions (AeroTeam et
+            AeroPrimes).
           </p>
           {admins.length > 0 && (
             <ul className="divide-y divide-slate-100 border border-slate-200 rounded-lg mb-3">
@@ -695,7 +687,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                         </button>
                       )}
                       <button
-                        onClick={() => handleRemoveAdmin(entry.name)}
+                        onClick={() => handleRemoveAdmin(entry)}
                         disabled={adminBusy || admins.length <= 1}
                         className="text-slate-400 hover:text-red-600 disabled:opacity-40"
                         title={
@@ -712,30 +704,31 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
               })}
             </ul>
           )}
-          <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-            <input
-              value={addAdminName}
-              onChange={(e) => setAddAdminName(e.target.value)}
-              placeholder="Nom (ex : Manager)"
-              className="border border-slate-300 rounded-md px-3 py-2 text-sm"
-            />
-            <input
-              value={addAdminCode}
-              onChange={(e) => setAddAdminCode(e.target.value)}
-              placeholder="Code du profil existant"
-              className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
-            />
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <select
+              value={addAdminProfileId}
+              onChange={(e) => setAddAdminProfileId(e.target.value)}
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
+            >
+              <option value="">— Choisir un profil à promouvoir —</option>
+              {(profiles || []).map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                  {p.identifiant ? ` · ${p.identifiant}` : ''}
+                </option>
+              ))}
+            </select>
             <button
               onClick={handleAddAdmin}
-              disabled={adminBusy}
+              disabled={adminBusy || !addAdminProfileId}
               className="flex items-center justify-center gap-1.5 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
             >
-              <UserPlus className="h-4 w-4" /> Ajouter
+              <UserPlus className="h-4 w-4" /> Promouvoir
             </button>
           </div>
           <p className="text-[11px] text-slate-400 mt-1">
-            Le code doit correspondre à un profil existant (créez-le d'abord dans « Créer un
-            nouveau profil » si besoin).
+            Aucun code n'est demandé : le profil est promu par sélection (créez-le d'abord dans
+            « Créer un nouveau profil » si besoin).
           </p>
           {adminMsg && <p className="text-sm text-sky-700 mt-2">{adminMsg}</p>}
         </div>
