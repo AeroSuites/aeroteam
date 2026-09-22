@@ -7,9 +7,9 @@ import * as profileStore from '../lib/profileStore'
 const navItems = [
   { to: '/', label: 'Tableau de bord', end: true, ordre: 5 },
   { to: '/import', label: 'Import Victory', ordre: 1 },
-  { to: '/taches', label: 'Tâches', ordre: 4 },
-  { to: '/equipes', label: 'Équipes', ordre: 2 },
-  { to: '/affectation', label: 'Affectation', ordre: 3 },
+  { to: '/taches', label: 'Tâches', ordre: 2 },
+  { to: '/equipes', label: 'Équipes', ordre: 3 },
+  { to: '/affectation', label: 'Affectation', ordre: 4 },
   { to: '/export', label: 'Export' },
   { to: '/preparation', label: 'Préparation vac suivante' },
   { to: '/notes', label: 'Bloc-notes' },

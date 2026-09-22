@@ -485,6 +485,29 @@ export default function ImportConsignes() {
     return [...withEffectif].filter((immat) => !haveTasks.has(immat)).sort()
   }, [sheet, eligible, selectedShift])
 
+  // Affectations valides uniquement : un avion absent du fichier ne doit pas
+  // rester en mémoire (fantôme) et être ré-appliqué à chaque clic.
+  const activeAssignments = useMemo(
+    () =>
+      Object.entries(assignments).filter(
+        ([immat, code]) => code && eligible.includes(immat)
+      ),
+    [assignments, eligible]
+  )
+
+  useEffect(() => {
+    if (!report) return
+    setAssignments((prev) => {
+      const next = {}
+      let changed = false
+      Object.entries(prev).forEach(([immat, code]) => {
+        if (eligible.includes(immat)) next[immat] = code
+        else changed = true
+      })
+      return changed ? next : prev
+    })
+  }, [report, eligible])
+
   // Avions concernés par des consignes sur le shift SÉLECTIONNÉ uniquement
   // (modifications manuelles comprises) — sert au masquage des avions vides.
   const visibleBlocks = useMemo(() => {
@@ -542,7 +565,7 @@ export default function ImportConsignes() {
     'border border-slate-300 rounded-md px-3 py-2 text-sm bg-white'
 
   const applyAssignments = async () => {
-    const assigned = Object.entries(assignments).filter(([, c]) => c)
+    const assigned = activeAssignments
     if (!assigned.length || !activeProfile?.code || !sheet) return
     setRunning(true)
     setResults([])
@@ -579,17 +602,27 @@ export default function ImportConsignes() {
           out.push({ immat, ok: false, error: saved.error })
           continue
         }
-        // Avion(s) du profil : ajouté à la liste s'il gère déjà d'autres avions
+        // Avion(s) du profil : la liste ne garde que les avions présents dans
+        // ce fichier (un avion d'un import précédent ne doit pas subsister) + celui-ci
         const currentAircrafts = String(lookup.aircraft || '')
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean)
-        if (!currentAircrafts.includes(immat)) {
+        const fileAircrafts = new Set((sheet?.blocks || []).map((b) => b.immat))
+        const nextAircrafts = [
+          ...new Set([
+            ...currentAircrafts.filter(
+              (a) => fileAircrafts.has(a) || a === immat
+            ),
+            immat,
+          ]),
+        ]
+        if (nextAircrafts.join(', ') !== currentAircrafts.join(', ')) {
           try {
             await profileStore.adminSetProfileAircraft(
               activeProfile.code,
               profileCode,
-              [...currentAircrafts, immat].join(', ')
+              nextAircrafts.join(', ')
             )
           } catch {
             // l'avion du profil sera réglé manuellement
@@ -903,13 +936,13 @@ export default function ImportConsignes() {
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={applyAssignments}
-                  disabled={running || Object.values(assignments).filter(Boolean).length === 0}
+                  disabled={running || activeAssignments.length === 0}
                   className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   {running
                     ? 'Application en cours…'
-                    : `Appliquer à ${Object.values(assignments).filter(Boolean).length} avion(s) (${selectedDay} ${selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)})`}
+                    : `Appliquer à ${activeAssignments.length} avion(s) (${selectedDay} ${selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)})`}
                 </button>
                 {running && <span className="text-sm text-slate-500">ne fermez pas l'onglet</span>}
               </div>

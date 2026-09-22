@@ -299,6 +299,13 @@ export function filterRow(row, columns) {
   return true
 }
 
+// Colonne « shift » des fichiers Victory : « vac 01 », « vac 02 »… = priorités.
+// Renvoie le numéro de priorité (1, 2, …) ou null si la cellule est vide/autre.
+export function taskPriority(task) {
+  const m = String(task?.shift || '').match(/vac\s*0*(\d+)/i)
+  return m ? Number(m[1]) : null
+}
+
 export function parseExcelRows(rows, columns) {
   const result = []
 
@@ -348,5 +355,11 @@ export function parseExcelRows(rows, columns) {
     result.push(task)
   })
 
-  return result
+  // Priorités (colonne shift : « vac 01 », « vac 02 »…) : tri par ordre croissant.
+  // Sans priorité : l'ordre du fichier est conservé (tri stable).
+  const prio = (t) => {
+    const p = taskPriority(t)
+    return p === null ? Number.POSITIVE_INFINITY : p
+  }
+  return [...result].sort((a, b) => prio(a) - prio(b))
 }

@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { getCategoryColor, getCategoryLabel } from '../utils/helpers'
+import { getCategoryColor, getCategoryLabel, taskPriority } from '../utils/helpers'
 
 // Arbre de sélection : bloc → sous-tâche (zone) → lignes, avec cases à cocher.
 // Utilisé par Import consignes (charge) et Préparation de vac suivante.
@@ -21,7 +21,13 @@ export function groupTasksTree(list) {
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([zone, tasks]) => ({
           zone,
-          tasks: [...tasks].sort((x, y) => Number(x.seq) - Number(y.seq)),
+          tasks: [...tasks].sort((x, y) => {
+            const px = taskPriority(x)
+            const py = taskPriority(y)
+            const ax = px === null ? Number.POSITIVE_INFINITY : px
+            const ay = py === null ? Number.POSITIVE_INFINITY : py
+            return ax - ay || Number(x.seq) - Number(y.seq)
+          }),
         })),
     }))
 }

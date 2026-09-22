@@ -266,13 +266,6 @@ export default function Preparation() {
     addTasksToPocket(pocketId, taskIds)
   }
 
-  const assignZoneToPocket = (pocketId, zone) => {
-    const ids = prepTasks
-      .filter((t) => (t.workArea || 'Sans zone') === zone)
-      .map((t) => t.id)
-    assignToPocket(pocketId, ids)
-  }
-
   const pocketTaskIds = (p) => (Array.isArray(p?.taskIds) ? p.taskIds : [])
 
   // { pocketId: nbTaches } pour un ensemble de tâches donné
@@ -851,7 +844,7 @@ export default function Preparation() {
                           variant="dark"
                           pockets={pockets}
                           placeholder="Affecter la zone..."
-                          onSelect={(pid) => assignZoneToPocket(pid, zone)}
+                          onSelect={(pid) => assignToPocket(pid, zoneTaskIds)}
                         />
                       </div>
                       {[...new Set(zoneTasks.map((t) => t.taskType).filter(Boolean))].map((blk) => {

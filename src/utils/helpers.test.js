@@ -13,6 +13,7 @@ import {
   hashCodeKey,
   taskContentKey,
   filterNewPrepTasks,
+  taskPriority,
 } from './helpers'
 
 describe('taskContentKey / filterNewPrepTasks', () => {
@@ -174,6 +175,22 @@ describe('filterRow / parseExcelRows', () => {
     )
     expect(kept).toHaveLength(1)
     expect(kept[0].description).toBe('WP-1234')
+  })
+
+  it('trie par priorité « vac 01 / vac 02 » de la colonne shift', () => {
+    const cols = { ...columns, shift: 8 }
+    const kept = parseExcelRows(
+      [
+        ['1', 'Tâche A', 'CABB1', 'ACTV', 'JIC', 'WING L', '2', 'F-GKXT', 'vac 03'],
+        ['2', 'Tâche B', 'CABB1', 'ACTV', 'JIC', 'WING L', '1', 'F-GKXT', 'vac 01'],
+        ['3', 'Tâche C', 'CABB1', 'ACTV', 'JIC', 'ENG', '3', 'F-GKXT', ''],
+        ['4', 'Tâche D', 'CABB1', 'ACTV', 'JIC', 'LEG', '1.5', 'F-GKXT', 'vac 02'],
+      ],
+      cols
+    )
+    expect(kept.map((t) => t.seq)).toEqual(['2', '4', '1', '3'])
+    expect(taskPriority(kept[0])).toBe(1)
+    expect(taskPriority(kept[3])).toBeNull()
   })
 })
 

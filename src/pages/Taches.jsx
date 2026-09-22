@@ -455,6 +455,16 @@ export default function Taches() {
                       </span>
                     )
                   })}
+                  {group.isFF && (
+                    <button
+                      onClick={() => addBlockToFollow('CORR')}
+                      className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5 self-center"
+                      title="Ajouter tout le bloc Found Fault à suivre (préparation vac suivante)"
+                    >
+                      <Plus className="h-3 w-3" />
+                      <span className="text-[10px] font-bold whitespace-nowrap">à suivre</span>
+                    </button>
+                  )}
                   {!group.isFF && (
                     <>
                       <button
