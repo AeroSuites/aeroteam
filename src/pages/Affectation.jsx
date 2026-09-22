@@ -4,7 +4,7 @@ import ManualTaskForm from '../components/ManualTaskForm'
 import LeaderPrimesForm from '../components/LeaderPrimesForm'
 import NoteCell from '../components/NoteCell'
 import ConsignesAvions from '../components/ConsignesAvions'
-import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, groupPriority, sortByPriority, priorityRank } from '../utils/helpers'
+import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo } from '../utils/helpers'
 import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X } from 'lucide-react'
 
 export default function Affectation() {
@@ -212,16 +212,9 @@ export default function Affectation() {
       groups[key].zones[sub].push(t)
     })
     return Object.values(groups).sort((a, b) => {
-      const la = Object.values(a.zones).flat()
-      const lb = Object.values(b.zones).flat()
-      const ra = priorityRank(la)
-      const rb = priorityRank(lb)
-      return (
-        ra.prio - rb.prio ||
-        rb.count - ra.count ||
-        lb.length - la.length ||
-        String(a.label).localeCompare(String(b.label))
-      )
+      const ca = Object.values(a.zones).reduce((n, l) => n + l.length, 0)
+      const cb = Object.values(b.zones).reduce((n, l) => n + l.length, 0)
+      return cb - ca
     })
   }, [filteredTasks])
 
@@ -532,7 +525,6 @@ export default function Affectation() {
             )
             const cardOpen = expandedZoneCards.includes(group.key)
             const groupBlocks = [...new Set(groupTasks.map((t) => t.taskType || 'AUTRE'))].sort()
-  const groupRank = priorityRank(groupTasks)
             return (
               <div
                 key={group.key}
@@ -557,14 +549,6 @@ export default function Affectation() {
                     </h3>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    {groupRank.label && (
-                      <span
-                        className="bg-white/90 text-slate-800 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap"
-                        title={`Priorité la plus haute de ce bloc/zone (colonne Shift) : ${groupRank.label} — ${groupRank.count} ligne(s)`}
-                      >
-                        {groupRank.label} · {groupRank.count}
-                      </span>
-                    )}
                     <span className="text-white/90 text-xs">
                       {unassignedInGroup.length} non assignée(s)
                     </span>
@@ -620,11 +604,7 @@ export default function Affectation() {
                 {cardOpen && (
                   <div className="p-4 space-y-3">
                     {Object.entries(group.zones)
-                      .sort(
-                        (a, b) =>
-                          groupPriority(a[1]) - groupPriority(b[1]) ||
-                          a[0].localeCompare(b[0])
-                      )
+                      .sort((a, b) => a[0].localeCompare(b[0]))
                       .map(([subZone, subTasks]) => {
                         const zoneColor = getZoneColor(subZone, zones)
                         const subKey = `${group.key}::${subZone}`
@@ -680,7 +660,7 @@ export default function Affectation() {
                             )}
                             {subOpen && (
                               <ul className="divide-y divide-slate-100">
-                                {sortByPriority(subTasks).map((task) => {
+                                {subTasks.map((task) => {
                                   const assignedTeams = assignmentTeams(assignments, task.id)
                                     .map((tid) => teams.find((tm) => tm.id === tid))
                                     .filter(Boolean)

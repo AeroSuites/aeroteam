@@ -318,44 +318,6 @@ export function filterRow(row, columns) {
   return true
 }
 
-// Colonne « shift » des fichiers Victory : « vac 01 », « vac 02 »… = priorités.
-// Renvoie le numéro de priorité (1, 2, …) ou null si la cellule est vide/autre.
-export function taskPriority(task) {
-  const m = String(task?.shift || '').match(/vac\s*0*(\d+)/i)
-  return m ? Number(m[1]) : null
-}
-
-// Priorité la plus haute d'un ensemble de tâches (Infinity si aucune)
-export function groupPriority(list) {
-  let min = Number.POSITIVE_INFINITY
-  ;(list || []).forEach((t) => {
-    const p = taskPriority(t)
-    if (p !== null && p < min) min = p
-  })
-  return min
-}
-
-// Rang de priorité d'une zone/bloc : « VAC 01 · 3 » = meilleure priorité
-// et nombre de lignes concernées (sert au tri et au badge affiché).
-export function priorityRank(list) {
-  const prio = groupPriority(list)
-  if (prio === Number.POSITIVE_INFINITY) return { prio, count: 0, label: '' }
-  const count = (list || []).filter((t) => taskPriority(t) === prio).length
-  return { prio, count, label: `VAC ${String(prio).padStart(2, '0')}` }
-}
-
-// Tri stable : les tâches prioritaires (vac 01, vac 02…) passent devant,
-// les autres gardent leur ordre actuel.
-export function sortByPriority(list) {
-  return [...(list || [])].sort((a, b) => {
-    const pa = taskPriority(a)
-    const pb = taskPriority(b)
-    const va = pa === null ? Number.POSITIVE_INFINITY : pa
-    const vb = pb === null ? Number.POSITIVE_INFINITY : pb
-    return va - vb
-  })
-}
-
 export function parseExcelRows(rows, columns) {
   const result = []
 
@@ -405,11 +367,5 @@ export function parseExcelRows(rows, columns) {
     result.push(task)
   })
 
-  // Priorités (colonne shift : « vac 01 », « vac 02 »…) : tri par ordre croissant.
-  // Sans priorité : l'ordre du fichier est conservé (tri stable).
-  const prio = (t) => {
-    const p = taskPriority(t)
-    return p === null ? Number.POSITIVE_INFINITY : p
-  }
-  return [...result].sort((a, b) => prio(a) - prio(b))
+  return result
 }

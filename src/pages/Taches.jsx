@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, groupPriority, sortByPriority, priorityRank } from '../utils/helpers'
+import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
 import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check } from 'lucide-react'
@@ -190,16 +190,9 @@ export default function Taches() {
       groups[key].zones[sub].push(t)
     })
     return Object.values(groups).sort((a, b) => {
-      const la = Object.values(a.zones).flat()
-      const lb = Object.values(b.zones).flat()
-      const ra = priorityRank(la)
-      const rb = priorityRank(lb)
-      return (
-        ra.prio - rb.prio ||
-        rb.count - ra.count ||
-        lb.length - la.length ||
-        String(a.label).localeCompare(String(b.label))
-      )
+      const ca = Object.values(a.zones).reduce((n, l) => n + l.length, 0)
+      const cb = Object.values(b.zones).reduce((n, l) => n + l.length, 0)
+      return cb - ca
     })
   }, [filtered])
 
@@ -405,7 +398,6 @@ export default function Taches() {
           const memberNames = [...new Set(assignedTeams.flatMap((t) => t.members))]
           const expanded = expandedZones.includes(zone)
           const transferredCount = zoneTasks.filter((t) => isTransferred(t)).length
-          const zoneRank = priorityRank(zoneTasks)
           return (
             <div
               key={zone}
@@ -431,14 +423,6 @@ export default function Taches() {
                   </div>
                 </div>
                 <div className="flex gap-1.5">
-                  {zoneRank.label && (
-                    <span
-                      className="bg-white/90 text-slate-800 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap self-center"
-                      title={`Priorité la plus haute de cette zone (colonne Shift) : ${zoneRank.label} — ${zoneRank.count} ligne(s)`}
-                    >
-                      {zoneRank.label} · {zoneRank.count}
-                    </span>
-                  )}
                   {transferredCount > 0 && (
                     <span
                       className="bg-emerald-500/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white whitespace-nowrap self-center"
@@ -530,11 +514,7 @@ export default function Taches() {
                   </thead>
                   <tbody>
                     {Object.entries(group.zones)
-                      .sort(
-                        (a, b) =>
-                          groupPriority(a[1]) - groupPriority(b[1]) ||
-                          a[0].localeCompare(b[0])
-                      )
+                      .sort((a, b) => a[0].localeCompare(b[0]))
                       .map(([subZone, subTasks]) => {
                         const subOpen = expandedSubZones.includes(`${group.key}::${subZone}`)
                         return (
@@ -594,7 +574,7 @@ export default function Taches() {
                             </>
                           )}
                     {(!group.isFF || subOpen) &&
-                      sortByPriority(subTasks).map((task) => {
+                      subTasks.map((task) => {
                       const teamIds = assignmentTeams(assignments, task.id)
                       const taskTeams = teamIds
                         .map((id) => teams.find((tm) => tm.id === id))

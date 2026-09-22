@@ -6,17 +6,14 @@ import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
 import {
-detectColumns,
-parseExcelRows,
-getCategoryColor,
-getZoneColor,
-getCategoryLabel,
-hexToRgb,
-makeId,
-filterNewPrepTasks,
-groupPriority,
-sortByPriority,
-priorityRank,
+  detectColumns,
+  parseExcelRows,
+  getCategoryColor,
+  getZoneColor,
+  getCategoryLabel,
+  hexToRgb,
+  makeId,
+  filterNewPrepTasks,
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
@@ -229,16 +226,9 @@ export default function Preparation() {
       groups[key].zones[sub].push(t)
     })
     return Object.values(groups).sort((a, b) => {
-      const la = Object.values(a.zones).flat()
-      const lb = Object.values(b.zones).flat()
-      const ra = priorityRank(la)
-      const rb = priorityRank(lb)
-      return (
-        ra.prio - rb.prio ||
-        rb.count - ra.count ||
-        lb.length - la.length ||
-        String(a.label).localeCompare(String(b.label))
-      )
+      const ca = Object.values(a.zones).reduce((n, l) => n + l.length, 0)
+      const cb = Object.values(b.zones).reduce((n, l) => n + l.length, 0)
+      return cb - ca
     })
   }, [prepTasks])
 
@@ -812,7 +802,6 @@ export default function Preparation() {
                 const h = parseFloat(t.scheduledHours)
                 return acc + (isNaN(h) ? 0 : h)
               }, 0)
-              const zoneRank = priorityRank(zoneTasks)
               return (
                 <div
                   key={zone}
@@ -844,14 +833,6 @@ export default function Preparation() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {zoneRank.label && (
-                        <span
-                          className="bg-white/90 text-slate-800 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap"
-                          title={`Priorité la plus haute de cette zone (colonne Shift) : ${zoneRank.label} — ${zoneRank.count} ligne(s)`}
-                        >
-                          {zoneRank.label} · {zoneRank.count}
-                        </span>
-                      )}
                       <PocketChips
                         dark
                         counts={pocketCounts(zoneTaskIds)}
@@ -924,11 +905,7 @@ export default function Preparation() {
                         </thead>
                         <tbody>
                           {Object.entries(group.zones)
-                            .sort(
-                              (a, b) =>
-                                groupPriority(a[1]) - groupPriority(b[1]) ||
-                                a[0].localeCompare(b[0])
-                            )
+                            .sort((a, b) => a[0].localeCompare(b[0]))
                             .map(([subZone, subTasks]) => {
                               const subOpen = expandedSubZones.includes(`${group.key}::${subZone}`)
                               return (
@@ -995,7 +972,7 @@ export default function Preparation() {
                                   </>
                                 )}
                           {(!group.isFF || subOpen) &&
-                            sortByPriority(subTasks).map((task) => {
+                            subTasks.map((task) => {
                             const h = parseFloat(task.scheduledHours)
                             const inPocket = pockets.filter((p) => pocketTaskIds(p).includes(task.id))
                             return (

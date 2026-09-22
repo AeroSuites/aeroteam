@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { getCategoryColor, getCategoryLabel, taskPriority } from '../utils/helpers'
+import { getCategoryColor, getCategoryLabel } from '../utils/helpers'
 
 // Arbre de sélection : bloc → sous-tâche (zone) → lignes, avec cases à cocher.
 // Utilisé par Import consignes (charge) et Préparation de vac suivante.
@@ -13,35 +13,15 @@ export function groupTasksTree(list) {
     if (!blocks[b][z]) blocks[b][z] = []
     blocks[b][z].push(t)
   })
-  const byPriorityThenSeq = (x, y) => {
-    const px = taskPriority(x)
-    const py = taskPriority(y)
-    const ax = px === null ? Number.POSITIVE_INFINITY : px
-    const ay = py === null ? Number.POSITIVE_INFINITY : py
-    return ax - ay || Number(x.seq) - Number(y.seq)
-  }
-  // Priorité d'un bloc = priorité la plus haute de ses lignes
-  // (« vac 01 », « vac 02 »… de la colonne shift)
-  const blockPriority = (zones) => {
-    let min = Number.POSITIVE_INFINITY
-    Object.values(zones)
-      .flat()
-      .forEach((t) => {
-        const p = taskPriority(t)
-        if (p !== null && p < min) min = p
-      })
-    return min
-  }
   return Object.entries(blocks)
-    .map(([block, zones]) => ({ block, zones, prio: blockPriority(zones) }))
-    .sort((a, b) => a.prio - b.prio || a.block.localeCompare(b.block))
-    .map(({ block, zones }) => ({
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([block, zones]) => ({
       block,
       zones: Object.entries(zones)
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([zone, tasks]) => ({
           zone,
-          tasks: [...tasks].sort(byPriorityThenSeq),
+          tasks: [...tasks].sort((x, y) => Number(x.seq) - Number(y.seq)),
         })),
     }))
 }
