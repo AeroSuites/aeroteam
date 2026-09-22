@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey } from '../utils/helpers'
+import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, groupPriority, sortByPriority } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
 import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check } from 'lucide-react'
@@ -190,9 +190,13 @@ export default function Taches() {
       groups[key].zones[sub].push(t)
     })
     return Object.values(groups).sort((a, b) => {
-      const ca = Object.values(a.zones).reduce((n, l) => n + l.length, 0)
-      const cb = Object.values(b.zones).reduce((n, l) => n + l.length, 0)
-      return cb - ca
+      const la = Object.values(a.zones).flat()
+      const lb = Object.values(b.zones).flat()
+      return (
+        groupPriority(la) - groupPriority(lb) ||
+        lb.length - la.length ||
+        String(a.label).localeCompare(String(b.label))
+      )
     })
   }, [filtered])
 
@@ -514,7 +518,11 @@ export default function Taches() {
                   </thead>
                   <tbody>
                     {Object.entries(group.zones)
-                      .sort((a, b) => a[0].localeCompare(b[0]))
+                      .sort(
+                        (a, b) =>
+                          groupPriority(a[1]) - groupPriority(b[1]) ||
+                          a[0].localeCompare(b[0])
+                      )
                       .map(([subZone, subTasks]) => {
                         const subOpen = expandedSubZones.includes(`${group.key}::${subZone}`)
                         return (
@@ -574,7 +582,7 @@ export default function Taches() {
                             </>
                           )}
                     {(!group.isFF || subOpen) &&
-                      subTasks.map((task) => {
+                      sortByPriority(subTasks).map((task) => {
                       const teamIds = assignmentTeams(assignments, task.id)
                       const taskTeams = teamIds
                         .map((id) => teams.find((tm) => tm.id === id))

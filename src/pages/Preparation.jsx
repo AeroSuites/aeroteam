@@ -6,14 +6,16 @@ import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
 import {
-  detectColumns,
-  parseExcelRows,
-  getCategoryColor,
-  getZoneColor,
-  getCategoryLabel,
-  hexToRgb,
-  makeId,
-  filterNewPrepTasks,
+detectColumns,
+parseExcelRows,
+getCategoryColor,
+getZoneColor,
+getCategoryLabel,
+hexToRgb,
+makeId,
+filterNewPrepTasks,
+groupPriority,
+sortByPriority,
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
@@ -226,9 +228,13 @@ export default function Preparation() {
       groups[key].zones[sub].push(t)
     })
     return Object.values(groups).sort((a, b) => {
-      const ca = Object.values(a.zones).reduce((n, l) => n + l.length, 0)
-      const cb = Object.values(b.zones).reduce((n, l) => n + l.length, 0)
-      return cb - ca
+      const la = Object.values(a.zones).flat()
+      const lb = Object.values(b.zones).flat()
+      return (
+        groupPriority(la) - groupPriority(lb) ||
+        lb.length - la.length ||
+        String(a.label).localeCompare(String(b.label))
+      )
     })
   }, [prepTasks])
 
@@ -905,7 +911,11 @@ export default function Preparation() {
                         </thead>
                         <tbody>
                           {Object.entries(group.zones)
-                            .sort((a, b) => a[0].localeCompare(b[0]))
+                            .sort(
+                              (a, b) =>
+                                groupPriority(a[1]) - groupPriority(b[1]) ||
+                                a[0].localeCompare(b[0])
+                            )
                             .map(([subZone, subTasks]) => {
                               const subOpen = expandedSubZones.includes(`${group.key}::${subZone}`)
                               return (
@@ -972,7 +982,7 @@ export default function Preparation() {
                                   </>
                                 )}
                           {(!group.isFF || subOpen) &&
-                            subTasks.map((task) => {
+                            sortByPriority(subTasks).map((task) => {
                             const h = parseFloat(task.scheduledHours)
                             const inPocket = pockets.filter((p) => pocketTaskIds(p).includes(task.id))
                             return (

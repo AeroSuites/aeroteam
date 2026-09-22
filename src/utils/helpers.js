@@ -325,6 +325,28 @@ export function taskPriority(task) {
   return m ? Number(m[1]) : null
 }
 
+// Priorité la plus haute d'un ensemble de tâches (Infinity si aucune)
+export function groupPriority(list) {
+  let min = Number.POSITIVE_INFINITY
+  ;(list || []).forEach((t) => {
+    const p = taskPriority(t)
+    if (p !== null && p < min) min = p
+  })
+  return min
+}
+
+// Tri stable : les tâches prioritaires (vac 01, vac 02…) passent devant,
+// les autres gardent leur ordre actuel.
+export function sortByPriority(list) {
+  return [...(list || [])].sort((a, b) => {
+    const pa = taskPriority(a)
+    const pb = taskPriority(b)
+    const va = pa === null ? Number.POSITIVE_INFINITY : pa
+    const vb = pb === null ? Number.POSITIVE_INFINITY : pb
+    return va - vb
+  })
+}
+
 export function parseExcelRows(rows, columns) {
   const result = []
 
