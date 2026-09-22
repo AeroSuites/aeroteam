@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { useApp } from '../context/AppContext'
+import { groupTasksTree } from '../components/TaskTreeSelect'
 import { detectColumns, parseExcelRows, getCategoryColor, getCategoryLabel, CATEGORIES } from '../utils/helpers'
 import {
   Upload,
@@ -26,27 +27,8 @@ export default function ImportExcel() {
   const [selected, setSelected] = useState({})
 
   // Arborescence du fichier : bloc -> sous-tâche (zone) -> lignes
-  const tree = useMemo(() => {
-    const blocks = {}
-    preview.forEach((t) => {
-      const b = t.taskType || 'AUTRE'
-      const z = t.workArea || 'Autre'
-      if (!blocks[b]) blocks[b] = {}
-      if (!blocks[b][z]) blocks[b][z] = []
-      blocks[b][z].push(t)
-    })
-    return Object.entries(blocks)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([block, zones]) => ({
-        block,
-        zones: Object.entries(zones)
-          .sort((a, b) => a[0].localeCompare(b[0]))
-          .map(([zone, zoneTasks]) => ({
-            zone,
-            tasks: [...zoneTasks].sort((x, y) => Number(x.seq) - Number(y.seq)),
-          })),
-      }))
-  }, [preview])
+  // (priorités « vac 01 », « vac 02 »… de la colonne shift d'abord)
+  const tree = useMemo(() => groupTasksTree(preview), [preview])
 
   const selectedCount = preview.filter((t) => selected[t.id]).length
 
