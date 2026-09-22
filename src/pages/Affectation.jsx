@@ -4,7 +4,7 @@ import ManualTaskForm from '../components/ManualTaskForm'
 import LeaderPrimesForm from '../components/LeaderPrimesForm'
 import NoteCell from '../components/NoteCell'
 import ConsignesAvions from '../components/ConsignesAvions'
-import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, groupPriority, sortByPriority } from '../utils/helpers'
+import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, groupPriority, sortByPriority, priorityRank } from '../utils/helpers'
 import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X } from 'lucide-react'
 
 export default function Affectation() {
@@ -214,8 +214,11 @@ export default function Affectation() {
     return Object.values(groups).sort((a, b) => {
       const la = Object.values(a.zones).flat()
       const lb = Object.values(b.zones).flat()
+      const ra = priorityRank(la)
+      const rb = priorityRank(lb)
       return (
-        groupPriority(la) - groupPriority(lb) ||
+        ra.prio - rb.prio ||
+        rb.count - ra.count ||
         lb.length - la.length ||
         String(a.label).localeCompare(String(b.label))
       )
@@ -529,6 +532,7 @@ export default function Affectation() {
             )
             const cardOpen = expandedZoneCards.includes(group.key)
             const groupBlocks = [...new Set(groupTasks.map((t) => t.taskType || 'AUTRE'))].sort()
+  const groupRank = priorityRank(groupTasks)
             return (
               <div
                 key={group.key}
@@ -553,6 +557,14 @@ export default function Affectation() {
                     </h3>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    {groupRank.label && (
+                      <span
+                        className="bg-white/90 text-slate-800 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap"
+                        title={`Priorité la plus haute de ce bloc/zone (colonne Shift) : ${groupRank.label} — ${groupRank.count} ligne(s)`}
+                      >
+                        {groupRank.label} · {groupRank.count}
+                      </span>
+                    )}
                     <span className="text-white/90 text-xs">
                       {unassignedInGroup.length} non assignée(s)
                     </span>

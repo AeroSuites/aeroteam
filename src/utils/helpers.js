@@ -335,6 +335,15 @@ export function groupPriority(list) {
   return min
 }
 
+// Rang de priorité d'une zone/bloc : « VAC 01 · 3 » = meilleure priorité
+// et nombre de lignes concernées (sert au tri et au badge affiché).
+export function priorityRank(list) {
+  const prio = groupPriority(list)
+  if (prio === Number.POSITIVE_INFINITY) return { prio, count: 0, label: '' }
+  const count = (list || []).filter((t) => taskPriority(t) === prio).length
+  return { prio, count, label: `VAC ${String(prio).padStart(2, '0')}` }
+}
+
 // Tri stable : les tâches prioritaires (vac 01, vac 02…) passent devant,
 // les autres gardent leur ordre actuel.
 export function sortByPriority(list) {

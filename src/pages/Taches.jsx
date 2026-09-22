@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, groupPriority, sortByPriority } from '../utils/helpers'
+import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, groupPriority, sortByPriority, priorityRank } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
 import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check } from 'lucide-react'
@@ -192,8 +192,11 @@ export default function Taches() {
     return Object.values(groups).sort((a, b) => {
       const la = Object.values(a.zones).flat()
       const lb = Object.values(b.zones).flat()
+      const ra = priorityRank(la)
+      const rb = priorityRank(lb)
       return (
-        groupPriority(la) - groupPriority(lb) ||
+        ra.prio - rb.prio ||
+        rb.count - ra.count ||
         lb.length - la.length ||
         String(a.label).localeCompare(String(b.label))
       )
@@ -402,6 +405,7 @@ export default function Taches() {
           const memberNames = [...new Set(assignedTeams.flatMap((t) => t.members))]
           const expanded = expandedZones.includes(zone)
           const transferredCount = zoneTasks.filter((t) => isTransferred(t)).length
+          const zoneRank = priorityRank(zoneTasks)
           return (
             <div
               key={zone}
@@ -427,6 +431,14 @@ export default function Taches() {
                   </div>
                 </div>
                 <div className="flex gap-1.5">
+                  {zoneRank.label && (
+                    <span
+                      className="bg-white/90 text-slate-800 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap self-center"
+                      title={`Priorité la plus haute de cette zone (colonne Shift) : ${zoneRank.label} — ${zoneRank.count} ligne(s)`}
+                    >
+                      {zoneRank.label} · {zoneRank.count}
+                    </span>
+                  )}
                   {transferredCount > 0 && (
                     <span
                       className="bg-emerald-500/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white whitespace-nowrap self-center"

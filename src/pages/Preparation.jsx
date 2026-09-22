@@ -16,6 +16,7 @@ makeId,
 filterNewPrepTasks,
 groupPriority,
 sortByPriority,
+priorityRank,
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
@@ -230,8 +231,11 @@ export default function Preparation() {
     return Object.values(groups).sort((a, b) => {
       const la = Object.values(a.zones).flat()
       const lb = Object.values(b.zones).flat()
+      const ra = priorityRank(la)
+      const rb = priorityRank(lb)
       return (
-        groupPriority(la) - groupPriority(lb) ||
+        ra.prio - rb.prio ||
+        rb.count - ra.count ||
         lb.length - la.length ||
         String(a.label).localeCompare(String(b.label))
       )
@@ -808,6 +812,7 @@ export default function Preparation() {
                 const h = parseFloat(t.scheduledHours)
                 return acc + (isNaN(h) ? 0 : h)
               }, 0)
+              const zoneRank = priorityRank(zoneTasks)
               return (
                 <div
                   key={zone}
@@ -839,6 +844,14 @@ export default function Preparation() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
+                      {zoneRank.label && (
+                        <span
+                          className="bg-white/90 text-slate-800 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap"
+                          title={`Priorité la plus haute de cette zone (colonne Shift) : ${zoneRank.label} — ${zoneRank.count} ligne(s)`}
+                        >
+                          {zoneRank.label} · {zoneRank.count}
+                        </span>
+                      )}
                       <PocketChips
                         dark
                         counts={pocketCounts(zoneTaskIds)}
