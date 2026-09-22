@@ -27,7 +27,6 @@ export default function ImportExcel() {
   const [selected, setSelected] = useState({})
 
   // Arborescence du fichier : bloc -> sous-tâche (zone) -> lignes
-  // (priorités « vac 01 », « vac 02 »… de la colonne shift d'abord)
   const tree = useMemo(() => groupTasksTree(preview), [preview])
 
   const selectedCount = preview.filter((t) => selected[t.id]).length
