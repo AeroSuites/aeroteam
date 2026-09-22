@@ -7,12 +7,13 @@ import {
   getCategoryColor,
   getZoneColor,
   groupTasksByCategory,
-  getFirstName,
-  getCategoryLabel,
-  hexToRgb,
-  isAssignedTo,
-  assignmentTeams,
-  assignedTaskCount,
+getFirstName,
+getCategoryLabel,
+hexToRgb,
+isAssignedTo,
+assignmentTeams,
+assignedTaskCount,
+consigneDay,
 } from '../utils/helpers'
 import {
   ClipboardList,
@@ -62,7 +63,7 @@ export default function Dashboard() {
     const all = notes
       .filter((n) => String(n.title || '').startsWith('[C] '))
       .map((n) => {
-        const day = String(n.title).split(' ')[1]?.toUpperCase()
+        const day = consigneDay(n.title)
         const idx = day ? DAY_ORDER[day] ?? 99 : 99
         return { n, ordre: (idx - todayIdx + 7) % 7 }
       })
@@ -72,9 +73,7 @@ export default function Dashboard() {
           String(a.n.title).localeCompare(String(b.n.title))
       )
       .map((x) => x.n)
-    const today = all.filter(
-      (n) => String(n.title).split(' ')[1]?.toUpperCase() === todayName
-    )
+    const today = all.filter((n) => consigneDay(n.title) === todayName)
     return { todayConsignes: today, weekConsignes: all }
   }, [notes])
   const [showAllConsignes, setShowAllConsignes] = useState(false)

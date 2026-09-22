@@ -1,10 +1,12 @@
 -- ============================================================
 -- Purge des consignes des jours passés (admin)
--- À exécuter dans Supabase > SQL Editor
+-- À exécuter dans Supabase > SQL Editor (ré-exécutable sans risque)
 --
 -- Supprime les notes [C] dont le jour est antérieur à aujourd'hui
 -- (LUNDI..SAMEDI, DIMANCHE), pour ne pas accumuler les jours déjà
 -- traités dans le Bloc-notes des avions.
+-- Le jour est cherché dans le titre, que celui-ci soit
+-- « [C] MERCREDI Matin » ou « [C] F-GZNO MERCREDI Matin » (immat).
 -- ============================================================
 
 create or replace function public.admin_purge_consignes(
@@ -36,7 +38,12 @@ begin
   )) as n
   where not (
     n->>'title' ~ '^\[C\] '
-    and case split_part(n->>'title', ' ', 2)
+    and case coalesce((
+          select w
+          from unnest(string_to_array(upper(n->>'title'), ' ')) as w
+          where w in ('LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE')
+          limit 1
+        ), '')
           when 'LUNDI' then 1
           when 'MARDI' then 2
           when 'MERCREDI' then 3

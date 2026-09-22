@@ -57,6 +57,25 @@ export function getZoneColor(zone, _allZones) {
   return ZONE_COLORS[hash % ZONE_COLORS.length]
 }
 
+const DAY_NAMES = [
+  'DIMANCHE',
+  'LUNDI',
+  'MARDI',
+  'MERCREDI',
+  'JEUDI',
+  'VENDREDI',
+  'SAMEDI',
+]
+
+// Jour (LUNDI..DIMANCHE) porté par une note de consignes [C] :
+// « [C] MERCREDI Matin » ou « [C] F-GZNO MERCREDI Matin » (immatriculation).
+export function consigneDay(title) {
+  const words = String(title || '')
+    .toUpperCase()
+    .split(/[^A-Z]+/)
+  return DAY_NAMES.find((d) => words.includes(d)) || ''
+}
+
 export function hexToRgb(hex) {
   const h = String(hex || '').replace('#', '')
   if (!/^[0-9a-fA-F]{6}$/.test(h)) return [100, 116, 139]

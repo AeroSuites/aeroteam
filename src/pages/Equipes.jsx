@@ -14,6 +14,7 @@ export default function Equipes() {
   const [newName, setNewName] = useState('')
   const [selected, setSelected] = useState([])
   const [memberInput, setMemberInput] = useState('')
+  const [memberSearch, setMemberSearch] = useState('')
 
   const activeMembers = tab === 'permanent' ? members : dayMembers
 
@@ -24,6 +25,17 @@ export default function Equipes() {
   const availableMembers = activeMembers.filter(
     (m) => !teams.some((t) => t.members.includes(m))
   )
+
+  // Recherche par nom (insensible à la casse et aux accents)
+  const normSearch = (s) =>
+    String(s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+  const searchKey = normSearch(memberSearch.trim())
+  const visibleMembers = searchKey
+    ? availableMembers.filter((m) => normSearch(m).includes(searchKey))
+    : availableMembers
 
   const toggleSelected = (name) => {
     setSelected((prev) =>
@@ -36,6 +48,7 @@ export default function Equipes() {
     addTeam({ name: newName.trim(), members: [...selected], color: defaultColors[teams.length % defaultColors.length] })
     setNewName('')
     setSelected([])
+    setMemberSearch('')
     setShowAdd(false)
   }
 
@@ -240,14 +253,27 @@ export default function Equipes() {
           <label className="block text-sm font-medium text-slate-700 mb-2">
             Membres (cochez les noms de l'onglet actif)
           </label>
+          {availableMembers.length > 0 && (
+            <input
+              value={memberSearch}
+              onChange={(e) => setMemberSearch(e.target.value)}
+              placeholder={`Rechercher un nom parmi ${availableMembers.length}…`}
+              className="w-full border border-slate-300 rounded-md px-3 py-2 mb-2 text-sm"
+            />
+          )}
           {availableMembers.length === 0 && (
             <p className="text-sm text-amber-600 mb-3">
               Aucun membre disponible dans cet onglet. Ajoutez-en dans le panneau ci-dessus, ou
               retirez d'abord les membres déjà affectés.
             </p>
           )}
-          <div className="max-h-52 overflow-y-auto border border-slate-200 rounded-md p-2 space-y-1 mb-4">
-            {availableMembers.map((m) => {
+          <div className="max-h-52 overflow-y-auto border border-slate-200 rounded-md p-2 space-y-1 mb-2">
+            {availableMembers.length > 0 && visibleMembers.length === 0 && (
+              <p className="text-sm text-slate-400 italic px-2 py-1">
+                Aucun nom ne correspond à « {memberSearch.trim()} ».
+              </p>
+            )}
+            {visibleMembers.map((m) => {
               const checked = selected.includes(m)
               return (
                 <label key={m} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-50 cursor-pointer text-sm">
@@ -262,6 +288,11 @@ export default function Equipes() {
               )
             })}
           </div>
+          {selected.length > 0 && (
+            <p className="text-xs text-slate-500 mb-2">
+              Sélection : {selected.join(', ')}
+            </p>
+          )}
           <button
             onClick={handleCreate}
             disabled={!newName.trim() || selected.length === 0}

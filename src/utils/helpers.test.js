@@ -14,6 +14,7 @@ import {
   taskContentKey,
   filterNewPrepTasks,
   taskPriority,
+  consigneDay,
 } from './helpers'
 
 describe('taskContentKey / filterNewPrepTasks', () => {
@@ -191,6 +192,16 @@ describe('filterRow / parseExcelRows', () => {
     expect(kept.map((t) => t.seq)).toEqual(['2', '4', '1', '3'])
     expect(taskPriority(kept[0])).toBe(1)
     expect(taskPriority(kept[3])).toBeNull()
+  })
+})
+
+describe('consigneDay', () => {
+  it('trouve le jour avec ou sans immatriculation dans le titre', () => {
+    expect(consigneDay('[C] MERCREDI Matin')).toBe('MERCREDI')
+    expect(consigneDay('[C] F-GZNO MERCREDI Matin')).toBe('MERCREDI')
+    expect(consigneDay('[C] F-GSPA LUNDI Soir')).toBe('LUNDI')
+    expect(consigneDay('[C] DIMANCHE Nuit')).toBe('DIMANCHE')
+    expect(consigneDay('Note libre')).toBe('')
   })
 })
 
