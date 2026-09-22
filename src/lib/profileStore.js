@@ -362,6 +362,15 @@ export async function adminTestEmail(adminCode) {
   return data
 }
 
+export async function adminSendPrimesRecapNow(adminCode, month) {
+  const { data, error } = await supabase.rpc('admin_send_primes_recap_now', {
+    p_admin_code: adminCode,
+    p_month: month || null,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function adminDeleteDeclaration(adminCode, id) {
   const { data, error } = await supabase.rpc('admin_delete_declaration', {
     p_admin_code: adminCode,

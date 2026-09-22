@@ -343,6 +343,26 @@ export default function Primes() {
     setNotifyBusy(false)
   }
 
+  const sendRecapTest = async () => {
+    setNotifyBusy(true)
+    setNotifyMsg('')
+    setNotifyError('')
+    try {
+      const res = await profileStore.adminSendPrimesRecapNow(activeProfile?.code)
+      if (res?.error === 'aucun_destinataire')
+        setNotifyError("Renseignez d'abord votre adresse email ci-dessus (adresse manager).")
+      else if (res?.error) setNotifyError(`Échec du récap : ${res.error}`)
+      else if (res?.ok)
+        setNotifyMsg(
+          `Récap « ${res.label} » envoyé à ${res.recipients} adresse(s) : ${res.agents} agent(s), ${res.total} déclaration(s).`
+        )
+      else setNotifyError("Échec de l'envoi du récap.")
+    } catch (err) {
+      setNotifyError(`Échec de l'envoi du récap : ${err?.message || 'hors ligne ?'}`)
+    }
+    setNotifyBusy(false)
+  }
+
   const afterDecision = () => {
     loadPrimes()
     loadAgents()
@@ -1100,6 +1120,14 @@ export default function Primes() {
           className="mt-2 text-sky-600 hover:underline text-xs disabled:opacity-50"
         >
           Envoyer un email de test
+        </button>
+        <button
+          onClick={sendRecapTest}
+          disabled={notifyBusy}
+          className="mt-2 ml-4 text-sky-600 hover:underline text-xs disabled:opacity-50"
+          title="Envoie maintenant le récap du mois dernier (le vrai part automatiquement le 1er de chaque mois)"
+        >
+          Envoyer le récap du mois dernier (test)
         </button>
         {(notifyMsg || notifyError) && (
           <p className={`text-sm mt-2 ${notifyError ? 'text-red-600' : 'text-emerald-700'}`}>
