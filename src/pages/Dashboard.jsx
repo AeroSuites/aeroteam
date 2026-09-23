@@ -173,12 +173,10 @@ export default function Dashboard() {
                 content: `${zone} (${zoneTasks.length})`,
                 colSpan: 4,
                 styles: {
-                  fillColor: [255, 255, 255],
-                  textColor: [0, 0, 0],
+                  fillColor: [226, 232, 240],
+                  textColor: [30, 41, 59],
                   fontStyle: 'bold',
                   fontSize: 9,
-                  lineWidth: { bottom: 0.3 },
-                  lineColor: [0, 0, 0],
                 },
               },
             ],
@@ -192,7 +190,7 @@ export default function Dashboard() {
           styles: { fontSize: 8, cellPadding: 1.2 },
           columnStyles: {
             0: { cellWidth: 12 },
-            1: { cellWidth: 30 },
+            1: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
             3: { cellWidth: 26 },
           },
         })
@@ -486,7 +484,7 @@ export default function Dashboard() {
                                     >
                                       <span className="w-10 shrink-0 font-bold text-slate-500">{task.seq || '—'}</span>
                                       {task.taskBarcode && (
-                                        <span className="shrink-0 font-mono text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">
+                                        <span className="shrink-0 font-mono text-[11px] font-bold text-black bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">
                                           {task.taskBarcode}
                                         </span>
                                       )}
@@ -693,7 +691,7 @@ export default function Dashboard() {
                             </tr>
                             {tasks.map((task) => (
                               <tr key={task.id} className="border-b hover:bg-slate-50">
-                                <td className="px-3 py-2 font-mono font-bold text-xs text-slate-600 whitespace-nowrap">
+                                <td className="px-3 py-2 font-mono font-bold text-xs text-black whitespace-nowrap">
                                   {task.taskBarcode || '—'}
                                 </td>
                                 <td className="px-3 py-2 font-bold text-slate-500 whitespace-nowrap">
