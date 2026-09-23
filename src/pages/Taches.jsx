@@ -21,7 +21,7 @@ export default function Taches() {
   } = useApp()
   const [filter, setFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [prioFilter, setPrioFilter] = useState('all')
+  const [prioFilter, setPrioFilter] = useState([])
   const [selectedBlocks, setSelectedBlocks] = useState([])
   const [expandedZones, setExpandedZones] = useState([])
   const [expandedSubZones, setExpandedSubZones] = useState([])
@@ -192,9 +192,9 @@ export default function Taches() {
 
   const filtered = useMemo(
     () =>
-      prioFilter === 'all'
+      prioFilter.length === 0
         ? preFiltered
-        : preFiltered.filter((t) => prioOf(t) === prioFilter),
+        : preFiltered.filter((t) => prioFilter.includes(prioOf(t))),
     [preFiltered, prioFilter]
   )
 
@@ -347,30 +347,38 @@ export default function Taches() {
           </select>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setPrioFilter((p) => (p === 'MEL' ? 'all' : 'MEL'))}
+              onClick={() =>
+                setPrioFilter((prev) =>
+                  prev.includes('MEL') ? prev.filter((x) => x !== 'MEL') : [...prev, 'MEL']
+                )
+              }
               className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
-                prioFilter === 'MEL'
+                prioFilter.includes('MEL')
                   ? 'bg-red-600 border-red-600 text-white'
                   : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
               }`}
-              title="Afficher uniquement les lignes MEL (recliquer pour tout réafficher)"
+              title="Afficher les lignes MEL (combine avec EXMP si les deux sont actifs)"
             >
               MEL ({prioCounts.mel})
             </button>
             <button
-              onClick={() => setPrioFilter((p) => (p === 'EXMP' ? 'all' : 'EXMP'))}
+              onClick={() =>
+                setPrioFilter((prev) =>
+                  prev.includes('EXMP') ? prev.filter((x) => x !== 'EXMP') : [...prev, 'EXMP']
+                )
+              }
               className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
-                prioFilter === 'EXMP'
+                prioFilter.includes('EXMP')
                   ? 'bg-red-600 border-red-600 text-white'
                   : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
               }`}
-              title="Afficher uniquement les lignes EXMP (recliquer pour tout réafficher)"
+              title="Afficher les lignes EXMP (combine avec MEL si les deux sont actifs)"
             >
               EXMP ({prioCounts.exmp})
             </button>
-            {prioFilter !== 'all' && (
+            {prioFilter.length > 0 && (
               <button
-                onClick={() => setPrioFilter('all')}
+                onClick={() => setPrioFilter([])}
                 className="text-xs text-sky-600 hover:underline"
               >
                 Tout réafficher
