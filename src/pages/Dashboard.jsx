@@ -173,8 +173,8 @@ export default function Dashboard() {
                 content: `${zone} (${zoneTasks.length})`,
                 colSpan: 4,
                 styles: {
-                  fillColor: [226, 232, 240],
-                  textColor: [30, 41, 59],
+                  fillColor: hexToRgb(getZoneColor(zone)),
+                  textColor: [255, 255, 255],
                   fontStyle: 'bold',
                   fontSize: 9,
                 },

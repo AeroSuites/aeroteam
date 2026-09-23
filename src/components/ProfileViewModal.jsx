@@ -179,8 +179,8 @@ function buildRecapPdf(profile, data) {
                 content: `${zone} (${zoneTasks.length})`,
                 colSpan: 3,
                 styles: {
-                  fillColor: [...hexToRgb(getZoneColor(zone)), 35],
-                  textColor: [15, 23, 42],
+                  fillColor: hexToRgb(getZoneColor(zone)),
+                  textColor: [255, 255, 255],
                   fontStyle: 'bold',
                   fontSize: 8,
                 },
