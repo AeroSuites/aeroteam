@@ -376,10 +376,12 @@ export default function Preparation() {
                 content: `${zone} (${zoneTasks.length})`,
                 colSpan: 5,
                 styles: {
-                  fillColor: [226, 232, 240],
-                  textColor: [30, 41, 59],
+                  fillColor: [255, 255, 255],
+                  textColor: [0, 0, 0],
                   fontStyle: 'bold',
                   fontSize: 9,
+                  lineWidth: { bottom: 0.3 },
+                  lineColor: [0, 0, 0],
                 },
               },
             ],
@@ -391,12 +393,12 @@ export default function Preparation() {
             t.registration || '—',
             t.note || '',
           ]),
-          styles: { fontSize: 8, cellPadding: 1.2 },
+          styles: { fontSize: 8, cellPadding: 1.2, textColor: [0, 0, 0] },
           columnStyles: {
             0: { cellWidth: 12 },
             1: { cellWidth: 30 },
             3: { cellWidth: 26, halign: 'left' },
-            4: { cellWidth: 40, textColor: [87, 83, 78], fontStyle: 'italic' },
+            4: { cellWidth: 40, textColor: [0, 0, 0], fontStyle: 'italic' },
           },
         })
         y = doc.lastAutoTable.finalY + 5

@@ -165,7 +165,12 @@ export default function Taches() {
         t.description?.toLowerCase().includes(q) ||
         t.workArea?.toLowerCase().includes(q) ||
         t.skills?.toLowerCase().includes(q) ||
-        t.registration?.toLowerCase().includes(q)
+        t.registration?.toLowerCase().includes(q) ||
+        String(t.seq ?? '').toLowerCase().includes(q) ||
+        String(t.ref ?? '').toLowerCase().includes(q) ||
+        String(t.taskBarcode ?? '').toLowerCase().includes(q) ||
+        String(t.taskCode ?? '').toLowerCase().includes(q) ||
+        String(t.trfx ?? '').toLowerCase().includes(q)
       return matchStatus && matchText
     })
   }, [tasks, filter, statusFilter, shownBlocks, blocks])
@@ -307,7 +312,7 @@ export default function Taches() {
             <input
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="Rechercher..."
+              placeholder="Rechercher (tâche, N°, TRFX…)"
               className="border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm w-40 sm:w-52"
             />
           </div>
