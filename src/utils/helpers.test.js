@@ -13,6 +13,7 @@ import {
   hashCodeKey,
   taskContentKey,
   filterNewPrepTasks,
+  priorityToken,
   consigneDay,
 } from './helpers'
 
@@ -178,8 +179,24 @@ describe('filterRow / parseExcelRows', () => {
   })
 })
 
-describe('consigneDay', () => {
-  it('trouve le jour avec ou sans immatriculation dans le titre', () => {
+describe('priorityToken — lignes MEL / EXMP', () => {
+  it('détecte les lignes prioritaires avec référence', () => {
+    expect(priorityToken('MEL L206')).toBe('MEL')
+    expect(priorityToken('L11 MEL VERROU GALLEY G0')).toBe('MEL')
+    expect(priorityToken('INSP B/C L49 + EXMP L251')).toBe('EXMP')
+    expect(priorityToken('EXMP_AF_33TX LAVATORY 12')).toBe('EXMP')
+    expect(priorityToken('MEL / EXMP : L222-223-224')).toBe('MEL')
+  })
+
+  it('ignore le simple libellé « MEL / EXMP : » et les autres lignes', () => {
+    expect(priorityToken('MEL / EXMP :')).toBe('')
+    expect(priorityToken('BMCC : AVEC DEFER / SANS DEFER')).toBe('')
+    expect(priorityToken('NSRE RDY/IPR :')).toBe('')
+    expect(priorityToken('Remplacement caramélisé')).toBe('')
+  })
+})
+
+describe('consigneDay', () => {  it('trouve le jour avec ou sans immatriculation dans le titre', () => {
     expect(consigneDay('[C] MERCREDI Matin')).toBe('MERCREDI')
     expect(consigneDay('[C] F-GZNO MERCREDI Matin')).toBe('MERCREDI')
     expect(consigneDay('[C] F-GSPA LUNDI Soir')).toBe('LUNDI')

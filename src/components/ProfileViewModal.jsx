@@ -3,12 +3,13 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as profileStore from '../lib/profileStore'
 import {
-  getCategoryColor,
-  getCategoryLabel,
-  getZoneColor,
-  hexToRgb,
-  makeId,
-  isAssignedTo,
+getCategoryColor,
+getCategoryLabel,
+getZoneColor,
+hexToRgb,
+makeId,
+isAssignedTo,
+priorityPrefix,
 } from '../utils/helpers'
 import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
 import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw, FolderKanban } from 'lucide-react'
@@ -189,7 +190,7 @@ function buildRecapPdf(profile, data) {
           ],
           body: zoneTasks.map((t) => [
             t.seq !== undefined && t.seq !== '' ? String(t.seq) : '—',
-            t.description || '',
+            `${priorityPrefix(t)}${t.description || ''}`,
             t.registration || '',
           ]),
           styles: { fontSize: 7.5, cellPadding: 1, textColor: [0, 0, 0], fontStyle: 'bold' },

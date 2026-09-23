@@ -4,7 +4,7 @@ import ManualTaskForm from '../components/ManualTaskForm'
 import LeaderPrimesForm from '../components/LeaderPrimesForm'
 import NoteCell from '../components/NoteCell'
 import ConsignesAvions from '../components/ConsignesAvions'
-import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo } from '../utils/helpers'
+import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, priorityToken } from '../utils/helpers'
 import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X } from 'lucide-react'
 
 export default function Affectation() {
@@ -684,8 +684,18 @@ export default function Affectation() {
                                         {task.seq || '—'}
                                       </span>
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate" title={task.description}>
-                                          {task.description}
+                                        <p className="text-sm font-medium" title={task.description}>
+                                          <span className="flex items-center gap-1 min-w-0">
+                                            <span className="truncate">{task.description}</span>
+                                            {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
+                                              <span
+                                                className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
+                                                title="Ligne prioritaire (MEL / EXMP)"
+                                              >
+                                                {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`)}
+                                              </span>
+                                            )}
+                                          </span>
                                         </p>
                                         <p className="text-xs text-slate-400">
                                           {task.taskBarcode && (

@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey } from '../utils/helpers'
+import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, priorityToken } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
 import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check } from 'lucide-react'
@@ -613,8 +613,18 @@ export default function Taches() {
                             )}
                           </td>
                           <td className="px-2 py-2 font-bold text-slate-500">{task.seq || '-'}</td>
-                          <td className="px-2 py-2 font-medium max-w-md truncate" title={task.description}>
-                            {task.description}
+                          <td className="px-2 py-2 font-medium max-w-md" title={task.description}>
+                            <span className="flex items-center gap-1 min-w-0">
+                              <span className="truncate">{task.description}</span>
+                              {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
+                                <span
+                                  className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
+                                  title="Ligne prioritaire (MEL / EXMP)"
+                                >
+                                  {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`)}
+                                </span>
+                              )}
+                            </span>
                           </td>
                           <td className="px-0.5 py-2 whitespace-nowrap">
                             <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: getCategoryColor(task.taskType) }}>

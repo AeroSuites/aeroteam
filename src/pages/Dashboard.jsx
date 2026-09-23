@@ -14,6 +14,8 @@ isAssignedTo,
 assignmentTeams,
 assignedTaskCount,
 consigneDay,
+priorityToken,
+priorityPrefix,
 } from '../utils/helpers'
 import {
   ClipboardList,
@@ -184,7 +186,7 @@ export default function Dashboard() {
           body: zoneTasks.map((t) => [
             t.seq !== undefined && t.seq !== '' ? String(t.seq) : '—',
             t.taskBarcode || '—',
-            t.description || '',
+            `${priorityPrefix(t)}${t.description || ''}`,
             t.registration || '—',
           ]),
           styles: { fontSize: 8, cellPadding: 1.2, textColor: [0, 0, 0], fontStyle: 'bold' },
@@ -391,9 +393,29 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ) : (
-                  <p className="whitespace-pre-wrap text-xs text-slate-700 mt-1 leading-relaxed">
-                    {n.content || '—'}
-                  </p>
+                  <div className="mt-1 space-y-0.5">
+                    {String(n.content || '—')
+                      .split('\n')
+                      .map((line, li) => {
+                        const tok = priorityToken(line)
+                        return (
+                          <p
+                            key={li}
+                            className="whitespace-pre-wrap text-xs text-slate-700 leading-relaxed"
+                          >
+                            {line || '\u00A0'}
+                            {tok && (
+                              <span
+                                className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
+                                title="Ligne prioritaire (MEL / EXMP)"
+                              >
+                                {tok}
+                              </span>
+                            )}
+                          </p>
+                        )
+                      })}
+                  </div>
                 )}
               </div>
             ))}
@@ -710,8 +732,18 @@ export default function Dashboard() {
                                     {task.workArea || '—'}
                                   </span>
                                 </td>
-                                <td className="px-3 py-2 max-w-md truncate text-slate-600 text-xs" title={task.description}>
-                                  {task.description || '—'}
+                                <td className="px-3 py-2 max-w-md text-slate-600 text-xs" title={task.description}>
+                                  <span className="flex items-center gap-1 min-w-0">
+                                    <span className="truncate">{task.description || '—'}</span>
+                                    {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
+                                      <span
+                                        className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
+                                        title="Ligne prioritaire (MEL / EXMP)"
+                                      >
+                                        {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`)}
+                                      </span>
+                                    )}
+                                  </span>
                                 </td>
                                 <td className="px-3 py-2 whitespace-nowrap text-slate-600">
                                   {task.registration || '—'}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ClipboardList } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
+import { priorityToken } from '../utils/helpers'
 
 const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
 
@@ -167,6 +168,15 @@ export default function ConsignesAvions({ scope = 'affectation' }) {
                   .split('\n')
                   .map((line, li) => {
                     const isTask = line.trim().startsWith('- ')
+                    const tok = priorityToken(line)
+                    const badge = tok ? (
+                      <span
+                        className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
+                        title="Ligne prioritaire (MEL / EXMP)"
+                      >
+                        {tok}
+                      </span>
+                    ) : null
                     if (!isTask) {
                       return (
                         <p
@@ -174,6 +184,7 @@ export default function ConsignesAvions({ scope = 'affectation' }) {
                           className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap"
                         >
                           {line || '\u00A0'}
+                          {badge}
                         </p>
                       )
                     }
@@ -191,6 +202,7 @@ export default function ConsignesAvions({ scope = 'affectation' }) {
                           }`}
                         >
                           {line}
+                          {badge}
                         </span>
                         <input
                           type="checkbox"

@@ -14,6 +14,8 @@ import {
   hexToRgb,
   makeId,
   filterNewPrepTasks,
+  priorityToken,
+  priorityPrefix,
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
@@ -387,7 +389,7 @@ export default function Preparation() {
           body: zoneTasks.map((t) => [
             t.seq !== undefined && t.seq !== '' ? String(t.seq) : '—',
             t.taskBarcode || '—',
-            t.description || '',
+            `${priorityPrefix(t)}${t.description || ''}`,
             t.registration || '—',
             t.note || '',
           ]),
@@ -988,8 +990,18 @@ export default function Preparation() {
                                 <td className="px-2 py-2 font-bold text-slate-500">
                                   {task.seq || '-'}
                                 </td>
-                                <td className="px-2 py-2 font-medium max-w-md truncate" title={task.description}>
-                                  {task.description}
+                                <td className="px-2 py-2 font-medium max-w-md" title={task.description}>
+                                  <span className="flex items-center gap-1 min-w-0">
+                                    <span className="truncate">{task.description}</span>
+                                    {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
+                                      <span
+                                        className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
+                                        title="Ligne prioritaire (MEL / EXMP)"
+                                      >
+                                        {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`)}
+                                      </span>
+                                    )}
+                                  </span>
                                   {!isNaN(h) && (
                                     <div className="text-[11px] text-slate-400 font-normal">
                                       {formatHours(h)} h
