@@ -509,7 +509,7 @@ export default function Taches() {
                       <th className="px-2 py-2 border-b whitespace-nowrap">Tâche</th>
                       <th className="px-0.5 py-2 border-b whitespace-nowrap">Bloc</th>
                       <th className="hidden lg:table-cell px-0.5 py-2 border-b whitespace-nowrap">Skills</th>
-                      <th className="px-0.5 py-2 border-b whitespace-nowrap">TRFX</th>
+                      <th className="px-0.5 py-2 border-b whitespace-nowrap font-bold text-black">TRFX</th>
                       <th className="px-0.5 py-2 border-b whitespace-nowrap">Statut</th>
                       <th className="hidden md:table-cell px-0.5 py-2 border-b whitespace-nowrap">Appareil</th>
                       <th className="px-0.5 py-2 border-b whitespace-nowrap">Note</th>

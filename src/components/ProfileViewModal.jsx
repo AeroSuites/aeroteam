@@ -192,7 +192,7 @@ function buildRecapPdf(profile, data) {
             t.description || '',
             t.registration || '',
           ]),
-          styles: { fontSize: 7.5, cellPadding: 1 },
+          styles: { fontSize: 7.5, cellPadding: 1, textColor: [0, 0, 0], fontStyle: 'bold' },
           columnStyles: {
             0: { cellWidth: 12 },
             2: { cellWidth: 22 },

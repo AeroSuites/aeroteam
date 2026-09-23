@@ -391,12 +391,12 @@ export default function Preparation() {
             t.registration || '—',
             t.note || '',
           ]),
-          styles: { fontSize: 8, cellPadding: 1.2 },
+          styles: { fontSize: 8, cellPadding: 1.2, textColor: [0, 0, 0], fontStyle: 'bold' },
           columnStyles: {
             0: { cellWidth: 12 },
             1: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
             3: { cellWidth: 26, halign: 'left' },
-            4: { cellWidth: 40, textColor: [87, 83, 78], fontStyle: 'italic' },
+            4: { cellWidth: 40, textColor: [0, 0, 0], fontStyle: 'bolditalic' },
           },
         })
         y = doc.lastAutoTable.finalY + 5
@@ -895,7 +895,7 @@ export default function Preparation() {
                             <th className="px-2 py-2 border-b">Tâche</th>
                             <th className="px-0.5 py-2 border-b">Bloc</th>
                             <th className="px-0.5 py-2 border-b">Skills</th>
-                            <th className="px-0.5 py-2 border-b">TRFX</th>
+                              <th className="px-0.5 py-2 border-b font-bold text-black">TRFX</th>
                             <th className="px-0.5 py-2 border-b">Statut</th>
                             <th className="px-0.5 py-2 border-b">Appareil</th>
                             <th className="px-0.5 py-2 border-b">Note</th>

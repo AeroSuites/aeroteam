@@ -187,7 +187,7 @@ export default function Dashboard() {
             t.description || '',
             t.registration || '—',
           ]),
-          styles: { fontSize: 8, cellPadding: 1.2 },
+          styles: { fontSize: 8, cellPadding: 1.2, textColor: [0, 0, 0], fontStyle: 'bold' },
           columnStyles: {
             0: { cellWidth: 12 },
             1: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
@@ -661,7 +661,7 @@ export default function Dashboard() {
                 <table className="w-full text-sm min-w-[520px]">
                   <thead>
                     <tr className="text-left bg-slate-100 rounded">
-                      <th className="px-3 py-2 font-semibold text-slate-700">TRFX</th>
+                                <th className="px-3 py-2 font-bold text-black">TRFX</th>
                       <th className="px-3 py-2 font-semibold text-slate-700">N°</th>
                       <th className="px-3 py-2 font-semibold text-slate-700">Type</th>
                       <th className="px-3 py-2 font-semibold text-slate-700">Bloc</th>
