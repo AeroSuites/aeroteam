@@ -11,6 +11,7 @@ export default function Affectation() {
   const { tasks, teams, assignments, assignTask, unassignTask, updateTeam, addTasks, removeTasksByBlock, updateTask } = useApp()
   const [dragTask, setDragTask] = useState(null)
   const [selectedBlocks, setSelectedBlocks] = useState([])
+  const [prioFilter, setPrioFilter] = useState('all')
   const [lastAutoAssignments, setLastAutoAssignments] = useState(null)
   const [tab, setTab] = useState('affectation')
 
@@ -189,9 +190,31 @@ export default function Affectation() {
     )
 
   // Blocs masqués (selectedBlocks) => tâches filtrées avant regroupement
-  const filteredTasks = useMemo(
+  const prioOf = (t) => priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
+
+  const preFilteredTasks = useMemo(
     () => tasks.filter((t) => !selectedBlocks.includes(t.taskType || 'AUTRE')),
     [tasks, selectedBlocks]
+  )
+
+  // Compteurs MEL / EXMP (sur les tâches affichées par les filtres de bloc)
+  const prioCounts = useMemo(() => {
+    let mel = 0
+    let exmp = 0
+    preFilteredTasks.forEach((t) => {
+      const tok = prioOf(t)
+      if (tok === 'MEL') mel += 1
+      else if (tok === 'EXMP') exmp += 1
+    })
+    return { mel, exmp }
+  }, [preFilteredTasks])
+
+  const filteredTasks = useMemo(
+    () =>
+      prioFilter === 'all'
+        ? preFilteredTasks
+        : preFilteredTasks.filter((t) => prioOf(t) === prioFilter),
+    [preFilteredTasks, prioFilter]
   )
 
   const zoneGroups = useMemo(() => {
@@ -495,6 +518,39 @@ export default function Affectation() {
               <span className="text-xs text-slate-400 self-center">
                 Affichage : {visibleBlocksList.length} bloc(s)
               </span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+            <span className="text-xs font-semibold text-slate-500">Priorités :</span>
+            <button
+              onClick={() => setPrioFilter((p) => (p === 'MEL' ? 'all' : 'MEL'))}
+              className={`px-3 py-1 rounded-full text-xs font-bold border-2 transition-all ${
+                prioFilter === 'MEL'
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
+              }`}
+              title="Afficher uniquement les lignes MEL (recliquer pour tout réafficher)"
+            >
+              MEL ({prioCounts.mel})
+            </button>
+            <button
+              onClick={() => setPrioFilter((p) => (p === 'EXMP' ? 'all' : 'EXMP'))}
+              className={`px-3 py-1 rounded-full text-xs font-bold border-2 transition-all ${
+                prioFilter === 'EXMP'
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
+              }`}
+              title="Afficher uniquement les lignes EXMP (recliquer pour tout réafficher)"
+            >
+              EXMP ({prioCounts.exmp})
+            </button>
+            {prioFilter !== 'all' && (
+              <button
+                onClick={() => setPrioFilter('all')}
+                className="text-xs text-sky-600 hover:underline"
+              >
+                Tout réafficher
+              </button>
             )}
           </div>
         </div>

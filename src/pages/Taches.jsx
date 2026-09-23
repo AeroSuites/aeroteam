@@ -21,6 +21,7 @@ export default function Taches() {
   } = useApp()
   const [filter, setFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [prioFilter, setPrioFilter] = useState('all')
   const [selectedBlocks, setSelectedBlocks] = useState([])
   const [expandedZones, setExpandedZones] = useState([])
   const [expandedSubZones, setExpandedSubZones] = useState([])
@@ -153,7 +154,7 @@ export default function Taches() {
 
   const shownBlocks = blocks.filter((b) => !selectedBlocks.includes(b))
 
-  const filtered = useMemo(() => {
+  const preFiltered = useMemo(() => {
     const isAllBlocks = shownBlocks.length === blocks.length || blocks.length === 0
     const visibleSet = isAllBlocks ? null : new Set(shownBlocks)
     return tasks.filter((t) => {
@@ -174,6 +175,28 @@ export default function Taches() {
       return matchStatus && matchText
     })
   }, [tasks, filter, statusFilter, shownBlocks, blocks])
+
+  // Compteurs MEL / EXMP + affichage séparé (pastilles rouges)
+  const prioOf = (t) => priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
+
+  const prioCounts = useMemo(() => {
+    let mel = 0
+    let exmp = 0
+    preFiltered.forEach((t) => {
+      const tok = prioOf(t)
+      if (tok === 'MEL') mel += 1
+      else if (tok === 'EXMP') exmp += 1
+    })
+    return { mel, exmp }
+  }, [preFiltered])
+
+  const filtered = useMemo(
+    () =>
+      prioFilter === 'all'
+        ? preFiltered
+        : preFiltered.filter((t) => prioOf(t) === prioFilter),
+    [preFiltered, prioFilter]
+  )
 
   // Regroupement : par zone/sous-tâche, SAUF les Found Fault (CORR) qui restent
   // regroupés dans un seul bloc avec leurs sous-tâches.
@@ -322,6 +345,38 @@ export default function Taches() {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPrioFilter((p) => (p === 'MEL' ? 'all' : 'MEL'))}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
+                prioFilter === 'MEL'
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
+              }`}
+              title="Afficher uniquement les lignes MEL (recliquer pour tout réafficher)"
+            >
+              MEL ({prioCounts.mel})
+            </button>
+            <button
+              onClick={() => setPrioFilter((p) => (p === 'EXMP' ? 'all' : 'EXMP'))}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
+                prioFilter === 'EXMP'
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
+              }`}
+              title="Afficher uniquement les lignes EXMP (recliquer pour tout réafficher)"
+            >
+              EXMP ({prioCounts.exmp})
+            </button>
+            {prioFilter !== 'all' && (
+              <button
+                onClick={() => setPrioFilter('all')}
+                className="text-xs text-sky-600 hover:underline"
+              >
+                Tout réafficher
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
