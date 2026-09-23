@@ -1,9 +1,9 @@
 import * as XLSX from 'xlsx'
-import { assignmentTeams, isAssignedTo } from './helpers'
+import { assignmentTeams, isAssignedTo, priorityToken } from './helpers'
 
 export function exportToExcel({ tasks, teams, assignments }) {
   const wsData = [
-    ['N°', 'Tâche', 'Zone', 'Bloc', 'Skills', 'TRFX', 'Heures prévues', 'Statut', 'Appareil', 'Équipe(s)', 'Membres'],
+    ['N°', 'Tâche', 'Priorité', 'Zone', 'Bloc', 'Skills', 'TRFX', 'Heures prévues', 'Statut', 'Appareil', 'Équipe(s)', 'Membres'],
   ]
 
   const sorted = [...tasks].sort((a, b) => {
@@ -23,6 +23,7 @@ export function exportToExcel({ tasks, teams, assignments }) {
     wsData.push([
       task.seq ?? '',
       task.description ?? '',
+      priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) || '',
       task.workArea ?? '',
       task.taskType ?? '',
       task.skills ?? '',
@@ -36,7 +37,7 @@ export function exportToExcel({ tasks, teams, assignments }) {
   })
 
   const ws = XLSX.utils.aoa_to_sheet(wsData)
-  const colWidths = [6, 55, 22, 10, 18, 22, 12, 10, 12, 26, 40]
+  const colWidths = [6, 55, 10, 22, 10, 18, 22, 12, 10, 12, 26, 40]
   ws['!cols'] = colWidths.map((wch) => ({ wch }))
 
   const wb = XLSX.utils.book_new()
