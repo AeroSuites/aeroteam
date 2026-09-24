@@ -43,6 +43,15 @@ const SHIFT_COLORS = {
 const STATE_KEY = 'import-consignes-session-v1'
 const HISTORY_KEY = 'import-consignes-history'
 
+// Jour par défaut à l'ouverture d'un fichier : aujourd'hui s'il existe dans
+// le rapport, sinon le premier jour du fichier.
+const TODAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
+function defaultDayOf(days) {
+  const today = TODAY_NAMES[new Date().getDay()]
+  if (days.includes(today)) return today
+  return days[0] || ''
+}
+
 export default function ImportConsignes() {
   const { activeProfile } = useApp()
   const fileInputRef = useRef(null)
@@ -140,7 +149,7 @@ export default function ImportConsignes() {
       if (!st?.report) return
       setReport(st.report)
       setFileName(st.fileName || '')
-      setSelectedDay(st.selectedDay || Object.keys(st.report)[0] || '')
+      setSelectedDay(st.selectedDay || defaultDayOf(Object.keys(st.report)))
       setSelectedShift(st.selectedShift || 'matin')
       setOverrides(st.overrides || {})
       setResults(st.results || [])
@@ -454,7 +463,7 @@ export default function ImportConsignes() {
         const results = parseConsignesWorkbook(workbook)
         setReport(results)
         const days = Object.keys(results)
-        setSelectedDay(days[0] || '')
+        setSelectedDay(defaultDayOf(days))
         setSelectedShift('matin')
       } catch (err) {
         setError(`Erreur lors de la lecture : ${err.message}`)
