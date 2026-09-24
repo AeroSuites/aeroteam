@@ -15,6 +15,7 @@ import {
   filterNewPrepTasks,
   priorityToken,
   consigneDay,
+  logicalToday,
 } from './helpers'
 
 describe('taskContentKey / filterNewPrepTasks', () => {
@@ -193,6 +194,21 @@ describe('priorityToken — lignes MEL / EXMP', () => {
     expect(priorityToken('BMCC : AVEC DEFER / SANS DEFER')).toBe('')
     expect(priorityToken('NSRE RDY/IPR :')).toBe('')
     expect(priorityToken('Remplacement caramélisé')).toBe('')
+  })
+})
+
+describe('logicalToday — vacation de nuit', () => {
+  it('avant 6 h la journée logique est la veille, après 6 h c’est le jour même', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-22T00:30:00'))
+    expect(logicalToday().getDate()).toBe(21)
+    vi.setSystemTime(new Date('2026-09-22T05:59:00'))
+    expect(logicalToday().getDate()).toBe(21)
+    vi.setSystemTime(new Date('2026-09-22T06:00:00'))
+    expect(logicalToday().getDate()).toBe(22)
+    vi.setSystemTime(new Date('2026-09-22T23:30:00'))
+    expect(logicalToday().getDate()).toBe(22)
+    vi.useRealTimers()
   })
 })
 

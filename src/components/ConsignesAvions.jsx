@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ClipboardList } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
-import { priorityToken } from '../utils/helpers'
+import { priorityToken, logicalToday } from '../utils/helpers'
 
 const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
 
@@ -21,7 +21,7 @@ export default function ConsignesAvions({ scope = 'affectation' }) {
   const CHECKS_KEY = `consignes-checks-${scope}-v1`
   // Affectation conserve l'ancien format de clés (compatibilité des coches existantes)
   const keyPrefix = scope === 'affectation' ? '' : `${scope}|`
-  const [conDay, setConDay] = useState(() => DAY_NAMES[new Date().getDay()])
+  const [conDay, setConDay] = useState(() => DAY_NAMES[logicalToday().getDay()])
   const [conShift, setConShift] = useState(currentShiftNow)
   const [conList, setConList] = useState(null)
   const [conError, setConError] = useState('')

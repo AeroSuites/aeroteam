@@ -16,6 +16,7 @@ assignedTaskCount,
 consigneDay,
 priorityToken,
 priorityPrefix,
+logicalToday,
 } from '../utils/helpers'
 import {
   ClipboardList,
@@ -60,7 +61,7 @@ export default function Dashboard() {
       VENDREDI: 5,
       SAMEDI: 6,
     }
-    const todayIdx = new Date().getDay() // 0 = dimanche
+    const todayIdx = logicalToday().getDay() // 0 = dimanche (avant 6 h : la veille)
     const todayName = Object.keys(DAY_ORDER)[todayIdx]
     const all = notes
       .filter((n) => String(n.title || '').startsWith('[C] '))

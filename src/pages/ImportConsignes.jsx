@@ -11,6 +11,7 @@ import {
   dedupeAndMerge,
   getCategoryColor,
   getCategoryLabel,
+  logicalToday,
 } from '../utils/helpers'
 import * as profileStore from '../lib/profileStore'
 import { useApp } from '../context/AppContext'
@@ -47,7 +48,7 @@ const HISTORY_KEY = 'import-consignes-history'
 // le rapport, sinon le premier jour du fichier.
 const TODAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
 function defaultDayOf(days) {
-  const today = TODAY_NAMES[new Date().getDay()]
+  const today = TODAY_NAMES[logicalToday().getDay()]
   if (days.includes(today)) return today
   return days[0] || ''
 }

@@ -28,7 +28,15 @@ begin
     return jsonb_build_object('error', 'not_admin');
   end if;
 
-  today_idx := extract(isodow from now())::integer; -- 1 = lundi ... 7 = dimanche
+  -- Vacation de nuit (22 h -> 6 h) : avant 6 h du matin, la journée logique est
+  -- encore celle de la veille — on ne purge donc rien avant 6 h (heure de Paris).
+  today_idx := extract(isodow from (
+    case
+      when extract(hour from (now() at time zone 'Europe/Paris')) < 6
+        then (now() at time zone 'Europe/Paris')::date - 1
+      else (now() at time zone 'Europe/Paris')::date
+    end
+  ))::integer; -- 1 = lundi ... 7 = dimanche
 
   select jsonb_agg(n)
   into new_notes

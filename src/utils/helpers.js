@@ -79,6 +79,17 @@ export function priorityPrefix(task) {
   return tok ? `[${tok}] ` : ''
 }
 
+// Vacation de nuit (22 h → 6 h) : entre 0 h et 6 h du matin, la journée
+// « en cours » est encore celle de la veille — les consignes de la veille
+// restent donc affichées jusqu'à 6 h (sauf effacement manuel).
+export const NIGHT_CUTOFF_HOUR = 6
+
+export function logicalToday(date = new Date()) {
+  const d = new Date(date)
+  if (d.getHours() < NIGHT_CUTOFF_HOUR) d.setDate(d.getDate() - 1)
+  return d
+}
+
 const DAY_NAMES = [
   'DIMANCHE',
   'LUNDI',
