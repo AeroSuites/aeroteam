@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import DOMPurify from 'dompurify'
 import {
   Bold,
@@ -10,6 +10,7 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Smile,
 } from 'lucide-react'
 
 const FONTS = ['Arial', 'Verdana', 'Tahoma', 'Times New Roman', 'Courier New']
@@ -23,7 +24,7 @@ const COLORS = [
   '#64748b',
 ]
 
-const ALLOWED_TAGS = [
+export const ALLOWED_TAGS = [
   'p',
   'br',
   'strong',
@@ -41,11 +42,24 @@ const ALLOWED_TAGS = [
   'blockquote',
   'a',
 ]
-const ALLOWED_ATTR = ['style', 'href', 'target', 'rel', 'size', 'color', 'face']
+export const ALLOWED_ATTR = ['style', 'href', 'target', 'rel', 'size', 'color', 'face']
 
-export default function RichEditor({ onChange, placeholder = '', minHeight = 80 }) {
+const EMOJIS = [
+  '👍', '✅', '❌', '⚠️', '🚨', '🔧', '🔩', '✈️', '🛠️', '📎',
+  '📅', '⏰', '👌', '🙏', '😊', '😉', '😂', '😅', '😮', '🙌',
+  '🔴', '🟠', '🟢', '🔵', '⭐', '❗', '❓', '💪', '🧰', '📞',
+]
+
+export default function RichEditor({
+  onChange,
+  placeholder = '',
+  minHeight = 80,
+  value,
+  onEnterSend,
+}) {
   const ref = useRef(null)
   const valueRef = useRef('')
+  const [showEmoji, setShowEmoji] = useState(false)
 
   const sync = () => {
     if (!ref.current) return
@@ -58,7 +72,11 @@ export default function RichEditor({ onChange, placeholder = '', minHeight = 80 
     onChange(clean, (div.textContent || '').trim())
   }
 
+  // Synchronise le contenu affiché : interne (frappe) ou externe (prop value)
   useEffect(() => {
+    if (value !== undefined && value !== valueRef.current) {
+      valueRef.current = value || ''
+    }
     if (ref.current && ref.current.innerHTML !== valueRef.current) {
       ref.current.innerHTML = valueRef.current
     }
@@ -132,6 +150,36 @@ export default function RichEditor({ onChange, placeholder = '', minHeight = 80 
             />
           ))}
         </div>
+        <span className="w-px h-5 bg-slate-300 mx-0.5" />
+        <div className="relative">
+          <button
+            type="button"
+            className={toolbarButton}
+            title="Emojis"
+            onClick={() => setShowEmoji((v) => !v)}
+          >
+            <Smile className="h-4 w-4" />
+          </button>
+          {showEmoji && (
+            <div className="absolute bottom-full mb-1 left-0 z-40 bg-white border border-slate-200 rounded-lg shadow-xl p-2 w-56">
+              <div className="flex flex-wrap gap-0.5">
+                {EMOJIS.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => {
+                      exec('insertText', e)
+                      setShowEmoji(false)
+                    }}
+                    className="h-7 w-7 rounded hover:bg-slate-100 text-base leading-none"
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       <div
         ref={ref}
@@ -139,6 +187,13 @@ export default function RichEditor({ onChange, placeholder = '', minHeight = 80 
         suppressContentEditableWarning
         onInput={sync}
         onBlur={sync}
+        onKeyDown={(e) => {
+          if (onEnterSend && e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
+            sync()
+            onEnterSend()
+          }
+        }}
         data-placeholder={placeholder}
         className="p-2 text-sm text-slate-800 outline-none editor-body"
         style={{ minHeight }}

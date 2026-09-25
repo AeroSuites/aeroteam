@@ -8,10 +8,12 @@ import {
   MessageSquare,
   X,
 } from 'lucide-react'
+import DOMPurify from 'dompurify'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
+import RichEditor, { ALLOWED_TAGS, ALLOWED_ATTR } from '../components/RichEditor'
 
-const MAX_ATTACHMENT = 5 * 1024 * 1024 // 5 Mo (comme côté serveur)
+const MAX_ATTACHMENT = 5 * 1024 * 1024 // 5 Mo (comme cÃ´tÃ© serveur)
 
 const frTime = (iso) => {
   if (!iso) return ''
@@ -46,7 +48,7 @@ const humanSize = (n) => {
   return `${(v / (1024 * 1024)).toFixed(1)} Mo`
 }
 
-// Mise en forme des messages : pastilles (- ou •), gras (*...*) et italique (_..._)
+// Mise en forme des messages : pastilles (- ou â€¢), gras (*...*) et italique (_..._)
 const INLINE_RE = /(\*[^*\n]+\*|_[^_\n]+_)/g
 
 function Inline({ text }) {
@@ -61,11 +63,11 @@ function Inline({ text }) {
 function RichText({ text }) {
   const lines = String(text || '').split('\n')
   return lines.map((line, i) => {
-    const m = line.match(/^\s*[-•]\s+(.*)$/)
+    const m = line.match(/^\s*[-â€¢]\s+(.*)$/)
     if (m) {
       return (
         <span key={i} className="flex items-start gap-1.5">
-          <span className="text-sky-500 font-bold leading-5 shrink-0">•</span>
+          <span className="text-sky-500 font-bold leading-5 shrink-0">â€¢</span>
           <span className="flex-1">
             <Inline text={m[1]} />
           </span>
@@ -81,20 +83,39 @@ function RichText({ text }) {
   })
 }
 
-// Aperçu court dans la liste (sans les marqueurs de mise en forme)
-const previewText = (text) =>
-  String(text || '')
-    .replace(/^\s*[-•]\s+/gm, '• ')
-    .replace(/[*_]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 60)
+// Rendu d'un message : HTML enrichi (RichEditor) ou ancien texte simple
+function MessageBody({ body }) {
+  const raw = String(body || '')
+  if (/<[a-z][\s\S]*>/i.test(raw)) {
+    return (
+      <div
+        className="text-sm break-words leading-relaxed message-body"
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(raw, { ALLOWED_TAGS, ALLOWED_ATTR }),
+        }}
+      />
+    )
+  }
+  return (
+    <p className="text-sm break-words leading-relaxed">
+      <RichText text={raw} />
+    </p>
+  )
+}
 
-const EMOJIS = [
-  '👍', '✅', '❌', '⚠️', '🚨', '🔧', '🔩', '✈️', '🛠️', '📎',
-  '📅', '⏰', '👌', '🙏', '😊', '😉', '😂', '😅', '😮', '🙌',
-  '🔴', '🟠', '🟢', '🔵', '⭐', '❗', '❓', '💪', '🧰', '📞',
-]
+// AperÃ§u court dans la liste (sans les marqueurs de mise en forme)
+const previewText = (text) => {
+  const raw = String(text || '')
+  const plain = /<[a-z][\s\S]*>/i.test(raw)
+    ? (() => {
+        const d = document.createElement('div')
+        d.innerHTML = DOMPurify.sanitize(raw, { ALLOWED_TAGS, ALLOWED_ATTR })
+        return d.textContent || ''
+      })()
+    : raw.replace(/^\s*[-â€¢]\s+/gm, 'â€¢ ').replace(/[*_]/g, '')
+  return plain.replace(/\s+/g, ' ').trim().slice(0, 60)
+}
+
 
 
 export default function Messagerie() {
@@ -107,14 +128,13 @@ export default function Messagerie() {
   const [messages, setMessages] = useState(null)
   const [search, setSearch] = useState('')
   const [text, setText] = useState('')
+  const [textPlain, setTextPlain] = useState('')
   const [file, setFile] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [lightbox, setLightbox] = useState(null)
-  const [showEmoji, setShowEmoji] = useState(false)
 
   const fileRef = useRef(null)
-  const textRef = useRef(null)
   const bottomRef = useRef(null)
   const pollRef = useRef(null)
 
@@ -154,10 +174,10 @@ export default function Messagerie() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code])
 
-  // Aucun profil sélectionné par défaut : le choix reste à l'utilisateur
-  // (évite les envois au mauvais destinataire).
+  // Aucun profil sÃ©lectionnÃ© par dÃ©faut : le choix reste Ã  l'utilisateur
+  // (Ã©vite les envois au mauvais destinataire).
 
-  // Rafraîchit le fil ouvert régulièrement (nouveaux messages)
+  // RafraÃ®chit le fil ouvert rÃ©guliÃ¨rement (nouveaux messages)
   useEffect(() => {
     if (!contactId) return
     loadThread(contactId)
@@ -175,7 +195,7 @@ export default function Messagerie() {
     [contacts, contactId]
   )
 
-  // Liste affichée : conversations (dernier message) puis contacts sans conversation
+  // Liste affichÃ©e : conversations (dernier message) puis contacts sans conversation
   const listItems = useMemo(() => {
     const byId = {}
     const items = []
@@ -185,7 +205,7 @@ export default function Messagerie() {
         id: t.contact_id,
         name: t.contact_name,
                         preview: t.last_attachment
-          ? `📎 ${t.last_attachment}`
+          ? `ðŸ“Ž ${t.last_attachment}`
           : previewText(t.last_body),
         at: t.last_at,
         unread: Number(t.unread || 0),
@@ -215,39 +235,10 @@ export default function Messagerie() {
     return listItems.filter((i) => String(i.name).toLowerCase().includes(q))
   }, [listItems, search])
 
-  // Insère du texte à la position du curseur (mise en forme)
-  const insertAtCursor = (before, after = '') => {
-    const el = textRef.current
-    const start = el?.selectionStart ?? text.length
-    const end = el?.selectionEnd ?? text.length
-    const selected = text.slice(start, end)
-    setText(text.slice(0, start) + before + selected + after + text.slice(end))
-    requestAnimationFrame(() => {
-      if (!el) return
-      el.focus()
-      const pos = start + before.length + selected.length + after.length
-      el.setSelectionRange(pos, pos)
-    })
-  }
-
-  // Pastille : ajoute « - » en début de ligne courante
-  const insertBullet = () => {
-    const el = textRef.current
-    const start = el?.selectionStart ?? text.length
-    const lineStart = text.lastIndexOf('\n', Math.max(0, start - 1)) + 1
-    setText(text.slice(0, lineStart) + '- ' + text.slice(lineStart))
-    requestAnimationFrame(() => {
-      if (!el) return
-      el.focus()
-      const pos = start + 2
-      el.setSelectionRange(pos, pos)
-    })
-  }
-
   const pickFile = (f) => {
     if (!f) return
     if (f.size > MAX_ATTACHMENT) {
-      setError(`Pièce jointe trop lourde (${humanSize(f.size)}) — maximum 5 Mo.`)
+      setError(`PiÃ¨ce jointe trop lourde (${humanSize(f.size)}) â€” maximum 5 Mo.`)
       return
     }
     setError('')
@@ -266,23 +257,24 @@ export default function Messagerie() {
 
   const send = async () => {
     if (!code || !contactId) return
-    const body = text.trim()
-    if (!body && !file) return
+    const body = String(text || '').trim()
+    if (!textPlain && !file) return
     setBusy(true)
     setError('')
     try {
       const res = await profileStore.msgSend(code, contactId, body, file)
-      if (res?.error === 'piece_jointe_trop_lourde') setError('Pièce jointe trop lourde (5 Mo max).')
-      else if (res?.error === 'message_trop_long') setError('Message trop long (4000 caractères max).')
-      else if (res?.error) setError("Échec de l'envoi.")
+      if (res?.error === 'piece_jointe_trop_lourde') setError('PiÃ¨ce jointe trop lourde (5 Mo max).')
+      else if (res?.error === 'message_trop_long') setError('Message trop long (4000 caractÃ¨res max).')
+      else if (res?.error) setError("Ã‰chec de l'envoi.")
       else {
         setText('')
+        setTextPlain('')
         setFile(null)
         await loadThread(contactId)
         await loadLists()
       }
     } catch {
-      setError("Échec de l'envoi (hors ligne ?).")
+      setError("Ã‰chec de l'envoi (hors ligne ?).")
     }
     setBusy(false)
   }
@@ -291,7 +283,7 @@ export default function Messagerie() {
     try {
       const res = await profileStore.msgAttachment(code, m.id)
       if (!res?.ok) {
-        setError('Pièce jointe introuvable.')
+        setError('PiÃ¨ce jointe introuvable.')
         return
       }
       const bytes = Uint8Array.from(atob(res.data || ''), (c) => c.charCodeAt(0))
@@ -304,7 +296,7 @@ export default function Messagerie() {
       a.click()
       setTimeout(() => URL.revokeObjectURL(url), 30000)
     } catch {
-      setError('Téléchargement impossible.')
+      setError('TÃ©lÃ©chargement impossible.')
     }
   }
 
@@ -313,12 +305,12 @@ export default function Messagerie() {
       const res = await profileStore.msgAttachment(code, m.id)
       if (res?.ok) setLightbox({ src: `data:${res.type};base64,${res.data}`, name: res.name })
     } catch {
-      setError('Aperçu impossible.')
+      setError('AperÃ§u impossible.')
     }
   }
 
   const removeMessage = async (m) => {
-    if (!window.confirm('Supprimer ce message de votre côté ?')) return
+    if (!window.confirm('Supprimer ce message de votre cÃ´tÃ© ?')) return
     try {
       await profileStore.msgDelete(code, m.id)
       await loadThread(contactId)
@@ -333,7 +325,7 @@ export default function Messagerie() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Messagerie</h1>
         <p className="text-slate-600 mt-1">
-          Messages entre profils — texte et pièces jointes (5 Mo max).
+          Messages entre profils â€” texte et piÃ¨ces jointes (5 Mo max).
         </p>
       </div>
 
@@ -356,7 +348,7 @@ export default function Messagerie() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Rechercher un profil…"
+                  placeholder="Rechercher un profilâ€¦"
                   className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm"
                 />
               </div>
@@ -405,7 +397,7 @@ export default function Messagerie() {
             </ul>
           </div>
 
-          {/* Conversation : un seul cadre, messages qui s'enchaînent */}
+          {/* Conversation : un seul cadre, messages qui s'enchaÃ®nent */}
           <div className="flex flex-col min-h-[60vh]">
             {contact ? (
               <>
@@ -416,18 +408,18 @@ export default function Messagerie() {
                   <div className="min-w-0">
                     <p className="font-semibold text-slate-800 truncate">{contact.name}</p>
                     {contact.aircraft && (
-                      <p className="text-xs text-slate-400 truncate">✈ {contact.aircraft}</p>
+                      <p className="text-xs text-slate-400 truncate">âœˆ {contact.aircraft}</p>
                     )}
                   </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 px-3 sm:px-5 py-4 space-y-2">
                   {messages === null ? (
-                    <p className="text-sm text-slate-400">Chargement…</p>
+                    <p className="text-sm text-slate-400">Chargementâ€¦</p>
                   ) : messages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2 py-16">
                       <MessageSquare className="h-10 w-10 text-slate-300" />
-                      <p className="text-sm">Aucun message — écrivez le premier.</p>
+                      <p className="text-sm">Aucun message â€” Ã©crivez le premier.</p>
                     </div>
                   ) : (
                     messages.map((m, idx) => {
@@ -449,11 +441,7 @@ export default function Messagerie() {
                                   : 'bg-white text-slate-800 rounded-bl-sm border border-slate-100'
                               }`}
                             >
-                              {m.body && (
-                                <p className="text-sm break-words leading-relaxed">
-                                  <RichText text={m.body} />
-                                </p>
-                              )}
+                              {m.body && <MessageBody body={m.body} />}
                               {m.attachment_name && (
                                 <div className={`mt-1 ${m.body ? 'pt-1' : ''}`}>
                                   {String(m.attachment_type || '').startsWith('image/') && (
@@ -466,7 +454,7 @@ export default function Messagerie() {
                                       }`}
                                       title="Voir l'image"
                                     >
-                                      🖼 {m.attachment_name}
+                                      ðŸ–¼ {m.attachment_name}
                                     </button>
                                   )}
                                   <button
@@ -476,10 +464,10 @@ export default function Messagerie() {
                                         ? 'bg-white/15 text-white hover:bg-white/25'
                                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                     }`}
-                                    title="Télécharger la pièce jointe"
+                                    title="TÃ©lÃ©charger la piÃ¨ce jointe"
                                   >
                                     <Download className="h-3.5 w-3.5" />
-                                    {m.attachment_name} · {humanSize(m.attachment_size)}
+                                    {m.attachment_name} Â· {humanSize(m.attachment_size)}
                                   </button>
                                 </div>
                               )}
@@ -489,14 +477,14 @@ export default function Messagerie() {
                                 }`}
                               >
                                 {frTime(m.created_at)}
-                                {m.mine && m.read_at && <span title="Lu">✓✓</span>}
+                                {m.mine && m.read_at && <span title="Lu">âœ“âœ“</span>}
                               </div>
                               <button
                                 onClick={() => removeMessage(m)}
                                 className={`absolute -top-2 ${
                                   m.mine ? '-left-2' : '-right-2'
                                 } hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 hover:text-red-600 shadow`}
-                                title="Supprimer de mon côté"
+                                title="Supprimer de mon cÃ´tÃ©"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </button>
@@ -521,60 +509,7 @@ export default function Messagerie() {
                       </button>
                     </div>
                   )}
-                  {/* Barre de mise en forme (comme les pastilles des consignes) */}
-                  <div className="flex items-center gap-1 mb-2 flex-wrap">
-                    <button
-                      onClick={insertBullet}
-                      className="h-7 px-2 rounded-md text-slate-600 hover:bg-slate-100 text-sm font-bold border border-slate-200"
-                      title="Insérer une pastille (liste à puces)"
-                    >
-                      • Pastille
-                    </button>
-                    <button
-                      onClick={() => insertAtCursor('*', '*')}
-                      className="h-7 w-7 rounded-md text-slate-700 hover:bg-slate-100 font-bold border border-slate-200"
-                      title="Gras (encadrer avec *)"
-                    >
-                      G
-                    </button>
-                    <button
-                      onClick={() => insertAtCursor('_', '_')}
-                      className="h-7 w-7 rounded-md text-slate-700 hover:bg-slate-100 italic border border-slate-200"
-                      title="Italique (encadrer avec _)"
-                    >
-                      I
-                    </button>
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowEmoji((v) => !v)}
-                        className="h-7 w-7 rounded-md hover:bg-slate-100 border border-slate-200"
-                        title="Emojis"
-                      >
-                        😊
-                      </button>
-                      {showEmoji && (
-                        <div className="absolute bottom-full mb-1 left-0 z-40 bg-white border border-slate-200 rounded-lg shadow-xl p-2 w-56">
-                          <div className="flex flex-wrap gap-0.5">
-                            {EMOJIS.map((e) => (
-                              <button
-                                key={e}
-                                onClick={() => {
-                                  insertAtCursor(e)
-                                  setShowEmoji(false)
-                                }}
-                                className="h-7 w-7 rounded hover:bg-slate-100 text-base leading-none"
-                              >
-                                {e}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-[10px] text-slate-400 ml-1">
-                      *gras* · _italique_ · « • Pastille » en début de ligne
-                    </span>
-                  </div>
+                  {/* RÃ©daction (mÃªme Ã©diteur que les consignes, avec emojis) */}
                   <div className="flex items-end gap-2">
                     <button
                       onClick={() => fileRef.current?.click()}
@@ -589,23 +524,21 @@ export default function Messagerie() {
                       className="hidden"
                       onChange={(e) => pickFile(e.target.files && e.target.files[0])}
                     />
-                    <textarea
-                      ref={textRef}
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          send()
-                        }
-                      }}
-                      rows={1}
-                      placeholder="Écrivez un message… (Entrée pour envoyer, Maj+Entrée = nouvelle ligne)"
-                      className="flex-1 resize-none border border-slate-300 rounded-2xl px-3 py-2.5 text-sm max-h-32"
-                    />
+                    <div className="flex-1 min-w-0">
+                      <RichEditor
+                        value={text}
+                        onChange={(html, plain) => {
+                          setText(html)
+                          setTextPlain(plain)
+                        }}
+                        onEnterSend={send}
+                        placeholder="Ã‰crivez un messageâ€¦ (EntrÃ©e pour envoyer, Maj+EntrÃ©e = nouvelle ligne)"
+                        minHeight={44}
+                      />
+                    </div>
                     <button
                       onClick={send}
-                      disabled={busy || (!text.trim() && !file)}
+                      disabled={busy || (!textPlain && !file)}
                       className="shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-40"
                       title="Envoyer"
                     >
