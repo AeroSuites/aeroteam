@@ -1,7 +1,7 @@
 // Lecteur du fichier CONSIGNES S37 : effectif par jour/shift + blocs charge par avion.
 // Détection 100 % par contenu (libellés), jamais par positions fixes.
 
-import * as XLSX from 'npm:xlsx'
+import * as XLSX from 'xlsx'
 
 const DAY_SHEET_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
 const SHIFT_RE = /^\s*(matin|soir|nuit)\s*$/i
@@ -47,7 +47,32 @@ export function findSheetDate(rows) {
   return ''
 }
 
-export function parseEffectif(rows) {
+// Couleur bleue (case ou police) : sert à repérer les LEADERS dans l'effectif
+export function isBlueColor(rgb) {
+  const m = String(rgb || '').match(/([0-9A-Fa-f]{6})$/)
+  if (!m) return false
+  const v = m[1]
+  const r = parseInt(v.slice(0, 2), 16)
+  const g = parseInt(v.slice(2, 4), 16)
+  const b = parseInt(v.slice(4, 6), 16)
+  return b > 110 && b - r > 50 && b - g > 50
+}
+
+// Style de la cellule (ws) : bleu si le fond ou la police est bleu
+function cellIsBlue(ws, range, r, c) {
+  if (!ws) return false
+  const addr = XLSX.utils.encode_cell({ r: r + (range?.s?.r || 0), c: c + (range?.s?.c || 0) })
+  const s = ws[addr] && ws[addr].s
+  if (!s) return false
+  return [
+    s.fill && s.fill.fgColor && s.fill.fgColor.rgb,
+    s.fill && s.fill.bgColor && s.fill.bgColor.rgb,
+    s.font && s.font.color && s.font.color.rgb,
+  ].some((rgb) => isBlueColor(rgb))
+}
+
+export function parseEffectif(rows, ws) {
+  const range = ws && ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : null
   // Cherche la ligne des libellés de shifts ("Matin" / "Soir" / "Nuit")
   const shifts = []
   for (let r = 1; r < Math.min(rows.length, 8); r++) {
@@ -75,7 +100,11 @@ export function parseEffectif(rows) {
         if (!name) break
         const aircrafts = [...new Set(affectCols.map((ac) => cell(rows, dr, ac)).filter((v) => /^F-[\w-]+$/i.test(v)))]
         if (!aircrafts.length) continue // ABSENT / MANAGER / TSP etc.
-        members.push({ name, aircrafts })
+        members.push({
+          name,
+          aircrafts,
+          leader: cellIsBlue(ws, range, dr, memberCol),
+        })
       }
       shifts.push({ shift: shiftName, members })
       // Les autres shifts sont ailleurs dans la ligne : on continue la boucle
@@ -207,7 +236,7 @@ export function parseConsignesSheet(ws) {
   const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true })
   return {
     date: findSheetDate(rows),
-    effectif: parseEffectif(rows),
+    effectif: parseEffectif(rows, ws),
     blocks: parseBlocks(rows),
   }
 }

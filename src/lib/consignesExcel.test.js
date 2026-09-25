@@ -7,6 +7,7 @@ import {
   parseEffectif,
   parseBlocks,
   toDateString,
+  isBlueColor,
 } from './consignesExcel'
 
 function buildFixtureSheet() {
@@ -122,6 +123,31 @@ describe('parseEffectif', () => {
     expect(soir.members.map((m) => m.name)).toEqual(['DIAS (BRUNO)', 'LACHAUD (ARTHUR)'])
     const nuit = effectif.find((s) => s.shift === 'nuit')
     expect(nuit.members).toHaveLength(1)
+  })
+
+  it('marque comme leader le membre dont le nom est sur fond bleu', () => {
+    const rows = []
+    rows[1] = []
+    rows[1][0] = 'Matin'
+    rows[2] = []
+    rows[2][0] = 'Nom'
+    rows[2][1] = 'Affectation'
+    rows[3] = []
+    rows[3][0] = 'AYAD (FARID)'
+    rows[3][1] = 'F-GSQB'
+    rows[4] = []
+    rows[4][0] = 'DIAS (BRUNO)'
+    rows[4][1] = 'F-GSQB'
+    const ws = {
+      '!ref': 'A1:B5',
+      A4: { v: 'AYAD (FARID)', s: { fill: { fgColor: { rgb: 'FF0000FF' } } } },
+    }
+    const eff = parseEffectif(rows, ws)
+    const members = eff.find((s) => s.shift === 'matin').members
+    expect(members.find((m) => m.name === 'AYAD (FARID)').leader).toBe(true)
+    expect(members.find((m) => m.name === 'DIAS (BRUNO)').leader).toBe(false)
+    expect(isBlueColor('FF0000FF')).toBe(true)
+    expect(isBlueColor('FFFF0000')).toBe(false)
   })
 })
 

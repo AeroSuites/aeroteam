@@ -461,7 +461,7 @@ export default function ImportConsignes() {
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target.result)
-        const workbook = XLSX.read(data, { type: 'array' })
+        const workbook = XLSX.read(data, { type: 'array', cellStyles: true })
         const results = parseConsignesWorkbook(workbook)
         setReport(results)
         const days = Object.keys(results)
@@ -533,6 +533,7 @@ export default function ImportConsignes() {
   const hiddenBlocksCount = (sheet?.blocks.length || 0) - visibleBlocks.length
 
   // Effectif du shift sélectionné uniquement : avions (couleur) -> membres
+  // (les LEADERS — nom sur fond bleu dans le fichier — passent en premier et en bleu)
   const effectifShift = useMemo(() => {
     if (!sheet) return { aircrafts: [], byAircraft: {}, count: 0 }
     const sh = sheet.effectif.find((x) => x.shift === selectedShift)
@@ -543,9 +544,12 @@ export default function ImportConsignes() {
         if (seen.has(a)) return
         seen.add(a)
         if (!byAircraft[a]) byAircraft[a] = []
-        byAircraft[a].push(m.name)
+        byAircraft[a].push(m)
       })
     })
+    Object.values(byAircraft).forEach((list) =>
+      list.sort((x, y) => (y.leader ? 1 : 0) - (x.leader ? 1 : 0))
+    )
     return {
       aircrafts: Object.keys(byAircraft).sort(),
       byAircraft,
@@ -1099,12 +1103,17 @@ export default function ImportConsignes() {
                           </span>
                         </div>
                         <div className="p-2 flex flex-wrap gap-1">
-                          {effectifShift.byAircraft[a].map((n, i) => (
+                          {effectifShift.byAircraft[a].map((m, i) => (
                             <span
                               key={i}
-                              className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-medium"
+                              className={`px-2 py-0.5 rounded-full text-[11px] border ${
+                                m.leader
+                                  ? 'bg-sky-100 border-sky-300 text-sky-800 font-bold'
+                                  : 'bg-slate-100 border-slate-200 text-slate-700 font-medium'
+                              }`}
+                              title={m.leader ? 'Leader' : undefined}
                             >
-                              {n}
+                              {m.name}
                             </span>
                           ))}
                         </div>
@@ -1141,14 +1150,23 @@ export default function ImportConsignes() {
                         </button>
                         {active && (
                           <ul className="max-h-72 overflow-y-auto divide-y divide-slate-50">
-                            {sh?.members.map((m, i) => (
-                              <li key={i} className="px-3 py-1.5 text-xs flex justify-between gap-2">
-                                <span className="truncate">{m.name}</span>
-                                <span className="font-mono text-sky-700 shrink-0">
-                                  {m.aircrafts.join(', ')}
-                                </span>
-                              </li>
-                            ))}
+                            {[...(sh?.members || [])]
+                              .sort((a, b) => (b.leader ? 1 : 0) - (a.leader ? 1 : 0))
+                              .map((m, i) => (
+                                <li key={i} className="px-3 py-1.5 text-xs flex justify-between gap-2">
+                                  <span
+                                    className={`truncate ${
+                                      m.leader ? 'text-sky-700 font-bold' : ''
+                                    }`}
+                                    title={m.leader ? 'Leader' : undefined}
+                                  >
+                                    {m.name}
+                                  </span>
+                                  <span className="font-mono text-sky-700 shrink-0">
+                                    {m.aircrafts.join(', ')}
+                                  </span>
+                                </li>
+                              ))}
                             {(!sh || sh.members.length === 0) && (
                               <li className="px-3 py-2 text-xs text-slate-400 italic">
                                 Aucun membre pour ce shift.
