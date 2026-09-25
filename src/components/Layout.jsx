@@ -217,11 +217,6 @@ export default function Layout({ children }) {
                   title="Consignes et Import consignes"
                 >
                   {item.label}
-                  {consignesCount > 0 && (
-                    <span className="bg-amber-400 text-slate-900 rounded-full px-1.5 text-[10px] font-bold">
-                      {consignesCount}
-                    </span>
-                  )}
                   <ChevronDown
                     className={`h-3.5 w-3.5 transition-transform ${
                       consignesMenuOpen ? 'rotate-180' : ''
