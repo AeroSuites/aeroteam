@@ -13,7 +13,7 @@ import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
 import RichEditor, { ALLOWED_TAGS, ALLOWED_ATTR } from '../components/RichEditor'
 
-const MAX_ATTACHMENT = 5 * 1024 * 1024 // 5 Mo (comme cÃ´tÃ© serveur)
+const MAX_ATTACHMENT = 5 * 1024 * 1024 // 5 Mo (comme côté serveur)
 
 const frTime = (iso) => {
   if (!iso) return ''
@@ -48,7 +48,7 @@ const humanSize = (n) => {
   return `${(v / (1024 * 1024)).toFixed(1)} Mo`
 }
 
-// Mise en forme des messages : pastilles (- ou â€¢), gras (*...*) et italique (_..._)
+// Mise en forme des messages : pastilles (- ou •), gras (*...*) et italique (_..._)
 const INLINE_RE = /(\*[^*\n]+\*|_[^_\n]+_)/g
 
 function Inline({ text }) {
@@ -63,11 +63,11 @@ function Inline({ text }) {
 function RichText({ text }) {
   const lines = String(text || '').split('\n')
   return lines.map((line, i) => {
-    const m = line.match(/^\s*[-â€¢]\s+(.*)$/)
+    const m = line.match(/^\s*[-•]\s+(.*)$/)
     if (m) {
       return (
         <span key={i} className="flex items-start gap-1.5">
-          <span className="text-sky-500 font-bold leading-5 shrink-0">â€¢</span>
+          <span className="text-sky-500 font-bold leading-5 shrink-0">•</span>
           <span className="flex-1">
             <Inline text={m[1]} />
           </span>
@@ -103,7 +103,7 @@ function MessageBody({ body }) {
   )
 }
 
-// AperÃ§u court dans la liste (sans les marqueurs de mise en forme)
+// Aperçu court dans la liste (sans les marqueurs de mise en forme)
 const previewText = (text) => {
   const raw = String(text || '')
   const plain = /<[a-z][\s\S]*>/i.test(raw)
@@ -112,7 +112,7 @@ const previewText = (text) => {
         d.innerHTML = DOMPurify.sanitize(raw, { ALLOWED_TAGS, ALLOWED_ATTR })
         return d.textContent || ''
       })()
-    : raw.replace(/^\s*[-â€¢]\s+/gm, 'â€¢ ').replace(/[*_]/g, '')
+    : raw.replace(/^\s*[-•]\s+/gm, '• ').replace(/[*_]/g, '')
   return plain.replace(/\s+/g, ' ').trim().slice(0, 60)
 }
 
@@ -174,10 +174,10 @@ export default function Messagerie() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code])
 
-  // Aucun profil sÃ©lectionnÃ© par dÃ©faut : le choix reste Ã  l'utilisateur
-  // (Ã©vite les envois au mauvais destinataire).
+  // Aucun profil sélectionné par défaut : le choix reste à l'utilisateur
+  // (évite les envois au mauvais destinataire).
 
-  // RafraÃ®chit le fil ouvert rÃ©guliÃ¨rement (nouveaux messages)
+  // Rafraîchit le fil ouvert régulièrement (nouveaux messages)
   useEffect(() => {
     if (!contactId) return
     loadThread(contactId)
@@ -195,7 +195,7 @@ export default function Messagerie() {
     [contacts, contactId]
   )
 
-  // Liste affichÃ©e : conversations (dernier message) puis contacts sans conversation
+  // Liste affichée : conversations (dernier message) puis contacts sans conversation
   const listItems = useMemo(() => {
     const byId = {}
     const items = []
@@ -238,7 +238,7 @@ export default function Messagerie() {
   const pickFile = (f) => {
     if (!f) return
     if (f.size > MAX_ATTACHMENT) {
-      setError(`PiÃ¨ce jointe trop lourde (${humanSize(f.size)}) â€” maximum 5 Mo.`)
+      setError(`Pièce jointe trop lourde (${humanSize(f.size)}) — maximum 5 Mo.`)
       return
     }
     setError('')
@@ -263,9 +263,9 @@ export default function Messagerie() {
     setError('')
     try {
       const res = await profileStore.msgSend(code, contactId, body, file)
-      if (res?.error === 'piece_jointe_trop_lourde') setError('PiÃ¨ce jointe trop lourde (5 Mo max).')
-      else if (res?.error === 'message_trop_long') setError('Message trop long (4000 caractÃ¨res max).')
-      else if (res?.error) setError("Ã‰chec de l'envoi.")
+      if (res?.error === 'piece_jointe_trop_lourde') setError('Pièce jointe trop lourde (5 Mo max).')
+      else if (res?.error === 'message_trop_long') setError('Message trop long (4000 caractères max).')
+      else if (res?.error) setError("Échec de l'envoi.")
       else {
         setText('')
         setTextPlain('')
@@ -274,7 +274,7 @@ export default function Messagerie() {
         await loadLists()
       }
     } catch {
-      setError("Ã‰chec de l'envoi (hors ligne ?).")
+      setError("Échec de l'envoi (hors ligne ?).")
     }
     setBusy(false)
   }
@@ -283,7 +283,7 @@ export default function Messagerie() {
     try {
       const res = await profileStore.msgAttachment(code, m.id)
       if (!res?.ok) {
-        setError('PiÃ¨ce jointe introuvable.')
+        setError('Pièce jointe introuvable.')
         return
       }
       const bytes = Uint8Array.from(atob(res.data || ''), (c) => c.charCodeAt(0))
@@ -296,7 +296,7 @@ export default function Messagerie() {
       a.click()
       setTimeout(() => URL.revokeObjectURL(url), 30000)
     } catch {
-      setError('TÃ©lÃ©chargement impossible.')
+      setError('Téléchargement impossible.')
     }
   }
 
@@ -305,12 +305,12 @@ export default function Messagerie() {
       const res = await profileStore.msgAttachment(code, m.id)
       if (res?.ok) setLightbox({ src: `data:${res.type};base64,${res.data}`, name: res.name })
     } catch {
-      setError('AperÃ§u impossible.')
+      setError('Aperçu impossible.')
     }
   }
 
   const removeMessage = async (m) => {
-    if (!window.confirm('Supprimer ce message de votre cÃ´tÃ© ?')) return
+    if (!window.confirm('Supprimer ce message de votre côté ?')) return
     try {
       await profileStore.msgDelete(code, m.id)
       await loadThread(contactId)
@@ -325,7 +325,7 @@ export default function Messagerie() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Messagerie</h1>
         <p className="text-slate-600 mt-1">
-          Messages entre profils â€” texte et piÃ¨ces jointes (5 Mo max).
+          Messages entre profils — texte et pièces jointes (5 Mo max).
         </p>
       </div>
 
@@ -348,7 +348,7 @@ export default function Messagerie() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Rechercher un profilâ€¦"
+                  placeholder="Rechercher un profil…"
                   className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm"
                 />
               </div>
@@ -397,7 +397,7 @@ export default function Messagerie() {
             </ul>
           </div>
 
-          {/* Conversation : un seul cadre, messages qui s'enchaÃ®nent */}
+          {/* Conversation : un seul cadre, messages qui s'enchaînent */}
           <div className="flex flex-col min-h-[60vh]">
             {contact ? (
               <>
@@ -408,18 +408,18 @@ export default function Messagerie() {
                   <div className="min-w-0">
                     <p className="font-semibold text-slate-800 truncate">{contact.name}</p>
                     {contact.aircraft && (
-                      <p className="text-xs text-slate-400 truncate">âœˆ {contact.aircraft}</p>
+                      <p className="text-xs text-slate-400 truncate">✈ {contact.aircraft}</p>
                     )}
                   </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 px-3 sm:px-5 py-4 space-y-2">
                   {messages === null ? (
-                    <p className="text-sm text-slate-400">Chargementâ€¦</p>
+                    <p className="text-sm text-slate-400">Chargement…</p>
                   ) : messages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2 py-16">
                       <MessageSquare className="h-10 w-10 text-slate-300" />
-                      <p className="text-sm">Aucun message â€” Ã©crivez le premier.</p>
+                      <p className="text-sm">Aucun message — écrivez le premier.</p>
                     </div>
                   ) : (
                     messages.map((m, idx) => {
@@ -464,10 +464,10 @@ export default function Messagerie() {
                                         ? 'bg-white/15 text-white hover:bg-white/25'
                                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                     }`}
-                                    title="TÃ©lÃ©charger la piÃ¨ce jointe"
+                                    title="Télécharger la pièce jointe"
                                   >
                                     <Download className="h-3.5 w-3.5" />
-                                    {m.attachment_name} Â· {humanSize(m.attachment_size)}
+                                    {m.attachment_name} · {humanSize(m.attachment_size)}
                                   </button>
                                 </div>
                               )}
@@ -477,14 +477,14 @@ export default function Messagerie() {
                                 }`}
                               >
                                 {frTime(m.created_at)}
-                                {m.mine && m.read_at && <span title="Lu">âœ“âœ“</span>}
+                                {m.mine && m.read_at && <span title="Lu">✓✓</span>}
                               </div>
                               <button
                                 onClick={() => removeMessage(m)}
                                 className={`absolute -top-2 ${
                                   m.mine ? '-left-2' : '-right-2'
                                 } hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 hover:text-red-600 shadow`}
-                                title="Supprimer de mon cÃ´tÃ©"
+                                title="Supprimer de mon côté"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </button>
@@ -509,7 +509,7 @@ export default function Messagerie() {
                       </button>
                     </div>
                   )}
-                  {/* RÃ©daction (mÃªme Ã©diteur que les consignes, avec emojis) */}
+                  {/* Rédaction (même éditeur que les consignes, avec emojis) */}
                   <div className="flex items-end gap-2">
                     <button
                       onClick={() => fileRef.current?.click()}
@@ -532,7 +532,7 @@ export default function Messagerie() {
                           setTextPlain(plain)
                         }}
                         onEnterSend={send}
-                        placeholder="Ã‰crivez un messageâ€¦ (EntrÃ©e pour envoyer, Maj+EntrÃ©e = nouvelle ligne)"
+                        placeholder="Écrivez un message… (Entrée pour envoyer, Maj+Entrée = nouvelle ligne)"
                         minHeight={44}
                       />
                     </div>
