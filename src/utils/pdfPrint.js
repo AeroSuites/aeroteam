@@ -48,14 +48,17 @@ export async function downloadPdfAsJpeg(doc, filename) {
 
 // Dessine une case à cocher vide dans la 1ère colonne d'une ligne autoTable
 // (case à cocher en début de ligne pour l'impression).
+// Alignée sur la PREMIÈRE ligne de texte (autoTable aligne le texte en haut).
 export function drawCheckboxCell(doc, data) {
   if (data.section !== 'body' || data.column.index !== 0) return
   const size = 3.2
+  const padTop = typeof data.cell.padding === 'function' ? data.cell.padding('top') : 1.2
+  const lineHeight = 2.8
   doc.setDrawColor(0, 0, 0)
   doc.setLineWidth(0.25)
   doc.rect(
     data.cell.x + (data.cell.width - size) / 2,
-    data.cell.y + (data.cell.height - size) / 2,
+    data.cell.y + padTop + (lineHeight - size) / 2,
     size,
     size
   )
@@ -64,13 +67,16 @@ export function drawCheckboxCell(doc, data) {
 // Dessine une pastille rouge arrondie (même look que l'appli) pour le badge
 // MEL / EXMP dans une colonne « Priorité » d'autoTable (le texte de la cellule
 // est masqué via didParseCell : data.cell.text = []).
+// Alignée sur la première ligne de texte, comme la case à cocher et le N°.
 export function drawPriorityBadge(doc, data, token, columnIndex = 2) {
   if (data.section !== 'body' || data.column.index !== columnIndex) return
   if (!token) return
-  const h = 4
+  const h = 3.8
   const w = Math.min(data.cell.width - 1.5, token.length * 2 + 5)
   const x = data.cell.x + (data.cell.width - w) / 2
-  const y = data.cell.y + (data.cell.height - h) / 2
+  const padTop = typeof data.cell.padding === 'function' ? data.cell.padding('top') : 1.2
+  const lineHeight = 2.8
+  const y = data.cell.y + padTop + (lineHeight - h) / 2
   doc.setFillColor(220, 38, 38)
   doc.roundedRect(x, y, w, h, 1.4, 1.4, 'F')
   doc.setTextColor(255, 255, 255)
