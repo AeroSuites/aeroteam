@@ -199,6 +199,17 @@ export default function Dashboard() {
             4: { cellWidth: 26 },
           },
           didDrawCell: (data) => drawCheckboxCell(doc, data),
+          didParseCell: (data) => {
+            if (data.section !== 'body') return
+            const t = zoneTasks[data.row.index]
+            if (
+              t &&
+              priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
+            ) {
+              data.cell.styles.textColor = [185, 28, 28]
+              data.cell.styles.fontStyle = 'bold'
+            }
+          },
         })
         y = doc.lastAutoTable.finalY + 5
         if (y > pageHeight - 15) {

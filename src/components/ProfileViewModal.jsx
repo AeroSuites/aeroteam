@@ -10,6 +10,7 @@ hexToRgb,
 makeId,
 isAssignedTo,
 priorityPrefix,
+priorityToken,
 } from '../utils/helpers'
 import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell } from '../utils/pdfPrint'
 import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw, FolderKanban } from 'lucide-react'
@@ -201,6 +202,17 @@ function buildRecapPdf(profile, data) {
             3: { cellWidth: 22 },
           },
           didDrawCell: (data) => drawCheckboxCell(doc, data),
+          didParseCell: (data) => {
+            if (data.section !== 'body') return
+            const t = zoneTasks[data.row.index]
+            if (
+              t &&
+              priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
+            ) {
+              data.cell.styles.textColor = [185, 28, 28]
+              data.cell.styles.fontStyle = 'bold'
+            }
+          },
         })
         y = doc.lastAutoTable.finalY + 3
         ensureRoom(6)
