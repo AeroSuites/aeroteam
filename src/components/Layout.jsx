@@ -223,7 +223,7 @@ export default function Layout({ children }) {
         )}
         <div className="mx-auto max-w-[1700px] px-2 pb-2 flex flex-wrap items-center gap-1">
           {items.map((item) =>
-            item.submenu ? (
+            item.submenu && isAdmin ? (
               <div
                 key={item.to}
                 className="relative shrink-0"
@@ -272,8 +272,7 @@ export default function Layout({ children }) {
                       >
                         Import consignes
                       </NavLink>
-                    )}
-                  </div>
+                    )}                  </div>
                 )}
               </div>
             ) : (
