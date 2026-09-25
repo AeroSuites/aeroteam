@@ -11,7 +11,7 @@ makeId,
 isAssignedTo,
 priorityPrefix,
 } from '../utils/helpers'
-import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
+import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell } from '../utils/pdfPrint'
 import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw, FolderKanban } from 'lucide-react'
 
 function StatBox({ label, value }) {
@@ -178,7 +178,7 @@ function buildRecapPdf(profile, data) {
             [
               {
                 content: `${zone} (${zoneTasks.length})`,
-                colSpan: 3,
+                colSpan: 4,
                 styles: {
                   fillColor: hexToRgb(getZoneColor(zone)),
                   textColor: [255, 255, 255],
@@ -189,15 +189,18 @@ function buildRecapPdf(profile, data) {
             ],
           ],
           body: zoneTasks.map((t) => [
+            '',
             t.seq !== undefined && t.seq !== '' ? String(t.seq) : '—',
             `${priorityPrefix(t)}${t.description || ''}`,
             t.registration || '',
           ]),
           styles: { fontSize: 7.5, cellPadding: 1, textColor: [0, 0, 0], fontStyle: 'bold' },
           columnStyles: {
-            0: { cellWidth: 12 },
-            2: { cellWidth: 22 },
+            0: { cellWidth: 7 },
+            1: { cellWidth: 12 },
+            3: { cellWidth: 22 },
           },
+          didDrawCell: (data) => drawCheckboxCell(doc, data),
         })
         y = doc.lastAutoTable.finalY + 3
         ensureRoom(6)

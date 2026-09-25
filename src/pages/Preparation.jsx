@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
+import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell } from '../utils/pdfPrint'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
 import {
@@ -376,7 +376,7 @@ export default function Preparation() {
             [
               {
                 content: `${zone} (${zoneTasks.length})`,
-                colSpan: 5,
+                colSpan: 6,
                 styles: {
                   fillColor: hexToRgb(getZoneColor(zone)),
                   textColor: [255, 255, 255],
@@ -387,6 +387,7 @@ export default function Preparation() {
             ],
           ],
           body: zoneTasks.map((t) => [
+            '',
             t.seq !== undefined && t.seq !== '' ? String(t.seq) : '—',
             t.taskBarcode || '—',
             `${priorityPrefix(t)}${t.description || ''}`,
@@ -395,11 +396,13 @@ export default function Preparation() {
           ]),
           styles: { fontSize: 8, cellPadding: 1.2, textColor: [0, 0, 0], fontStyle: 'bold' },
           columnStyles: {
-            0: { cellWidth: 12 },
-            1: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
-            3: { cellWidth: 26, halign: 'left' },
-            4: { cellWidth: 40, textColor: [0, 0, 0], fontStyle: 'bolditalic' },
+            0: { cellWidth: 8 },
+            1: { cellWidth: 12 },
+            2: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
+            4: { cellWidth: 26, halign: 'left' },
+            5: { cellWidth: 40, textColor: [0, 0, 0], fontStyle: 'bolditalic' },
           },
+          didDrawCell: (data) => drawCheckboxCell(doc, data),
         })
         y = doc.lastAutoTable.finalY + 5
         if (y > pageHeight - 15) {

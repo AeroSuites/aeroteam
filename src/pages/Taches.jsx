@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, priorityToken } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
-import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check } from 'lucide-react'
+import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check, FileText } from 'lucide-react'
 
 export default function Taches() {
   const {
@@ -22,6 +22,7 @@ export default function Taches() {
   const [filter, setFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [prioFilter, setPrioFilter] = useState([])
+  const [descTask, setDescTask] = useState(null)
   const [selectedBlocks, setSelectedBlocks] = useState([])
   const [expandedZones, setExpandedZones] = useState([])
   const [expandedSubZones, setExpandedSubZones] = useState([])
@@ -678,7 +679,25 @@ export default function Taches() {
                           <td className="px-2 py-2 font-bold text-slate-500">{task.seq || '-'}</td>
                           <td className="px-2 py-2 font-medium max-w-md" title={task.description}>
                             <span className="flex items-center gap-1 min-w-0">
-                              <span className="truncate">{task.description}</span>
+                              <span
+                                className={`truncate ${
+                                  task.taskDescription
+                                    ? 'cursor-pointer hover:underline decoration-dotted'
+                                    : ''
+                                }`}
+                                onClick={() => task.taskDescription && setDescTask(task)}
+                              >
+                                {task.description}
+                              </span>
+                              {task.taskDescription && (
+                                <button
+                                  onClick={() => setDescTask(task)}
+                                  className="shrink-0 text-sky-600 hover:text-sky-800"
+                                  title="Voir la description détaillée (colonne Task_Description)"
+                                >
+                                  <FileText className="h-3.5 w-3.5" />
+                                </button>
+                              )}
                               {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
                                 <span
                                   className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
@@ -795,6 +814,50 @@ export default function Taches() {
             </div>
           )
       })}
+
+      {descTask && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setDescTask(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
+              <div className="min-w-0">
+                <h2 className="font-bold truncate">
+                  N° {descTask.seq || '—'} · {descTask.description}
+                </h2>
+                <p className="text-xs text-slate-300 truncate">
+                  {[
+                    descTask.taskBarcode ? `TRFX ${descTask.taskBarcode}` : '',
+                    descTask.registration || '',
+                    descTask.workArea || '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </div>
+              <button
+                onClick={() => setDescTask(null)}
+                className="text-slate-300 hover:text-white shrink-0"
+                title="Fermer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto">
+              <p className="text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-wide">
+                Description détaillée
+              </p>
+              <p className="whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
+                {descTask.taskDescription}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

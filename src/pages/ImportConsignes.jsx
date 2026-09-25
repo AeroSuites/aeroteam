@@ -531,6 +531,34 @@ export default function ImportConsignes() {
 
   const hiddenBlocksCount = (sheet?.blocks.length || 0) - visibleBlocks.length
 
+  // Tableau des effectifs : shifts (lignes) × avions (colonnes), avec les
+  // couleurs de l'appli (couleur du shift en ligne, couleur de l'avion en colonne)
+  const effectifMatrix = useMemo(() => {
+    if (!sheet) return { aircrafts: [], rows: [] }
+    const aircraftSet = new Set()
+    sheet.effectif.forEach((s) =>
+      (s.members || []).forEach((m) => (m.aircrafts || []).forEach((a) => aircraftSet.add(a)))
+    )
+    const aircrafts = [...aircraftSet].sort()
+    const rows = ['matin', 'soir', 'nuit'].map((shift) => {
+      const sh = sheet.effectif.find((x) => x.shift === shift)
+      const byAircraft = {}
+      aircrafts.forEach((a) => {
+        byAircraft[a] = []
+      })
+      ;(sh?.members || []).forEach((m) => {
+        const seen = new Set()
+        ;(m.aircrafts || []).forEach((a) => {
+          if (!byAircraft[a] || seen.has(a)) return
+          seen.add(a)
+          byAircraft[a].push(m.name)
+        })
+      })
+      return { shift, byAircraft, count: sh?.members.length || 0 }
+    })
+    return { aircrafts, rows }
+  }, [sheet])
+
   const aircraftInfoForScope = (immat) => {
     const shiftEff = sheet.effectif.find((s) => s.shift === selectedShift)
     const members = (shiftEff?.members || [])
@@ -1027,7 +1055,60 @@ export default function ImportConsignes() {
 
           {/* Aperçu jour + shift choisis */}
           {sheet && (
-            <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+            <div className="space-y-6">
+              {/* Tableau des effectifs par shift et par avion (couleurs de l'appli) */}
+              <div className="bg-white rounded-xl shadow p-4 sm:p-6">
+                <h2 className="font-semibold flex items-center gap-2 mb-1">
+                  <Users className="h-5 w-5 text-sky-500" /> Effectifs par shift et par avion —{' '}
+                  {selectedDay}
+                </h2>
+                <p className="text-xs text-slate-500 mb-3">
+                  Couleurs : shifts (lignes) et avions (colonnes), comme dans l'appli.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs min-w-[520px]">
+                    <thead>
+                      <tr>
+                        <th className="px-2 py-1.5 text-left text-slate-600 border-b bg-slate-50 whitespace-nowrap">
+                          Shift
+                        </th>
+                        {effectifMatrix.aircrafts.map((a) => (
+                          <th
+                            key={a}
+                            className="px-2 py-1.5 text-white border-b whitespace-nowrap font-bold"
+                            style={{ backgroundColor: getZoneColor(a) }}
+                          >
+                            {a}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {effectifMatrix.rows.map(({ shift, byAircraft, count }) => (
+                        <tr key={shift} className="border-b">
+                          <th
+                            className="px-2 py-1.5 text-left text-white font-bold whitespace-nowrap"
+                            style={{ backgroundColor: SHIFT_COLORS[shift] || '#64748b' }}
+                          >
+                            {shift.charAt(0).toUpperCase() + shift.slice(1)} ({count})
+                          </th>
+                          {effectifMatrix.aircrafts.map((a) => (
+                            <td key={a} className="px-2 py-1.5 align-top text-slate-700">
+                              {byAircraft[a].length ? (
+                                byAircraft[a].join(', ')
+                              ) : (
+                                <span className="text-slate-300">—</span>
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
               <div className="bg-white rounded-xl shadow p-4">
                 <h2 className="font-semibold flex items-center gap-2 mb-3">
                   <Users className="h-5 w-5 text-sky-500" /> Effectif {selectedDay}
@@ -1253,6 +1334,7 @@ export default function ImportConsignes() {
                   </table>
                 </div>
               </div>
+            </div>
             </div>
           )}
         </>

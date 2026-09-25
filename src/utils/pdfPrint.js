@@ -46,6 +46,21 @@ export async function downloadPdfAsJpeg(doc, filename) {
   }
 }
 
+// Dessine une case à cocher vide dans la 1ère colonne d'une ligne autoTable
+// (case à cocher en début de ligne pour l'impression).
+export function drawCheckboxCell(doc, data) {
+  if (data.section !== 'body' || data.column.index !== 0) return
+  const size = 3.2
+  doc.setDrawColor(0, 0, 0)
+  doc.setLineWidth(0.25)
+  doc.rect(
+    data.cell.x + (data.cell.width - size) / 2,
+    data.cell.y + (data.cell.height - size) / 2,
+    size,
+    size
+  )
+}
+
 // Imprime un PDF généré (jsPDF) via le visionneur du navigateur,
 // au lieu d'une capture d'écran de la page.
 export function openPdfPrint(doc) {

@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useEffect, useState } from 'react'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
+import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell } from '../utils/pdfPrint'
 import { useApp } from '../context/AppContext'
 import {
   getCategoryColor,
@@ -174,7 +174,7 @@ export default function Dashboard() {
             [
               {
                 content: `${zone} (${zoneTasks.length})`,
-                colSpan: 4,
+                colSpan: 5,
                 styles: {
                   fillColor: hexToRgb(getZoneColor(zone)),
                   textColor: [255, 255, 255],
@@ -185,6 +185,7 @@ export default function Dashboard() {
             ],
           ],
           body: zoneTasks.map((t) => [
+            '',
             t.seq !== undefined && t.seq !== '' ? String(t.seq) : '—',
             t.taskBarcode || '—',
             `${priorityPrefix(t)}${t.description || ''}`,
@@ -192,10 +193,12 @@ export default function Dashboard() {
           ]),
           styles: { fontSize: 8, cellPadding: 1.2, textColor: [0, 0, 0], fontStyle: 'bold' },
           columnStyles: {
-            0: { cellWidth: 12 },
-            1: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
-            3: { cellWidth: 26 },
+            0: { cellWidth: 8 },
+            1: { cellWidth: 12 },
+            2: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
+            4: { cellWidth: 26 },
           },
+          didDrawCell: (data) => drawCheckboxCell(doc, data),
         })
         y = doc.lastAutoTable.finalY + 5
         if (y > pageHeight - 15) {

@@ -309,6 +309,7 @@ export const HEADER_ALIASES = {
   pauseNotes: ['pause_notes'],
   technicalZones: ['technical_zones', 'technical_zones'],
   collected: ['collected'],
+  taskDescription: ['task_description', 'taskdesc', 'description_tache'],
 }
 
 export function detectColumns(headers) {
@@ -390,6 +391,9 @@ export function parseExcelRows(rows, columns) {
       registration: get('registration') ? String(get('registration')) : undefined,
       partStatus: get('partStatus') ? String(get('partStatus')) : undefined,
       impact: get('impact') ? String(get('impact')) : undefined,
+      taskDescription: get('taskDescription')
+        ? String(get('taskDescription'))
+        : undefined,
       // Alias compatibilité
       ref: get('seq') !== undefined ? String(get('seq')) : undefined,
       zone: get('workArea') ? String(get('workArea')) : undefined,
