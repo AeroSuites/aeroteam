@@ -54,7 +54,6 @@ export function isBlueColor(rgb) {
   if (!m) return false
   const v = m[1]
   const r = parseInt(v.slice(0, 2), 16)
-  const g = parseInt(v.slice(2, 4), 16)
   const b = parseInt(v.slice(4, 6), 16)
   return b > 150 && b - r > 30
 }
