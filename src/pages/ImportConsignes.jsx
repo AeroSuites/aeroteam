@@ -11,6 +11,7 @@ import {
   dedupeAndMerge,
   getCategoryColor,
   getCategoryLabel,
+  getZoneColor,
   logicalToday,
 } from '../utils/helpers'
 import * as profileStore from '../lib/profileStore'
