@@ -1108,11 +1108,12 @@ export default function ImportConsignes() {
                               key={i}
                               className={`px-2 py-0.5 rounded-full text-[11px] border ${
                                 m.leader
-                                  ? 'bg-sky-100 border-sky-300 text-sky-800 font-bold'
+                                  ? 'bg-sky-600 border-sky-700 text-white font-bold shadow-sm'
                                   : 'bg-slate-100 border-slate-200 text-slate-700 font-medium'
                               }`}
                               title={m.leader ? 'Leader' : undefined}
                             >
+                              {m.leader ? '★ ' : ''}
                               {m.name}
                             </span>
                           ))}
@@ -1156,10 +1157,13 @@ export default function ImportConsignes() {
                                 <li key={i} className="px-3 py-1.5 text-xs flex justify-between gap-2">
                                   <span
                                     className={`truncate ${
-                                      m.leader ? 'text-sky-700 font-bold' : ''
+                                      m.leader
+                                        ? 'bg-sky-600 text-white font-bold rounded px-1.5'
+                                        : ''
                                     }`}
                                     title={m.leader ? 'Leader' : undefined}
                                   >
+                                    {m.leader ? '★ ' : ''}
                                     {m.name}
                                   </span>
                                   <span className="font-mono text-sky-700 shrink-0">
