@@ -13,7 +13,7 @@ const navItems = [
   { to: '/export', label: 'Export' },
   { to: '/preparation', label: 'Préparation vac suivante' },
   { to: '/notes', label: 'Bloc-notes' },
-  { to: '/consignes', label: 'Consignes' },
+  { to: '/consignes', label: 'Consignes', submenu: true },
 ]
 
 export default function Layout({ children }) {
@@ -22,6 +22,9 @@ export default function Layout({ children }) {
   const location = useLocation()
   const [adminMenuOpen, setAdminMenuOpen] = useState(false)
   const adminMenuRef = useRef(null)
+  // Menu « Consignes » (survol) : Consignes / Import consignes
+  const [consignesMenuOpen, setConsignesMenuOpen] = useState(false)
+  const consignesMenuRef = useRef(null)
 
   const [primesPending, setPrimesPending] = useState(0)
   const [adminPending, setAdminPending] = useState(0)
@@ -90,6 +93,21 @@ export default function Layout({ children }) {
 
   const adminRouteActive =
     location.pathname === '/admin' || location.pathname === '/primes'
+
+  // Ferme le menu Consignes au clic extérieur
+  useEffect(() => {
+    if (!consignesMenuOpen) return
+    const onDown = (e) => {
+      if (consignesMenuRef.current && !consignesMenuRef.current.contains(e.target)) {
+        setConsignesMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [consignesMenuOpen])
+
+  const consignesRouteActive =
+    location.pathname === '/consignes' || location.pathname === '/import-consignes'
 
   const switchProfile = () => {
     if (window.confirm(`Quitter le profil « ${activeProfile?.name} » ? (les données sont sauvegardées dans le cloud)`)) {
@@ -180,27 +198,87 @@ export default function Layout({ children }) {
           </div>
         )}
         <div className="mx-auto max-w-[1700px] px-2 pb-2 flex flex-wrap items-center gap-1">
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `relative px-2.5 py-1.5 rounded-md text-[13px] whitespace-nowrap font-medium transition-colors shrink-0 ${
-                  isActive
-                    ? 'bg-sky-500 text-white'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`
-              }
-            >
-              {item.ordre && (
-                <span className="inline-flex items-center justify-center h-4 w-4 mr-1.5 rounded-full bg-amber-400 text-[10px] font-bold text-slate-900 align-middle" title={`Étape ${item.ordre} — ordre d'utilisation`}>
-                  {item.ordre}
-                </span>
-              )}
-              {item.label}
-            </NavLink>
-          ))}
+          {items.map((item) =>
+            item.submenu ? (
+              <div
+                key={item.to}
+                className="relative shrink-0"
+                ref={consignesMenuRef}
+                onMouseEnter={() => setConsignesMenuOpen(true)}
+                onMouseLeave={() => setConsignesMenuOpen(false)}
+              >
+                <button
+                  onClick={() => setConsignesMenuOpen((o) => !o)}
+                  className={`relative flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[13px] whitespace-nowrap font-medium transition-colors ${
+                    consignesRouteActive || consignesMenuOpen
+                      ? 'bg-sky-500 text-white'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                  title="Consignes et Import consignes"
+                >
+                  {item.label}
+                  {consignesCount > 0 && (
+                    <span className="bg-amber-400 text-slate-900 rounded-full px-1.5 text-[10px] font-bold">
+                      {consignesCount}
+                    </span>
+                  )}
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform ${
+                      consignesMenuOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                {consignesMenuOpen && (
+                  <div className="absolute left-0 top-full z-50 bg-slate-800 rounded-lg shadow-xl border border-slate-700 py-1 min-w-[190px]">
+                    <NavLink
+                      to="/consignes"
+                      onClick={() => setConsignesMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center px-3 py-2 text-sm ${
+                          isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
+                        }`
+                      }
+                    >
+                      Consignes
+                    </NavLink>
+                    {isAdmin && (
+                      <NavLink
+                        to="/import-consignes"
+                        onClick={() => setConsignesMenuOpen(false)}
+                        className={({ isActive }) =>
+                          `flex items-center px-3 py-2 text-sm ${
+                            isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
+                          }`
+                        }
+                      >
+                        Import consignes
+                      </NavLink>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `relative px-2.5 py-1.5 rounded-md text-[13px] whitespace-nowrap font-medium transition-colors shrink-0 ${
+                    isActive
+                      ? 'bg-sky-500 text-white'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`
+                }
+              >
+                {item.ordre && (
+                  <span className="inline-flex items-center justify-center h-4 w-4 mr-1.5 rounded-full bg-amber-400 text-[10px] font-bold text-slate-900 align-middle" title={`Étape ${item.ordre} — ordre d'utilisation`}>
+                    {item.ordre}
+                  </span>
+                )}
+                {item.label}
+              </NavLink>
+            )
+          )}
 
           {isAdmin && (
             <div className="relative shrink-0" ref={adminMenuRef}>
@@ -264,20 +342,6 @@ export default function Layout({ children }) {
             </div>
           )}
 
-          {isAdmin && (
-            <NavLink
-              to="/import-consignes"
-              className={({ isActive }) =>
-                `relative px-2.5 py-1.5 rounded-md text-[13px] whitespace-nowrap font-medium transition-colors shrink-0 ${
-                  isActive
-                    ? 'bg-sky-500 text-white'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`
-              }
-            >
-              Import consignes
-            </NavLink>
-          )}
         </div>
       </nav>
       <main className="mx-auto max-w-[1700px] px-4 py-6">{children}</main>
