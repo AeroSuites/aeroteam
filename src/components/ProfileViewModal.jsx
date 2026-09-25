@@ -9,10 +9,9 @@ getZoneColor,
 hexToRgb,
 makeId,
 isAssignedTo,
-priorityPrefix,
 priorityToken,
 } from '../utils/helpers'
-import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell } from '../utils/pdfPrint'
+import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell, drawPriorityBadge, hidePriorityCellText } from '../utils/pdfPrint'
 import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw, FolderKanban } from 'lucide-react'
 
 function StatBox({ label, value }) {
@@ -179,7 +178,7 @@ function buildRecapPdf(profile, data) {
             [
               {
                 content: `${zone} (${zoneTasks.length})`,
-                colSpan: 4,
+                colSpan: 5,
                 styles: {
                   fillColor: hexToRgb(getZoneColor(zone)),
                   textColor: [255, 255, 255],
@@ -192,27 +191,27 @@ function buildRecapPdf(profile, data) {
           body: zoneTasks.map((t) => [
             '',
             t.seq !== undefined && t.seq !== '' ? String(t.seq) : '—',
-            `${priorityPrefix(t)}${t.description || ''}`,
+            priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`),
+            t.description || '',
             t.registration || '',
           ]),
           styles: { fontSize: 7.5, cellPadding: 1, textColor: [0, 0, 0], fontStyle: 'bold' },
           columnStyles: {
             0: { cellWidth: 7 },
             1: { cellWidth: 12 },
-            3: { cellWidth: 22 },
+            2: { cellWidth: 14 },
+            4: { cellWidth: 22 },
           },
-          didDrawCell: (data) => drawCheckboxCell(doc, data),
-          didParseCell: (data) => {
-            if (data.section !== 'body') return
+          didDrawCell: (data) => {
+            drawCheckboxCell(doc, data)
             const t = zoneTasks[data.row.index]
-            if (
-              t &&
-              priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
-            ) {
-              data.cell.styles.textColor = [185, 28, 28]
-              data.cell.styles.fontStyle = 'bold'
-            }
+            drawPriorityBadge(
+              doc,
+              data,
+              t ? priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`) : ''
+            )
           },
+          didParseCell: (data) => hidePriorityCellText(data),
         })
         y = doc.lastAutoTable.finalY + 3
         ensureRoom(6)

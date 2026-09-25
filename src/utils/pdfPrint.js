@@ -61,6 +61,32 @@ export function drawCheckboxCell(doc, data) {
   )
 }
 
+// Dessine une pastille rouge arrondie (même look que l'appli) pour le badge
+// MEL / EXMP dans une colonne « Priorité » d'autoTable (le texte de la cellule
+// est masqué via didParseCell : data.cell.text = []).
+export function drawPriorityBadge(doc, data, token, columnIndex = 2) {
+  if (data.section !== 'body' || data.column.index !== columnIndex) return
+  if (!token) return
+  const h = 4
+  const w = Math.min(data.cell.width - 1.5, token.length * 2 + 5)
+  const x = data.cell.x + (data.cell.width - w) / 2
+  const y = data.cell.y + (data.cell.height - h) / 2
+  doc.setFillColor(220, 38, 38)
+  doc.roundedRect(x, y, w, h, 1.4, 1.4, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(6.5)
+  doc.text(token, x + w / 2, y + h / 2 + 0.7, { align: 'center' })
+  doc.setTextColor(0, 0, 0)
+}
+
+// Masque le texte d'une cellule (utile quand on dessine un badge à la place)
+export function hidePriorityCellText(data, columnIndex = 2) {
+  if (data.section === 'body' && data.column.index === columnIndex) {
+    data.cell.text = []
+  }
+}
+
 // Imprime un PDF généré (jsPDF) via le visionneur du navigateur,
 // au lieu d'une capture d'écran de la page.
 export function openPdfPrint(doc) {

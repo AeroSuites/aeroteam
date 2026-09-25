@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useEffect, useState } from 'react'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell } from '../utils/pdfPrint'
+import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell, drawPriorityBadge, hidePriorityCellText } from '../utils/pdfPrint'
 import { useApp } from '../context/AppContext'
 import {
   getCategoryColor,
@@ -15,7 +15,6 @@ assignmentTeams,
 assignedTaskCount,
 consigneDay,
 priorityToken,
-priorityPrefix,
 logicalToday,
 } from '../utils/helpers'
 import {
@@ -174,7 +173,7 @@ export default function Dashboard() {
             [
               {
                 content: `${zone} (${zoneTasks.length})`,
-                colSpan: 5,
+                colSpan: 6,
                 styles: {
                   fillColor: hexToRgb(getZoneColor(zone)),
                   textColor: [255, 255, 255],
@@ -187,29 +186,29 @@ export default function Dashboard() {
           body: zoneTasks.map((t) => [
             '',
             t.seq !== undefined && t.seq !== '' ? String(t.seq) : '—',
+            priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`),
             t.taskBarcode || '—',
-            `${priorityPrefix(t)}${t.description || ''}`,
+            t.description || '',
             t.registration || '—',
           ]),
           styles: { fontSize: 8, cellPadding: 1.2, textColor: [0, 0, 0], fontStyle: 'bold' },
           columnStyles: {
             0: { cellWidth: 8 },
             1: { cellWidth: 12 },
-            2: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
-            4: { cellWidth: 26 },
+            2: { cellWidth: 16 },
+            3: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
+            5: { cellWidth: 26 },
           },
-          didDrawCell: (data) => drawCheckboxCell(doc, data),
-          didParseCell: (data) => {
-            if (data.section !== 'body') return
+          didDrawCell: (data) => {
+            drawCheckboxCell(doc, data)
             const t = zoneTasks[data.row.index]
-            if (
-              t &&
-              priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
-            ) {
-              data.cell.styles.textColor = [185, 28, 28]
-              data.cell.styles.fontStyle = 'bold'
-            }
+            drawPriorityBadge(
+              doc,
+              data,
+              t ? priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`) : ''
+            )
           },
+          didParseCell: (data) => hidePriorityCellText(data),
         })
         y = doc.lastAutoTable.finalY + 5
         if (y > pageHeight - 15) {

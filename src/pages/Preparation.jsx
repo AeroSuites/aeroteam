@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell } from '../utils/pdfPrint'
+import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell, drawPriorityBadge, hidePriorityCellText } from '../utils/pdfPrint'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
 import {
@@ -15,7 +15,6 @@ import {
   makeId,
   filterNewPrepTasks,
   priorityToken,
-  priorityPrefix,
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
@@ -376,7 +375,7 @@ export default function Preparation() {
             [
               {
                 content: `${zone} (${zoneTasks.length})`,
-                colSpan: 6,
+                colSpan: 7,
                 styles: {
                   fillColor: hexToRgb(getZoneColor(zone)),
                   textColor: [255, 255, 255],
@@ -389,8 +388,9 @@ export default function Preparation() {
           body: zoneTasks.map((t) => [
             '',
             t.seq !== undefined && t.seq !== '' ? String(t.seq) : '—',
+            priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`),
             t.taskBarcode || '—',
-            `${priorityPrefix(t)}${t.description || ''}`,
+            t.description || '',
             t.registration || '—',
             t.note || '',
           ]),
@@ -398,22 +398,21 @@ export default function Preparation() {
           columnStyles: {
             0: { cellWidth: 8 },
             1: { cellWidth: 12 },
-            2: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
-            4: { cellWidth: 26, halign: 'left' },
-            5: { cellWidth: 40, textColor: [0, 0, 0], fontStyle: 'bolditalic' },
+            2: { cellWidth: 16 },
+            3: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
+            5: { cellWidth: 26, halign: 'left' },
+            6: { cellWidth: 40, textColor: [0, 0, 0], fontStyle: 'bolditalic' },
           },
-          didDrawCell: (data) => drawCheckboxCell(doc, data),
-          didParseCell: (data) => {
-            if (data.section !== 'body') return
+          didDrawCell: (data) => {
+            drawCheckboxCell(doc, data)
             const t = zoneTasks[data.row.index]
-            if (
-              t &&
-              priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
-            ) {
-              data.cell.styles.textColor = [185, 28, 28]
-              data.cell.styles.fontStyle = 'bold'
-            }
+            drawPriorityBadge(
+              doc,
+              data,
+              t ? priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`) : ''
+            )
           },
+          didParseCell: (data) => hidePriorityCellText(data),
         })
         y = doc.lastAutoTable.finalY + 5
         if (y > pageHeight - 15) {
