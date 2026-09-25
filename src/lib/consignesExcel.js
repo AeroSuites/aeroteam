@@ -47,7 +47,8 @@ export function findSheetDate(rows) {
   return ''
 }
 
-// Couleur bleue (case ou police) : sert à repérer les LEADERS dans l'effectif
+// Couleur bleue (case ou police) : sert à repérer les LEADERS dans l'effectif.
+// Accepte les bleus clairs type #AFEEEE (turquoise pâle) comme les bleus vifs.
 export function isBlueColor(rgb) {
   const m = String(rgb || '').match(/([0-9A-Fa-f]{6})$/)
   if (!m) return false
@@ -55,20 +56,33 @@ export function isBlueColor(rgb) {
   const r = parseInt(v.slice(0, 2), 16)
   const g = parseInt(v.slice(2, 4), 16)
   const b = parseInt(v.slice(4, 6), 16)
-  return b > 110 && b - r > 50 && b - g > 50
+  return b > 150 && b - r > 30
 }
 
-// Style de la cellule (ws) : bleu si le fond ou la police est bleu
+// Couleurs indexées (ancienne palette Excel) considérées comme bleues
+const BLUE_INDEXED = new Set([4, 12, 18, 24, 30, 31, 32, 39, 40, 44, 46, 48])
+
+function colorIsBlue(c) {
+  if (!c) return false
+  if (c.rgb) return isBlueColor(c.rgb)
+  if (typeof c.indexed === 'number') return BLUE_INDEXED.has(c.indexed)
+  return false
+}
+
+// Style de la cellule (ws) : bleu si le fond (ou la police) est bleu.
+// Selon la version de SheetJS, le fond est dans s.fill.fgColor ou directement s.fgColor.
 function cellIsBlue(ws, range, r, c) {
   if (!ws) return false
   const addr = XLSX.utils.encode_cell({ r: r + (range?.s?.r || 0), c: c + (range?.s?.c || 0) })
-  const s = ws[addr] && ws[addr].s
+  const cell = ws[addr]
+  const s = cell && cell.s
   if (!s) return false
-  return [
-    s.fill && s.fill.fgColor && s.fill.fgColor.rgb,
-    s.fill && s.fill.bgColor && s.fill.bgColor.rgb,
-    s.font && s.font.color && s.font.color.rgb,
-  ].some((rgb) => isBlueColor(rgb))
+  const fill = s.fill || s
+  const solid = !fill.patternType || fill.patternType === 'solid'
+  if (solid && colorIsBlue(fill.fgColor)) return true
+  if (!fill.fgColor && colorIsBlue(fill.bgColor)) return true
+  const fontRgb = s.font && s.font.color && s.font.color.rgb
+  return Boolean(fontRgb && isBlueColor(fontRgb))
 }
 
 export function parseEffectif(rows, ws) {

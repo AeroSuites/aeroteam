@@ -141,13 +141,21 @@ describe('parseEffectif', () => {
     const ws = {
       '!ref': 'A1:B5',
       A4: { v: 'AYAD (FARID)', s: { fill: { fgColor: { rgb: 'FF0000FF' } } } },
+      A5: {
+        v: 'DIAS (BRUNO)',
+        s: { patternType: 'solid', fgColor: { rgb: 'AFEEEE' }, bgColor: { indexed: 64 } },
+      },
     }
     const eff = parseEffectif(rows, ws)
     const members = eff.find((s) => s.shift === 'matin').members
     expect(members.find((m) => m.name === 'AYAD (FARID)').leader).toBe(true)
-    expect(members.find((m) => m.name === 'DIAS (BRUNO)').leader).toBe(false)
+    expect(members.find((m) => m.name === 'DIAS (BRUNO)').leader).toBe(true)
+    expect(isBlueColor('AFEEEE')).toBe(true)
+    expect(isBlueColor('00B0F0')).toBe(true)
     expect(isBlueColor('FF0000FF')).toBe(true)
     expect(isBlueColor('FFFF0000')).toBe(false)
+    expect(isBlueColor('D7E4BD')).toBe(false)
+    expect(isBlueColor('FFFF00')).toBe(false)
   })
 })
 
