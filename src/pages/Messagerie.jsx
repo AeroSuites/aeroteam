@@ -101,13 +101,8 @@ export default function Messagerie() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code])
 
-  // Premier contact : la conversation la plus récente, sinon le premier contact
-  useEffect(() => {
-    if (contactId || !contacts.length) return
-    if (threads.length) setContactId(threads[0].contact_id)
-    else setContactId(contacts[0].id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contacts, threads])
+  // Aucun profil sélectionné par défaut : le choix reste à l'utilisateur
+  // (évite les envois au mauvais destinataire).
 
   // Rafraîchit le fil ouvert régulièrement (nouveaux messages)
   useEffect(() => {
