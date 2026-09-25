@@ -289,7 +289,7 @@ export default function Layout({ children }) {
                     ? 'bg-sky-500 text-white'
                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
-                title="Administration, Primes et Import consignes"
+                title="Administration et Primes"
               >
                 Administration
                 <ChevronDown
