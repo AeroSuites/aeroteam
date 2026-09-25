@@ -11,6 +11,7 @@ import Export from './pages/Export'
 import Preparation from './pages/Preparation'
 import BlocNotes from './pages/BlocNotes'
 import Consignes from './pages/Consignes'
+import Messagerie from './pages/Messagerie'
 import ImportConsignes from './pages/ImportConsignes'
 import Admin from './pages/Admin'
 import Primes from './pages/Primes'
@@ -44,6 +45,7 @@ function AppContent() {
         <Route path="/preparation" element={<Preparation />} />
         <Route path="/notes" element={<BlocNotes />} />
         <Route path="/consignes" element={<Consignes />} />
+        <Route path="/messagerie" element={<Messagerie />} />
         <Route path="/export" element={<Export />} />
         {isAdmin && <Route path="/admin" element={<Admin />} />}
         {isAdmin && <Route path="/primes" element={<Primes />} />}

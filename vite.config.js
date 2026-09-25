@@ -44,6 +44,9 @@ export default defineConfig({
         navigateFallback: '/aeroteam/index.html',
         navigateFallbackDenylist: [/\/aeroteam\/assets\/.*/, /\/aeroteam\/docs\/.*/],
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // Le bundle principal dépasse 2 Mo : on autorise jusqu'à 5 Mo
+        // (sinon la génération du service worker échoue).
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),
   ],

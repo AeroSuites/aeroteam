@@ -13,6 +13,7 @@ const navItems = [
   { to: '/export', label: 'Export' },
   { to: '/preparation', label: 'Préparation vac suivante' },
   { to: '/notes', label: 'Bloc-notes' },
+  { to: '/messagerie', label: 'Messagerie', messages: true },
   { to: '/consignes', label: 'Consignes', submenu: true },
 ]
 
@@ -28,6 +29,29 @@ export default function Layout({ children }) {
 
   const [primesPending, setPrimesPending] = useState(0)
   const [adminPending, setAdminPending] = useState(0)
+  const [msgUnread, setMsgUnread] = useState(0)
+
+  // Messages non lus (pastille messagerie)
+  useEffect(() => {
+    if (!activeProfile?.code) return
+    let alive = true
+    const load = () => {
+      profileStore
+        .msgUnreadCount(activeProfile.code)
+        .then((res) => {
+          if (alive && res?.ok) setMsgUnread(Number(res.count || 0))
+        })
+        .catch(() => {})
+    }
+    load()
+    const timer = setInterval(load, 30000)
+    window.addEventListener('messages-updated', load)
+    return () => {
+      alive = false
+      clearInterval(timer)
+      window.removeEventListener('messages-updated', load)
+    }
+  }, [activeProfile?.code])
 
   useEffect(() => {
     if (!isAdmin || !activeProfile?.code) return
@@ -271,6 +295,11 @@ export default function Layout({ children }) {
                   </span>
                 )}
                 {item.label}
+                {item.messages && msgUnread > 0 && (
+                  <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold align-middle">
+                    {msgUnread}
+                  </span>
+                )}
               </NavLink>
             )
           )}

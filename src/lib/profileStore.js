@@ -371,6 +371,66 @@ export async function adminSendPrimesRecapNow(adminCode, month) {
   return data
 }
 
+// ---------- Messagerie entre profils ----------
+
+export async function msgContacts(code) {
+  const { data, error } = await supabase.rpc('msg_contacts', { p_code: code })
+  if (error) throw error
+  return data
+}
+
+export async function msgThreads(code) {
+  const { data, error } = await supabase.rpc('msg_threads', { p_code: code })
+  if (error) throw error
+  return data
+}
+
+export async function msgThread(code, contactId) {
+  const { data, error } = await supabase.rpc('msg_thread', {
+    p_code: code,
+    p_contact_id: contactId,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function msgSend(code, to, body, attachment) {
+  const { data, error } = await supabase.rpc('msg_send', {
+    p_code: code,
+    p_to: to,
+    p_body: body || '',
+    p_attachment_name: attachment?.name || null,
+    p_attachment_type: attachment?.type || null,
+    p_attachment_data: attachment?.data || null,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function msgAttachment(code, id) {
+  const { data, error } = await supabase.rpc('msg_attachment', {
+    p_code: code,
+    p_id: id,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function msgUnreadCount(code) {
+  const { data, error } = await supabase.rpc('msg_unread_count', { p_code: code })
+  if (error) throw error
+  return data
+}
+
+export async function msgDelete(code, id) {
+  const { data, error } = await supabase.rpc('msg_delete', {
+    p_code: code,
+    p_id: id,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function adminDeleteDeclaration(adminCode, id) {
   const { data, error } = await supabase.rpc('admin_delete_declaration', {
     p_admin_code: adminCode,
