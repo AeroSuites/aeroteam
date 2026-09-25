@@ -46,6 +46,57 @@ const humanSize = (n) => {
   return `${(v / (1024 * 1024)).toFixed(1)} Mo`
 }
 
+// Mise en forme des messages : pastilles (- ou •), gras (*...*) et italique (_..._)
+const INLINE_RE = /(\*[^*\n]+\*|_[^_\n]+_)/g
+
+function Inline({ text }) {
+  const parts = String(text || '').split(INLINE_RE)
+  return parts.map((p, i) => {
+    if (/^\*[^*]+\*$/.test(p)) return <strong key={i}>{p.slice(1, -1)}</strong>
+    if (/^_[^_]+_$/.test(p)) return <em key={i}>{p.slice(1, -1)}</em>
+    return <span key={i}>{p}</span>
+  })
+}
+
+function RichText({ text }) {
+  const lines = String(text || '').split('\n')
+  return lines.map((line, i) => {
+    const m = line.match(/^\s*[-•]\s+(.*)$/)
+    if (m) {
+      return (
+        <span key={i} className="flex items-start gap-1.5">
+          <span className="text-sky-500 font-bold leading-5 shrink-0">•</span>
+          <span className="flex-1">
+            <Inline text={m[1]} />
+          </span>
+        </span>
+      )
+    }
+    if (!line) return <br key={i} />
+    return (
+      <span key={i} className="block">
+        <Inline text={line} />
+      </span>
+    )
+  })
+}
+
+// Aperçu court dans la liste (sans les marqueurs de mise en forme)
+const previewText = (text) =>
+  String(text || '')
+    .replace(/^\s*[-•]\s+/gm, '• ')
+    .replace(/[*_]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60)
+
+const EMOJIS = [
+  '👍', '✅', '❌', '⚠️', '🚨', '🔧', '🔩', '✈️', '🛠️', '📎',
+  '📅', '⏰', '👌', '🙏', '😊', '😉', '😂', '😅', '😮', '🙌',
+  '🔴', '🟠', '🟢', '🔵', '⭐', '❗', '❓', '💪', '🧰', '📞',
+]
+
+
 export default function Messagerie() {
   const { activeProfile } = useApp()
   const code = activeProfile?.code
@@ -60,8 +111,10 @@ export default function Messagerie() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [lightbox, setLightbox] = useState(null)
+  const [showEmoji, setShowEmoji] = useState(false)
 
   const fileRef = useRef(null)
+  const textRef = useRef(null)
   const bottomRef = useRef(null)
   const pollRef = useRef(null)
 
@@ -131,9 +184,9 @@ export default function Messagerie() {
       items.push({
         id: t.contact_id,
         name: t.contact_name,
-        preview: t.last_attachment
+                        preview: t.last_attachment
           ? `📎 ${t.last_attachment}`
-          : String(t.last_body || '').replace(/\s+/g, ' ').slice(0, 60),
+          : previewText(t.last_body),
         at: t.last_at,
         unread: Number(t.unread || 0),
       })
@@ -161,6 +214,35 @@ export default function Messagerie() {
     if (!q) return listItems
     return listItems.filter((i) => String(i.name).toLowerCase().includes(q))
   }, [listItems, search])
+
+  // Insère du texte à la position du curseur (mise en forme)
+  const insertAtCursor = (before, after = '') => {
+    const el = textRef.current
+    const start = el?.selectionStart ?? text.length
+    const end = el?.selectionEnd ?? text.length
+    const selected = text.slice(start, end)
+    setText(text.slice(0, start) + before + selected + after + text.slice(end))
+    requestAnimationFrame(() => {
+      if (!el) return
+      el.focus()
+      const pos = start + before.length + selected.length + after.length
+      el.setSelectionRange(pos, pos)
+    })
+  }
+
+  // Pastille : ajoute « - » en début de ligne courante
+  const insertBullet = () => {
+    const el = textRef.current
+    const start = el?.selectionStart ?? text.length
+    const lineStart = text.lastIndexOf('\n', Math.max(0, start - 1)) + 1
+    setText(text.slice(0, lineStart) + '- ' + text.slice(lineStart))
+    requestAnimationFrame(() => {
+      if (!el) return
+      el.focus()
+      const pos = start + 2
+      el.setSelectionRange(pos, pos)
+    })
+  }
 
   const pickFile = (f) => {
     if (!f) return
@@ -368,7 +450,9 @@ export default function Messagerie() {
                               }`}
                             >
                               {m.body && (
-                                <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p>
+                                <p className="text-sm break-words leading-relaxed">
+                                  <RichText text={m.body} />
+                                </p>
                               )}
                               {m.attachment_name && (
                                 <div className={`mt-1 ${m.body ? 'pt-1' : ''}`}>
@@ -437,6 +521,60 @@ export default function Messagerie() {
                       </button>
                     </div>
                   )}
+                  {/* Barre de mise en forme (comme les pastilles des consignes) */}
+                  <div className="flex items-center gap-1 mb-2 flex-wrap">
+                    <button
+                      onClick={insertBullet}
+                      className="h-7 px-2 rounded-md text-slate-600 hover:bg-slate-100 text-sm font-bold border border-slate-200"
+                      title="Insérer une pastille (liste à puces)"
+                    >
+                      • Pastille
+                    </button>
+                    <button
+                      onClick={() => insertAtCursor('*', '*')}
+                      className="h-7 w-7 rounded-md text-slate-700 hover:bg-slate-100 font-bold border border-slate-200"
+                      title="Gras (encadrer avec *)"
+                    >
+                      G
+                    </button>
+                    <button
+                      onClick={() => insertAtCursor('_', '_')}
+                      className="h-7 w-7 rounded-md text-slate-700 hover:bg-slate-100 italic border border-slate-200"
+                      title="Italique (encadrer avec _)"
+                    >
+                      I
+                    </button>
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowEmoji((v) => !v)}
+                        className="h-7 w-7 rounded-md hover:bg-slate-100 border border-slate-200"
+                        title="Emojis"
+                      >
+                        😊
+                      </button>
+                      {showEmoji && (
+                        <div className="absolute bottom-full mb-1 left-0 z-40 bg-white border border-slate-200 rounded-lg shadow-xl p-2 w-56">
+                          <div className="flex flex-wrap gap-0.5">
+                            {EMOJIS.map((e) => (
+                              <button
+                                key={e}
+                                onClick={() => {
+                                  insertAtCursor(e)
+                                  setShowEmoji(false)
+                                }}
+                                className="h-7 w-7 rounded hover:bg-slate-100 text-base leading-none"
+                              >
+                                {e}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-slate-400 ml-1">
+                      *gras* · _italique_ · « • Pastille » en début de ligne
+                    </span>
+                  </div>
                   <div className="flex items-end gap-2">
                     <button
                       onClick={() => fileRef.current?.click()}
@@ -452,6 +590,7 @@ export default function Messagerie() {
                       onChange={(e) => pickFile(e.target.files && e.target.files[0])}
                     />
                     <textarea
+                      ref={textRef}
                       value={text}
                       onChange={(e) => setText(e.target.value)}
                       onKeyDown={(e) => {
@@ -461,7 +600,7 @@ export default function Messagerie() {
                         }
                       }}
                       rows={1}
-                      placeholder="Écrivez un message… (Entrée pour envoyer)"
+                      placeholder="Écrivez un message… (Entrée pour envoyer, Maj+Entrée = nouvelle ligne)"
                       className="flex-1 resize-none border border-slate-300 rounded-2xl px-3 py-2.5 text-sm max-h-32"
                     />
                     <button
