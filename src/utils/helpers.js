@@ -57,6 +57,22 @@ export function getZoneColor(zone, _allZones) {
   return ZONE_COLORS[hash % ZONE_COLORS.length]
 }
 
+// Nettoie un texte du Workpackage : balises <br> → saut de ligne, entités HTML,
+// retours chariot en double (\r\r\n) → lignes propres.
+export function cleanTaskText(text) {
+  return String(text ?? '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\r\r\n/g, '\n')
+    .replace(/\r\n?/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 // Ligne prioritaire : mention « MEL », « EXMP » ou « NSRE » suivie d'une
 // référence. Les simples libellés de fiche (« MEL / EXMP : », « NSRE RDY/IPR : »)
 // sont ignorés. Renvoie « MEL », « EXMP », « NSRE » ou '' si non prioritaire.
@@ -393,9 +409,9 @@ export function parseExcelRows(rows, columns) {
       partStatus: get('partStatus') ? String(get('partStatus')) : undefined,
       impact: get('impact') ? String(get('impact')) : undefined,
       taskDescription: get('taskDescription')
-        ? String(get('taskDescription'))
+        ? cleanTaskText(String(get('taskDescription')))
         : undefined,
-      taskSteps: get('taskSteps') ? String(get('taskSteps')) : undefined,
+      taskSteps: get('taskSteps') ? cleanTaskText(String(get('taskSteps'))) : undefined,
       // Alias compatibilité
       ref: get('seq') !== undefined ? String(get('seq')) : undefined,
       zone: get('workArea') ? String(get('workArea')) : undefined,

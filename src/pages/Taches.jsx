@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, priorityToken } from '../utils/helpers'
+import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, priorityToken, cleanTaskText } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
 import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check, FileText } from 'lucide-react'
@@ -873,7 +873,7 @@ export default function Taches() {
                     Description détaillée
                   </p>
                   <p className="whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
-                    {descTask.taskDescription}
+                    {cleanTaskText(descTask.taskDescription)}
                   </p>
                 </div>
               )}
@@ -883,7 +883,7 @@ export default function Taches() {
                     Étapes (Task Steps)
                   </p>
                   <p className="whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
-                    {descTask.taskSteps}
+                    {cleanTaskText(descTask.taskSteps)}
                   </p>
                 </div>
               )}

@@ -14,6 +14,7 @@ import {
   taskContentKey,
   filterNewPrepTasks,
   priorityToken,
+  cleanTaskText,
   consigneDay,
   logicalToday,
 } from './helpers'
@@ -197,6 +198,16 @@ describe('priorityToken — lignes MEL / EXMP / NSRE', () => {
     expect(priorityToken('BMCC : AVEC DEFER / SANS DEFER')).toBe('')
     expect(priorityToken('NSRE RDY/IPR :')).toBe('')
     expect(priorityToken('Remplacement caramélisé')).toBe('')
+  })
+})
+
+describe('cleanTaskText — textes du Workpackage', () => {
+  it('convertit les <br> en sauts de ligne et nettoie les retours chariot', () => {
+    expect(cleanTaskText('Ligne 1<br><br>Ligne 2')).toBe('Ligne 1\n\nLigne 2')
+    expect(cleanTaskText('A\r\r\nB\r\r\nC')).toBe('A\nB\nC')
+    expect(cleanTaskText('A&nbsp;B &amp; C')).toBe('A B & C')
+    expect(cleanTaskText('<b>Gras</b> suite')).toBe('Gras suite')
+    expect(cleanTaskText('  espaces  ')).toBe('espaces')
   })
 })
 
