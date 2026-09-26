@@ -294,9 +294,14 @@ export default function Dashboard() {
         teamTasks.forEach((t) => {
           const zone = t.workArea || 'Autre'
           const key = `${t.taskType || 'AUTRE'} / ${zone}`
-          if (!byBlock[key]) byBlock[key] = { count: 0, seqs: [] }
+          if (!byBlock[key]) byBlock[key] = { count: 0, seqs: [], done: [], paused: [] }
           byBlock[key].count += 1
-          if (t.seq !== undefined && t.seq !== '') byBlock[key].seqs.push(String(t.seq))
+          if (t.seq !== undefined && t.seq !== '') {
+            const seq = String(t.seq)
+            byBlock[key].seqs.push(seq)
+            if (t.mtxStatus === 'COMPLETE') byBlock[key].done.push(seq)
+            else if (t.mtxStatus === 'PAUSE') byBlock[key].paused.push(seq)
+          }
         })
         Object.values(byBlock).forEach((v) =>
           v.seqs.sort((a, b) => Number(a) - Number(b))
@@ -635,9 +640,33 @@ export default function Dashboard() {
                                     </span>
                                   </div>
                                   {info.seqs.length > 0 && (
-                                    <span className="text-[11px] font-mono font-bold text-slate-600 ml-1">
-                                      N° {info.seqs.join(', ')}
-                                    </span>
+                                    <div className="flex flex-wrap items-center gap-1 ml-1">
+                                      {info.seqs.map((s) => {
+                                        const isDone = info.done.includes(s)
+                                        const isPause = info.paused.includes(s)
+                                        return (
+                                          <span
+                                            key={s}
+                                            className={`text-[10px] font-bold rounded-full px-1.5 py-0.5 whitespace-nowrap ${
+                                              isDone
+                                                ? 'bg-green-600 text-white'
+                                                : isPause
+                                                ? 'bg-amber-500 text-white'
+                                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                            }`}
+                                            title={
+                                              isDone
+                                                ? `N° ${s} — COMPLETE`
+                                                : isPause
+                                                ? `N° ${s} — en PAUSE`
+                                                : `N° ${s}`
+                                            }
+                                          >
+                                            {s}
+                                          </span>
+                                        )
+                                      })}
+                                    </div>
                                   )}
                                 </div>
                               )
