@@ -524,25 +524,13 @@ export default function Taches() {
                   )}
                   {[...new Set(zoneTasks.map((t) => t.taskType).filter(Boolean))].map((blk) => {
                     const n = zoneTasks.filter((t) => t.taskType === blk).length
-                    const total = tasks.filter((t) => t.taskType === blk).length
                     return (
-                      <span key={blk} className="inline-flex items-center gap-1">
-                        <button
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} tâche(s) au total, toutes zones) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
-                              )
-                            ) {
-                              removeTasksByBlock(blk)
-                            }
-                          }}
-                          className="bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-xs font-semibold text-white flex items-center gap-1"
-                          title={`Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} tâches, toutes zones confondues)`}
-                        >
-                          {getCategoryLabel(blk)} · {n}
-                          <Trash2 className="h-3 w-3 opacity-80" />
-                        </button>
+                      <span
+                        key={blk}
+                        className="bg-white/25 px-2 py-0.5 rounded-full text-xs font-semibold text-white whitespace-nowrap"
+                        title={`Bloc ${getCategoryLabel(blk)} : ${n} tâche(s) dans cette zone`}
+                      >
+                        {getCategoryLabel(blk)} · {n}
                       </span>
                     )
                   })}
