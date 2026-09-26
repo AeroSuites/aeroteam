@@ -208,7 +208,17 @@ export default function Dashboard() {
               t ? priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`) : ''
             )
           },
-          didParseCell: (data) => hidePriorityCellText(data),
+          didParseCell: (data) => {
+            hidePriorityCellText(data)
+            // N° de ligne en vert quand la tâche est COMPLETE (comme à l'écran)
+            if (data.section === 'body' && data.column.index === 1) {
+              const t = zoneTasks[data.row.index]
+              if (t && t.mtxStatus === 'COMPLETE') {
+                data.cell.styles.textColor = [22, 163, 74]
+                data.cell.styles.fontStyle = 'bold'
+              }
+            }
+          },
         })
         y = doc.lastAutoTable.finalY + 5
         if (y > pageHeight - 15) {
