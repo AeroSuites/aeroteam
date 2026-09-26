@@ -183,12 +183,14 @@ export default function Taches() {
   const prioCounts = useMemo(() => {
     let mel = 0
     let exmp = 0
+    let nsre = 0
     preFiltered.forEach((t) => {
       const tok = prioOf(t)
       if (tok === 'MEL') mel += 1
       else if (tok === 'EXMP') exmp += 1
+      else if (tok === 'NSRE') nsre += 1
     })
-    return { mel, exmp }
+    return { mel, exmp, nsre }
   }, [preFiltered])
 
   const filtered = useMemo(
@@ -373,9 +375,24 @@ export default function Taches() {
                   ? 'bg-red-600 border-red-600 text-white'
                   : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
               }`}
-              title="Afficher les lignes EXMP (combine avec MEL si les deux sont actifs)"
+              title="Afficher les lignes EXMP (combine avec MEL et NSRE si actifs)"
             >
               EXMP ({prioCounts.exmp})
+            </button>
+            <button
+              onClick={() =>
+                setPrioFilter((prev) =>
+                  prev.includes('NSRE') ? prev.filter((x) => x !== 'NSRE') : [...prev, 'NSRE']
+                )
+              }
+              className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
+                prioFilter.includes('NSRE')
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
+              }`}
+              title="Afficher les lignes NSRE (combine avec MEL et EXMP si actifs)"
+            >
+              NSRE ({prioCounts.nsre})
             </button>
             {prioFilter.length > 0 && (
               <button
@@ -681,19 +698,21 @@ export default function Taches() {
                             <span className="flex items-center gap-1 min-w-0">
                               <span
                                 className={`truncate ${
-                                  task.taskDescription
+                                  task.taskDescription || task.taskSteps
                                     ? 'cursor-pointer hover:underline decoration-dotted'
                                     : ''
                                 }`}
-                                onClick={() => task.taskDescription && setDescTask(task)}
+                                onClick={() =>
+                                  (task.taskDescription || task.taskSteps) && setDescTask(task)
+                                }
                               >
                                 {task.description}
                               </span>
-                              {task.taskDescription && (
+                              {(task.taskDescription || task.taskSteps) && (
                                 <button
                                   onClick={() => setDescTask(task)}
                                   className="shrink-0 text-sky-600 hover:text-sky-800"
-                                  title="Voir la description détaillée (colonne Task_Description)"
+                                  title="Voir la description détaillée et les étapes (Task_Description / Task_Steps)"
                                 >
                                   <FileText className="h-3.5 w-3.5" />
                                 </button>
@@ -847,13 +866,27 @@ export default function Taches() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="p-5 overflow-y-auto">
-              <p className="text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-wide">
-                Description détaillée
-              </p>
-              <p className="whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
-                {descTask.taskDescription}
-              </p>
+            <div className="p-5 overflow-y-auto space-y-4">
+              {descTask.taskDescription && (
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-wide">
+                    Description détaillée
+                  </p>
+                  <p className="whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
+                    {descTask.taskDescription}
+                  </p>
+                </div>
+              )}
+              {descTask.taskSteps && (
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-wide">
+                    Étapes (Task Steps)
+                  </p>
+                  <p className="whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
+                    {descTask.taskSteps}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -197,16 +197,18 @@ export default function Affectation() {
     [tasks, selectedBlocks]
   )
 
-  // Compteurs MEL / EXMP (sur les tâches affichées par les filtres de bloc)
+  // Compteurs MEL / EXMP / NSRE (sur les tâches affichées par les filtres de bloc)
   const prioCounts = useMemo(() => {
     let mel = 0
     let exmp = 0
+    let nsre = 0
     preFilteredTasks.forEach((t) => {
       const tok = prioOf(t)
       if (tok === 'MEL') mel += 1
       else if (tok === 'EXMP') exmp += 1
+      else if (tok === 'NSRE') nsre += 1
     })
-    return { mel, exmp }
+    return { mel, exmp, nsre }
   }, [preFilteredTasks])
 
   const filteredTasks = useMemo(
@@ -548,9 +550,24 @@ export default function Affectation() {
                   ? 'bg-red-600 border-red-600 text-white'
                   : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
               }`}
-              title="Afficher les lignes EXMP (combine avec MEL si les deux sont actifs)"
+              title="Afficher les lignes EXMP (combine avec MEL et NSRE si actifs)"
             >
               EXMP ({prioCounts.exmp})
+            </button>
+            <button
+              onClick={() =>
+                setPrioFilter((prev) =>
+                  prev.includes('NSRE') ? prev.filter((x) => x !== 'NSRE') : [...prev, 'NSRE']
+                )
+              }
+              className={`px-3 py-1 rounded-full text-xs font-bold border-2 transition-all ${
+                prioFilter.includes('NSRE')
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
+              }`}
+              title="Afficher les lignes NSRE (combine avec MEL et EXMP si actifs)"
+            >
+              NSRE ({prioCounts.nsre})
             </button>
             {prioFilter.length > 0 && (
               <button

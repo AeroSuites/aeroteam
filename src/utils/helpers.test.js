@@ -180,17 +180,20 @@ describe('filterRow / parseExcelRows', () => {
   })
 })
 
-describe('priorityToken — lignes MEL / EXMP', () => {
+describe('priorityToken — lignes MEL / EXMP / NSRE', () => {
   it('détecte les lignes prioritaires avec référence', () => {
     expect(priorityToken('MEL L206')).toBe('MEL')
     expect(priorityToken('L11 MEL VERROU GALLEY G0')).toBe('MEL')
     expect(priorityToken('INSP B/C L49 + EXMP L251')).toBe('EXMP')
     expect(priorityToken('EXMP_AF_33TX LAVATORY 12')).toBe('EXMP')
     expect(priorityToken('MEL / EXMP : L222-223-224')).toBe('MEL')
+    expect(priorityToken('NSRE L204')).toBe('NSRE')
+    expect(priorityToken('NSRE RDY/IPR : L204 - L205')).toBe('NSRE')
   })
 
   it('ignore le simple libellé « MEL / EXMP : » et les autres lignes', () => {
     expect(priorityToken('MEL / EXMP :')).toBe('')
+    expect(priorityToken('NSRE RDY/IPR :')).toBe('')
     expect(priorityToken('BMCC : AVEC DEFER / SANS DEFER')).toBe('')
     expect(priorityToken('NSRE RDY/IPR :')).toBe('')
     expect(priorityToken('Remplacement caramélisé')).toBe('')

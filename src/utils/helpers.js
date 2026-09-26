@@ -57,16 +57,17 @@ export function getZoneColor(zone, _allZones) {
   return ZONE_COLORS[hash % ZONE_COLORS.length]
 }
 
-// Ligne prioritaire : mention « MEL » ou « EXMP » suivie d'une référence.
-// Le simple libellé « MEL / EXMP : » (sans valeur derrière) est ignoré.
-// Renvoie « MEL », « EXMP » ou '' si la ligne n'est pas prioritaire.
+// Ligne prioritaire : mention « MEL », « EXMP » ou « NSRE » suivie d'une
+// référence. Les simples libellés de fiche (« MEL / EXMP : », « NSRE RDY/IPR : »)
+// sont ignorés. Renvoie « MEL », « EXMP », « NSRE » ou '' si non prioritaire.
 export function priorityToken(text) {
   const s = String(text || '')
-  const m = s.match(/(^|[^A-Z0-9_])(EXMP|MEL)(?![A-Z0-9])/i)
+  const m = s.match(/(^|[^A-Z0-9_])(EXMP|MEL|NSRE)(?![A-Z0-9])/i)
   if (!m) return ''
   const after = s
     .slice(m.index + m[0].length)
-    .replace(/^\s*\/\s*(?:EXMP|MEL)(?![A-Z0-9])/i, '')
+    .replace(/^\s*\/\s*(?:EXMP|MEL|NSRE)(?![A-Z0-9])/i, '')
+    .replace(/^\s*RDY\s*\/\s*IPR/i, '')
     .replace(/^[\s:·\-–]*/, '')
   return /[a-z0-9]/i.test(after) ? m[2].toUpperCase() : ''
 }
@@ -394,6 +395,7 @@ export function parseExcelRows(rows, columns) {
       taskDescription: get('taskDescription')
         ? String(get('taskDescription'))
         : undefined,
+      taskSteps: get('taskSteps') ? String(get('taskSteps')) : undefined,
       // Alias compatibilité
       ref: get('seq') !== undefined ? String(get('seq')) : undefined,
       zone: get('workArea') ? String(get('workArea')) : undefined,

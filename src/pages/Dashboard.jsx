@@ -730,7 +730,14 @@ export default function Dashboard() {
                                 <td className="px-3 py-2 font-mono font-bold text-xs text-black whitespace-nowrap">
                                   {task.taskBarcode || '—'}
                                 </td>
-                                <td className="px-3 py-2 font-bold text-slate-500 whitespace-nowrap">
+                                <td
+                                  className={`px-3 py-2 font-bold whitespace-nowrap ${
+                                    task.mtxStatus === 'COMPLETE'
+                                      ? 'text-green-600'
+                                      : 'text-slate-500'
+                                  }`}
+                                  title={task.mtxStatus === 'COMPLETE' ? 'Tâche COMPLETE' : undefined}
+                                >
                                   {task.seq || '—'}
                                 </td>
                                 <td className="px-3 py-2 whitespace-nowrap">
