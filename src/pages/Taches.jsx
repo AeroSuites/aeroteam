@@ -489,8 +489,13 @@ export default function Taches() {
               key={zone}
               className={`bg-white rounded-xl shadow overflow-hidden${expanded ? ' ring-2 ring-black' : ''}`}
             >
-              <div className="px-3 sm:px-5 py-2 sm:py-3 flex items-center justify-between flex-wrap gap-2" style={{ backgroundColor: zoneColor }}>
-                <div className="flex items-center gap-2 cursor-pointer" onClick={() => toggleZone(zone)}>
+              <div
+                className="px-3 sm:px-5 py-2 sm:py-3 flex items-center justify-between flex-wrap gap-2 cursor-pointer"
+                style={{ backgroundColor: zoneColor }}
+                onClick={() => toggleZone(zone)}
+                title={expanded ? 'Replier cette zone' : 'Déplier cette zone'}
+              >
+                <div className="flex items-center gap-2">
                   {expanded ? (
                     <ChevronDown className="h-5 sm:h-6 w-5 sm:w-6 text-white" />
                   ) : (
@@ -508,7 +513,7 @@ export default function Taches() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-1.5">
+                <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                   {transferredCount > 0 && (
                     <span
                       className="bg-emerald-500/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white whitespace-nowrap self-center"

@@ -612,13 +612,12 @@ export default function Affectation() {
                 className={`bg-white rounded-xl shadow overflow-hidden${cardOpen ? ' ring-2 ring-black' : ''}`}
               >
                 <div
-                  className="px-4 py-2 flex flex-wrap items-center justify-between gap-2"
+                  className="px-4 py-2 flex flex-wrap items-center justify-between gap-2 cursor-pointer"
                   style={{ backgroundColor: cardColor }}
+                  onClick={() => toggleZoneCard(group.key)}
+                  title={cardOpen ? 'Replier ce bloc' : 'Déplier ce bloc'}
                 >
-                  <div
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => toggleZoneCard(group.key)}
-                  >
+                  <div className="flex items-center gap-2">
                     {cardOpen ? (
                       <ChevronDown className="h-5 w-5 text-white" />
                     ) : (
@@ -629,7 +628,7 @@ export default function Affectation() {
                       <span className="font-normal opacity-80">({groupTasks.length})</span>
                     </h3>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     <span className="text-white/90 text-xs">
                       {unassignedInGroup.length} non assignée(s)
                     </span>
@@ -716,7 +715,7 @@ export default function Affectation() {
                                     <span className="font-normal opacity-90">({subTasks.length})</span>
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                   <span className="text-white/90 text-xs">
                                     {unassignedInZone.length} non assignée(s)
                                   </span>
