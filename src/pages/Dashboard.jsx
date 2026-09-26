@@ -210,11 +210,14 @@ export default function Dashboard() {
           },
           didParseCell: (data) => {
             hidePriorityCellText(data)
-            // N° de ligne en vert quand la tâche est COMPLETE (comme à l'écran)
+            // N° de ligne coloré selon le statut (comme les badges de la page Tâches)
             if (data.section === 'body' && data.column.index === 1) {
               const t = zoneTasks[data.row.index]
               if (t && t.mtxStatus === 'COMPLETE') {
                 data.cell.styles.textColor = [22, 163, 74]
+                data.cell.styles.fontStyle = 'bold'
+              } else if (t && t.mtxStatus === 'PAUSE') {
+                data.cell.styles.textColor = [217, 119, 6]
                 data.cell.styles.fontStyle = 'bold'
               }
             }
@@ -740,15 +743,24 @@ export default function Dashboard() {
                                 <td className="px-3 py-2 font-mono font-bold text-xs text-black whitespace-nowrap">
                                   {task.taskBarcode || '—'}
                                 </td>
-                                <td
-                                  className={`px-3 py-2 font-bold whitespace-nowrap ${
-                                    task.mtxStatus === 'COMPLETE'
-                                      ? 'text-green-600'
-                                      : 'text-slate-500'
-                                  }`}
-                                  title={task.mtxStatus === 'COMPLETE' ? 'Tâche COMPLETE' : undefined}
-                                >
-                                  {task.seq || '—'}
+                                <td className="px-3 py-2 whitespace-nowrap">
+                                  {task.mtxStatus === 'COMPLETE' ? (
+                                    <span
+                                      className="inline-flex items-center justify-center min-w-[36px] px-2 py-0.5 rounded-full bg-green-600 text-white text-xs font-bold"
+                                      title="Tâche COMPLETE"
+                                    >
+                                      {task.seq || '—'}
+                                    </span>
+                                  ) : task.mtxStatus === 'PAUSE' ? (
+                                    <span
+                                      className="inline-flex items-center justify-center min-w-[36px] px-2 py-0.5 rounded-full bg-amber-500 text-white text-xs font-bold"
+                                      title="Tâche en PAUSE"
+                                    >
+                                      {task.seq || '—'}
+                                    </span>
+                                  ) : (
+                                    <span className="font-bold text-slate-500">{task.seq || '—'}</span>
+                                  )}
                                 </td>
                                 <td className="px-3 py-2 whitespace-nowrap">
                                   <span
