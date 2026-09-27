@@ -191,7 +191,7 @@ export default function ImportConsignes() {
     } catch {
       // stockage indisponible : non bloquant
     }
-  }, [report, fileName, selectedDay, selectedShift, overrides, results, assignments])
+  }, [report, fileName, selectedDay, selectedShift, reportWeek, overrides, results, assignments])
 
   const clearSession = () => {
     localStorage.removeItem(STATE_KEY)
