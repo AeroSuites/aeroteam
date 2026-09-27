@@ -562,6 +562,10 @@ export default function ImportConsignes() {
     const members = (shiftEff?.members || [])
       .filter((m) => m.aircrafts.includes(immat))
       .map((m) => m.name)
+    // Leaders du shift (nom sur fond bleu dans le fichier) pour ce shift/avion
+    const leaders = (shiftEff?.members || [])
+      .filter((m) => m.aircrafts.includes(immat) && m.leader)
+      .map((m) => m.name)
     const block = sheet.blocks.find((b) => b.immat === immat)
     return {
       immat,
@@ -569,6 +573,7 @@ export default function ImportConsignes() {
       days: {
         [selectedDay]: {
           [selectedShift]: [...new Set(members)],
+          leaders: { [selectedShift]: [...new Set(leaders)] },
           consignes: { [selectedShift]: effectiveTasks(immat) },
           infos: block
             ? {
