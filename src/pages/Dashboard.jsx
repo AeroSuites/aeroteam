@@ -429,21 +429,31 @@ export default function Dashboard() {
                     {String(n.content || '—')
                       .split('\n')
                       .map((line, li) => {
+                        const isItem = line.trim().startsWith('- ')
+                        const item = isItem ? line.trim().slice(2) : line
+                        if (!String(item).trim()) return null
                         const tok = priorityToken(line)
                         return (
                           <p
                             key={li}
-                            className="whitespace-pre-wrap text-xs text-slate-700 leading-relaxed"
+                            className={`whitespace-pre-wrap leading-relaxed ${
+                              isItem ? 'flex items-start gap-1.5 text-xs text-slate-700' : 'text-[11px] text-slate-500'
+                            }`}
                           >
-                            {line || '\u00A0'}
-                            {tok && (
-                              <span
-                                className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
-                                title="Ligne prioritaire (MEL / EXMP)"
-                              >
-                                {tok}
-                              </span>
+                            {isItem && (
+                              <span className="text-amber-500 font-bold leading-4 shrink-0">•</span>
                             )}
+                            <span className="flex-1">
+                              {item}
+                              {tok && (
+                                <span
+                                  className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
+                                  title="Ligne prioritaire (MEL / EXMP / NSRE)"
+                                >
+                                  {tok}
+                                </span>
+                              )}
+                            </span>
                           </p>
                         )
                       })}

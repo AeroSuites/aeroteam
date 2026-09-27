@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import ConsignesAvions from '../components/ConsignesAvions'
-import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen } from 'lucide-react'
+import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen, Pencil } from 'lucide-react'
 
 export default function Equipes() {
   const {
@@ -44,7 +44,7 @@ export default function Equipes() {
   }
 
   const handleCreate = () => {
-    if (!newName.trim() || selected.length === 0) return
+    if (!newName.trim()) return
     addTeam({ name: newName.trim(), members: [...selected], color: defaultColors[teams.length % defaultColors.length] })
     setNewName('')
     setSelected([])
@@ -191,10 +191,12 @@ export default function Equipes() {
           )}
           <button
             onClick={handleCreate}
-            disabled={!newName.trim() || selected.length === 0}
+            disabled={!newName.trim()}
             className="w-full bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50"
           >
-            Créer l'équipe ({selected.length} membre{selected.length > 1 ? 's' : ''})
+            {selected.length > 0
+              ? `Créer l'équipe (${selected.length} membre${selected.length > 1 ? 's' : ''})`
+              : "Créer l'équipe (vide — membres à ajouter plus tard)"}
           </button>
         </div>
       )}
@@ -328,6 +330,19 @@ export default function Equipes() {
                 </h3>
               </div>
               <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    const next = window.prompt("Nouveau nom de l'équipe :", team.name)
+                    if (next === null) return
+                    const name = String(next).trim()
+                    if (!name) return
+                    updateTeam(team.id, { name })
+                  }}
+                  className="text-white/80 hover:text-white p-1.5 rounded"
+                  title="Renommer l'équipe"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
                 <button
                   onClick={() => updateTeam(team.id, { locked: !team.locked })}
                   className="text-white/80 hover:text-white p-1.5 rounded"
