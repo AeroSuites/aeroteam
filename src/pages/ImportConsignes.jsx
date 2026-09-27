@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import {
   parseConsignesWorkbook,
+  findWorkbookWeek,
 } from '../lib/consignesExcel'
 import { buildProfileData } from '../lib/profileBuilder'
 import {
@@ -62,6 +63,7 @@ export default function ImportConsignes() {
   const [report, setReport] = useState(null)
   const [selectedDay, setSelectedDay] = useState('')
   const [selectedShift, setSelectedShift] = useState('matin')
+  const [reportWeek, setReportWeek] = useState(0)
   const [running, setRunning] = useState(false)
   const [results, setResults] = useState([])
   const [overrides, setOverrides] = useState({})
@@ -153,6 +155,7 @@ export default function ImportConsignes() {
       setFileName(st.fileName || '')
       setSelectedDay(st.selectedDay || defaultDayOf(Object.keys(st.report)))
       setSelectedShift(st.selectedShift || 'matin')
+      setReportWeek(Number(st.week) || 0)
       setOverrides(st.overrides || {})
       setResults(st.results || [])
       setAssignments(st.assignments || {})
@@ -179,6 +182,7 @@ export default function ImportConsignes() {
           report,
           selectedDay,
           selectedShift,
+          week: reportWeek,
           overrides,
           results,
           assignments,
@@ -464,6 +468,7 @@ export default function ImportConsignes() {
         const workbook = XLSX.read(data, { type: 'array', cellStyles: true })
         const results = parseConsignesWorkbook(workbook)
         setReport(results)
+        setReportWeek(findWorkbookWeek(workbook))
         const days = Object.keys(results)
         setSelectedDay(defaultDayOf(days))
         setSelectedShift('matin')
@@ -1030,7 +1035,6 @@ export default function ImportConsignes() {
                 {days.map((d) => (
                   <option key={d} value={d}>
                     {d}
-                    {report[d].date ? ` (${report[d].date})` : ''}
                   </option>
                 ))}
               </select>
@@ -1049,9 +1053,9 @@ export default function ImportConsignes() {
                 ))}
               </select>
             </label>
-            {sheet?.date && (
-              <span className="text-sm text-slate-500">
-                {selectedDay} · {sheet.date}
+            {reportWeek > 0 && (
+              <span className="text-sm font-semibold text-slate-700 bg-slate-100 border border-slate-200 rounded-full px-3 py-1">
+                Semaine {reportWeek}
               </span>
             )}
           </div>
