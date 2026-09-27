@@ -32,6 +32,7 @@ import {
   Pencil,
   Trash2,
   Check,
+  Users,
 } from 'lucide-react'
 
 function groupByZone(blockTasks) {
@@ -45,7 +46,7 @@ function groupByZone(blockTasks) {
 }
 
 export default function Dashboard() {
-  const { tasks, teams, assignments, notes, updateNote, removeNote } = useApp()
+  const { tasks, teams, assignments, notes, updateNote, removeNote, dayMembers, activeProfile } = useApp()
   const [selectedTeamId, setSelectedTeamId] = useState(null)
   const [editingConsigneId, setEditingConsigneId] = useState(null)
   const [consigneText, setConsigneText] = useState('')
@@ -467,6 +468,41 @@ export default function Dashboard() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Membres assignés à l'avion du jour (effectif reçu avec les consignes) */}
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Users className="h-5 w-5 text-sky-500" /> Membres assignés à l'avion
+            {activeProfile?.aircraft && (
+              <span className="text-sm font-normal text-slate-400">
+                · {activeProfile.aircraft}
+              </span>
+            )}
+          </h2>
+          {dayMembers.length === 0 ? (
+            <p className="text-slate-500 text-sm">
+              Aucun membre assigné pour le moment — ils arrivent avec les consignes importées
+              (Import consignes).
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-slate-500 mb-3">
+                <span className="font-semibold text-slate-700">{dayMembers.length}</span> membre(s)
+                assigné(s) à l'avion du jour
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {dayMembers.map((m) => (
+                  <span
+                    key={m}
+                    className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-sm text-slate-700"
+                  >
+                    {m}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
         <div className="bg-white rounded-xl shadow p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <Plane className="h-5 w-5 text-sky-500" /> Répartition par bloc
