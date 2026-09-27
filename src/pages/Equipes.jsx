@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import ConsignesAvions from '../components/ConsignesAvions'
-import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen, Pencil } from 'lucide-react'
+import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen, Pencil, Star } from 'lucide-react'
+import { consigneDay, logicalToday } from '../utils/helpers'
+
+const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
 
 export default function Equipes() {
   const {
-    teams, members, dayMembers, assignments,
+    teams, members, dayMembers, dayLeaders, assignments, notes,
     addTeam, updateTeam, removeTeam,
     addMembers, addDayMembers, clearDayMembers, removeMember,
   } = useApp()
@@ -17,6 +20,50 @@ export default function Equipes() {
   const [memberSearch, setMemberSearch] = useState('')
 
   const activeMembers = tab === 'permanent' ? members : dayMembers
+
+  // Consignes du jour (lignes « - … » des notes [C] de la journée logique en cours)
+  const dayConsignes = useMemo(() => {
+    const today = DAY_NAMES[logicalToday().getDay()]
+    const lines = []
+    ;(notes || [])
+      .filter(
+        (n) =>
+          String(n.title || '').startsWith('[C] ') && consigneDay(n.title) === today
+      )
+      .forEach((n) => {
+        String(n.content || '')
+          .split('\n')
+          .forEach((line) => {
+            const t = line.trim()
+            if (!t.startsWith('- ')) return
+            const item = t.slice(2).trim()
+            if (item && !lines.includes(item)) lines.push(item)
+          })
+      })
+    return lines
+  }, [notes])
+
+  // Consignes sans équipe du même nom → équipes vides à proposer
+  const proposedTeams = useMemo(
+    () =>
+      dayConsignes.filter(
+        (c) =>
+          !teams.some(
+            (t) => String(t.name || '').trim().toLowerCase() === c.toLowerCase()
+          )
+      ),
+    [dayConsignes, teams]
+  )
+
+  const createTeamsFromConsignes = () => {
+    proposedTeams.forEach((name, i) => {
+      addTeam({
+        name: name.slice(0, 60),
+        members: [],
+        color: defaultColors[(teams.length + i) % defaultColors.length],
+      })
+    })
+  }
 
   const taskCountByTeam = (teamId) =>
     Object.values(assignments).filter((id) => id === teamId).length
@@ -294,18 +341,64 @@ export default function Equipes() {
                   : 'Aucun membre du jour (ils arrivent avec les consignes importées).'}
               </span>
             )}
-            {activeMembers.map((m) => (
-              <span key={m} className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 rounded-full pl-3 pr-1.5 py-1 text-sm">
-                {m}
-                <button onClick={() => removeMember(m)} className="text-slate-400 hover:text-red-600">
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </span>
-            ))}
+            {activeMembers.map((m) => {
+              const isLeader = tab === 'jour' && (dayLeaders || []).includes(m)
+              return (
+                <span
+                  key={m}
+                  className={`inline-flex items-center gap-1.5 rounded-full pl-3 pr-1.5 py-1 text-sm border ${
+                    isLeader
+                      ? 'bg-sky-600 border-sky-700 text-white font-bold'
+                      : 'bg-slate-100 border-slate-200 text-slate-700'
+                  }`}
+                  title={isLeader ? 'Leader' : undefined}
+                >
+                  {isLeader && <Star className="h-3 w-3 fill-white" />}
+                  {m}
+                  <button
+                    onClick={() => removeMember(m)}
+                    className={isLeader ? 'text-white/70 hover:text-white' : 'text-slate-400 hover:text-red-600'}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </span>
+              )
+            })}
           </div>
         </div>
       </div>
 
+
+      {/* Proposition : équipes vides d'après les consignes du jour */}
+      {tab === 'jour' && proposedTeams.length > 0 && (
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6 border-l-4 border-l-sky-500">
+          <h2 className="font-semibold flex items-center gap-2 mb-1">
+            <Users className="h-5 w-5 text-sky-500" /> Équipes d'après les consignes du jour
+            <span className="text-sm font-normal text-slate-400">({proposedTeams.length})</span>
+          </h2>
+          <p className="text-sm text-slate-500 mb-3">
+            {proposedTeams.length} consigne(s) sans équipe du même nom : créez une équipe vide par
+            consigne, puis ajoutez les membres (bouton « + Ajouter à cette équipe »).
+          </p>
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {proposedTeams.map((c) => (
+              <span
+                key={c}
+                className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-[11px] text-slate-700"
+              >
+                {c}
+              </span>
+            ))}
+          </div>
+          <button
+            onClick={createTeamsFromConsignes}
+            className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
+          >
+            Créer {proposedTeams.length} équipe{proposedTeams.length > 1 ? 's' : ''} vide
+            {proposedTeams.length > 1 ? 's' : ''}
+          </button>
+        </div>
+      )}
 
       {teams.length === 0 && !showAdd && (
         <div className="bg-white rounded-xl shadow p-10 text-center text-slate-500">

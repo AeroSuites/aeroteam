@@ -37,6 +37,25 @@ describe('buildProfileData (jour × shift)', () => {
     expect(data.tasks).toHaveLength(1)
   })
 
+  it('mémorise les leaders du shift (nom sur fond bleu) dans dayLeaders', () => {
+    const info = {
+      immat: 'F-GSQB',
+      days: {
+        MERCREDI: {
+          soir: ['DIAS (BRUNO)', 'AYAD (FARID)'],
+          leaders: { soir: ['AYAD (FARID)'] },
+          consignes: { soir: ['WASTE'] },
+        },
+      },
+    }
+    const data = buildProfileData(
+      { tasks: [], teams: [], assignments: {}, members: [], dayMembers: [], prepTasks: [], notes: [], pockets: [] },
+      info,
+      { day: 'MERCREDI', shift: 'soir' }
+    )
+    expect(data.dayLeaders).toEqual(['AYAD (FARID)'])
+  })
+
   it('insère la consigne du jour × shift et remplace l’ancienne note [C] correspondante', () => {
     const existing = {
       tasks: [],

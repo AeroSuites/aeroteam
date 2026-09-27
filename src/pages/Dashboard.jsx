@@ -46,7 +46,7 @@ function groupByZone(blockTasks) {
 }
 
 export default function Dashboard() {
-  const { tasks, teams, assignments, notes, updateNote, removeNote, dayMembers, activeProfile } = useApp()
+  const { tasks, teams, assignments, notes, updateNote, removeNote, dayMembers, dayLeaders, activeProfile } = useApp()
   const [selectedTeamId, setSelectedTeamId] = useState(null)
   const [editingConsigneId, setEditingConsigneId] = useState(null)
   const [consigneText, setConsigneText] = useState('')
@@ -501,14 +501,23 @@ export default function Dashboard() {
                   <span className="text-white/90 text-xs font-semibold">{dayMembers.length}</span>
                 </div>
                 <div className="p-2 flex flex-wrap gap-1">
-                  {dayMembers.map((m) => (
-                    <span
-                      key={m}
-                      className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-medium"
-                    >
-                      {m}
-                    </span>
-                  ))}
+                  {dayMembers.map((m) => {
+                    const isLeader = (dayLeaders || []).includes(m)
+                    return (
+                      <span
+                        key={m}
+                        className={`px-2 py-0.5 rounded-full text-[11px] border ${
+                          isLeader
+                            ? 'bg-sky-600 border-sky-700 text-white font-bold'
+                            : 'bg-slate-100 border-slate-200 text-slate-700 font-medium'
+                        }`}
+                        title={isLeader ? 'Leader' : undefined}
+                      >
+                        {isLeader ? '★ ' : ''}
+                        {m}
+                      </span>
+                    )
+                  })}
                 </div>
               </div>
             </>

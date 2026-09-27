@@ -62,6 +62,7 @@ const DEFAULT_EMPTY = {
   assignments: {},
   members: [],
   dayMembers: [],
+  dayLeaders: [],
   prepTasks: [],
   notes: [],
   pockets: [],
@@ -80,6 +81,7 @@ export function AppProvider({ children }) {
   const [assignments, setAssignments] = useState({})
   const [members, setMembers] = useState([])
   const [dayMembers, setDayMembers] = useState([])
+  const [dayLeaders, setDayLeaders] = useState([])
   const [primeRequests, setPrimeRequests] = useState([])
   const [prepTasks, setPrepTasks] = useState([])
   const [pockets, setPockets] = useState([])
@@ -126,6 +128,7 @@ export function AppProvider({ children }) {
       assignments: normalizedAssignments,
       members: toArray(data.members),
       dayMembers: toArray(data.dayMembers),
+      dayLeaders: toArray(data.dayLeaders),
       prepTasks: toArray(data.prepTasks),
       notes: toArray(data.notes),
       pockets: toArray(data.pockets),
@@ -137,6 +140,7 @@ export function AppProvider({ children }) {
     setAssignments(cleaned.assignments)
     setMembers(cleaned.members)
     setDayMembers(cleaned.dayMembers)
+      setDayLeaders(cleaned.dayLeaders)
     setPrepTasks(cleaned.prepTasks)
     setPockets(cleaned.pockets)
     setNotes(cleaned.notes)
@@ -176,12 +180,13 @@ export function AppProvider({ children }) {
       assignments,
       members,
       dayMembers,
+      dayLeaders,
       prepTasks,
       notes,
       pockets,
       primeRequests,
     }),
-    [tasks, teams, assignments, members, dayMembers, prepTasks, notes, pockets, primeRequests]
+    [tasks, teams, assignments, members, dayMembers, dayLeaders, prepTasks, notes, pockets, primeRequests]
   )
 
   const performSave = useCallback(
@@ -615,12 +620,13 @@ export function AppProvider({ children }) {
     setPrepTasks([])
     setPockets([])
     setDayMembers([])
+    setDayLeaders([])
     // Seules les consignes [C] sont effacées : les notes du Bloc-notes sont conservées
     setNotes((prev) => prev.filter((n) => !String(n.title || '').startsWith('[C] ')))
   }, [])
 
 const value = {
-    tasks, teams, assignments, members, dayMembers, prepTasks, notes, pockets,
+    tasks, teams, assignments, members, dayMembers, dayLeaders, prepTasks, notes, pockets,
     primeRequests,
     activeProfile, code, isAdmin,
     loading, error, saveState, resolveConflict,

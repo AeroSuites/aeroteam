@@ -278,6 +278,13 @@ export function summarizeAircrafts(results) {
           if (!byAircraft[immat].days[day]) byAircraft[immat].days[day] = {}
           if (!byAircraft[immat].days[day][shift]) byAircraft[immat].days[day][shift] = []
           byAircraft[immat].days[day][shift].push(m.name)
+          // Leaders (nom sur fond bleu dans le fichier) : conservés à part
+          if (m.leader) {
+            if (!byAircraft[immat].days[day].leaders) byAircraft[immat].days[day].leaders = {}
+            if (!byAircraft[immat].days[day].leaders[shift])
+              byAircraft[immat].days[day].leaders[shift] = []
+            byAircraft[immat].days[day].leaders[shift].push(m.name)
+          }
         })
       })
     })

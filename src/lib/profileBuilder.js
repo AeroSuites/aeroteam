@@ -48,6 +48,16 @@ function shiftMembers(days, shift) {
   return out
 }
 
+// Leaders du shift visé (noms sur fond bleu dans le fichier consignes)
+function shiftLeaders(days, shift) {
+  const out = []
+  Object.values(days || {}).forEach((d) => {
+    const arr = d.leaders ? d.leaders[shift] : null
+    if (Array.isArray(arr)) out.push(...arr)
+  })
+  return out
+}
+
 export function buildProfileData(existing, aircraftInfo, scope) {
   const data = existing || {
     tasks: [],
@@ -64,6 +74,9 @@ export function buildProfileData(existing, aircraftInfo, scope) {
   const shift = scope ? scope.shift : 'matin'
   const scopeMembers = shiftMembers(aircraftInfo.days, shift)
   const dayMembers = [...new Set([...(data.dayMembers || []), ...scopeMembers])]
+  // Leaders du jour (nom sur fond bleu dans le fichier) : pour l'affichage en bleu
+  const scopeLeaders = shiftLeaders(aircraftInfo.days, shift)
+  const dayLeaders = [...new Set([...(data.dayLeaders || []), ...scopeLeaders])]
 
   // Notes consignes : seule la note du jour × shift visé (pour CET avion) est remplacée
   const immat = aircraftInfo?.immat ? String(aircraftInfo.immat).trim() : ''
@@ -99,6 +112,7 @@ export function buildProfileData(existing, aircraftInfo, scope) {
     assignments: data.assignments || {},
     members: data.members || [],
     dayMembers,
+    dayLeaders,
     prepTasks: data.prepTasks || [],
     notes: [...consigneNotes, ...keptNotes],
     pockets: data.pockets || [],
