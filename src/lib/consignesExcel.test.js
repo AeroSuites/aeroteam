@@ -4,10 +4,13 @@ import {
   parseConsignesWorkbook,
   summarizeAircrafts,
   findSheetDate,
+  findWorkbookWeek,
+  weekMonday,
   parseEffectif,
   parseBlocks,
   toDateString,
   isBlueColor,
+  dayDateForDay,
 } from './consignesExcel'
 
 function buildFixtureSheet() {
@@ -110,6 +113,21 @@ describe('findSheetDate', () => {
   })
 })
 
+describe('dayDateForDay — dates des jours de la semaine', () => {
+  it('décale depuis la date du dimanche de la semaine', () => {
+    expect(dayDateForDay('27/09/2026', 'DIMANCHE')).toBe('04/10/2026')
+    expect(dayDateForDay('27/09/2026', 'LUNDI')).toBe('28/09/2026')
+    expect(dayDateForDay('27/09/2026', 'MERCREDI')).toBe('30/09/2026')
+    expect(dayDateForDay('27/09/2026', 'SAMEDI')).toBe('03/10/2026')
+    expect(dayDateForDay('2026-09-27', 'LUNDI')).toBe('2026-09-28')
+  })
+
+  it('garde la date si elle est déjà celle du jour', () => {
+    expect(dayDateForDay('28/09/2026', 'LUNDI')).toBe('28/09/2026')
+    expect(dayDateForDay('', 'LUNDI')).toBe('')
+  })
+})
+
 describe('parseEffectif', () => {
   it('détecte Matin/Soir/Nuit, double affectation, ignore ABSENT/MANAGER', () => {
     const { rows } = buildFixtureSheet()
@@ -209,6 +227,45 @@ describe('parseBlocks', () => {
     expect(blocks).toHaveLength(1)
     expect(blocks[0].shifts.matin).toEqual(['LEADER', 'SPE02 + F/F', 'WASTE + CRUSHED ICE'])
     expect(blocks[0].shifts.soir).toEqual(['LEADER SOLDE DOSSIER', 'FDV'])
+  })
+})
+
+describe('dates des jours (semaine du fichier)', () => {
+  it('retrouve le lundi de la semaine ISO', () => {
+    expect(weekMonday(2026, 37).toISOString().slice(0, 10)).toBe('2026-09-07')
+    expect(weekMonday(2026, 40).toISOString().slice(0, 10)).toBe('2026-09-28')
+  })
+
+  it('lit le numéro de semaine dans la feuille « Consignes CHECK »', () => {
+    const { wb } = buildFixtureSheet()
+    expect(findWorkbookWeek(wb)).toBe(0)
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.aoa_to_sheet([[], ['Semaine', 'S37']]),
+      'Consignes CHECK'
+    )
+    expect(findWorkbookWeek(wb)).toBe(37)
+  })
+
+  it('donne à chaque jour la date de son jour de la semaine', () => {
+    const { wb } = buildFixtureSheet()
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([]), 'DIMANCHE')
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.aoa_to_sheet([[], ['Semaine', 'S37']]),
+      'Consignes CHECK'
+    )
+    const results = parseConsignesWorkbook(wb)
+    // Le fichier porte la même « Date » sur toutes les feuilles (2026-09-08) :
+    // chaque jour doit recevoir la date de son jour de la semaine 37.
+    expect(results.LUNDI.date).toBe('2026-09-07')
+    expect(results.DIMANCHE.date).toBe('2026-09-13')
+  })
+
+  it('garde la date du fichier quand la semaine est introuvable', () => {
+    const { wb } = buildFixtureSheet()
+    const results = parseConsignesWorkbook(wb)
+    expect(results.LUNDI.date).toBe('2026-09-08')
   })
 })
 

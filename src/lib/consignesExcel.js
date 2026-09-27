@@ -47,6 +47,48 @@ export function findSheetDate(rows) {
   return ''
 }
 
+// Numéro de semaine du classeur (« Semaine » → « S40 »), 0 si introuvable.
+export function findWorkbookWeek(workbook) {
+  for (const name of workbook.SheetNames) {
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, raw: true })
+    for (let r = 0; r < Math.min(rows.length, 12); r++) {
+      for (let c = 0; c < 20; c++) {
+        if (norm(cell(rows, r, c)) !== 'semaine') continue
+        const raw = rows[r] ? rows[r][c + 1] : undefined
+        const m = String(raw == null ? '' : raw).match(/(\d{1,2})/)
+        if (m && Number(m[1]) >= 1 && Number(m[1]) <= 53) return Number(m[1])
+      }
+    }
+  }
+  return 0
+}
+
+// Lundi (UTC) de la semaine ISO `week` de l'année `year`.
+export function weekMonday(year, week) {
+  const jan4 = new Date(Date.UTC(year, 0, 4))
+  const offset = (jan4.getUTCDay() + 6) % 7
+  const monday = new Date(jan4.getTime() - offset * 86400000)
+  return new Date(monday.getTime() + (week - 1) * 7 * 86400000)
+}
+
+// Année de la semaine : celle dont le lundi est le plus proche de la date de
+// référence du fichier (gère les passages d'année, ex. semaine 1 en décembre).
+function resolveWeekYear(week, refISO) {
+  const ref = refISO ? Date.parse(`${refISO}T00:00:00Z`) : NaN
+  if (Number.isNaN(ref)) return new Date().getUTCFullYear()
+  const baseYear = new Date(ref).getUTCFullYear()
+  let best = baseYear
+  let bestDist = Infinity
+  for (const y of [baseYear - 1, baseYear, baseYear + 1]) {
+    const dist = Math.abs(weekMonday(y, week).getTime() - ref)
+    if (dist < bestDist) {
+      bestDist = dist
+      best = y
+    }
+  }
+  return best
+}
+
 // Couleur bleue (case ou police) : sert à repérer les LEADERS dans l'effectif.
 // Accepte les bleus clairs type #AFEEEE (turquoise pâle) comme les bleus vifs.
 export function isBlueColor(rgb) {
@@ -264,7 +306,74 @@ export function parseConsignesWorkbook(workbook) {
       results[name] = { date: '', effectif: [], blocks: [], error: 'Feuille illisible' }
     }
   })
+  // Les feuilles jour portent toutes la MÊME « Date » (celle du fichier) : la
+  // vraie date de chaque jour est calculée depuis le numéro de semaine du
+  // classeur (« Semaine » → « S40 »). LUNDI = lundi de la semaine, DIMANCHE = +6.
+  const week = findWorkbookWeek(workbook)
+  const refISO = Object.values(results).map((s) => s.date).find(Boolean) || ''
+  let usedWeek = 0
+  if (week) {
+    const monday = weekMonday(resolveWeekYear(week, refISO), week)
+    // Contrôle de cohérence : si le lundi calculé est trop loin de la date du
+    // fichier, le numéro de semaine est probablement erroné → repli sur la date.
+    const ref = refISO ? Date.parse(`${refISO}T00:00:00Z`) : NaN
+    const coherent =
+      Number.isNaN(ref) || Math.abs(monday.getTime() - ref) <= 21 * 86400000
+    if (coherent) {
+      usedWeek = week
+      Object.entries(results).forEach(([name, sheet]) => {
+        const idx = DAY_SHEET_NAMES.indexOf(name.toUpperCase())
+        if (idx === -1) return
+        const offset = (idx + 6) % 7
+        sheet.date = new Date(monday.getTime() + offset * 86400000).toISOString().slice(0, 10)
+      })
+    }
+  }
+  if (!usedWeek) {
+    // Repli : si la date de la feuille est un dimanche (veille de la semaine),
+    // on décale selon le jour (LUNDI = +1, …, DIMANCHE = +7).
+    Object.entries(results).forEach(([name, sheet]) => {
+      sheet.date = dayDateForDay(sheet.date, name)
+    })
+  }
   return results
+}
+
+// Décalage de chaque jour par rapport au dimanche qui précède la semaine
+const DAY_OFFSET = {
+  DIMANCHE: 7,
+  LUNDI: 1,
+  MARDI: 2,
+  MERCREDI: 3,
+  JEUDI: 4,
+  VENDREDI: 5,
+  SAMEDI: 6,
+}
+
+// Date propre à chaque jour : les feuilles portent souvent la date du
+// dimanche de la semaine (ex. 27/09/2026) → on décale selon le jour
+// (LUNDI = +1, MARDI = +2, …). Si la date est déjà celle du jour, on la garde.
+export function dayDateForDay(refDate, dayName) {
+  const s = String(refDate || '').trim()
+  if (!s) return ''
+  let d = null
+  let iso = false
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (m) {
+    d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+    iso = true
+  } else {
+    m = s.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})/)
+    if (m) {
+      const y = Number(m[3]) < 100 ? 2000 + Number(m[3]) : Number(m[3])
+      d = new Date(y, Number(m[2]) - 1, Number(m[1]))
+    }
+  }
+  if (!d || isNaN(d.getTime()) || d.getDay() !== 0) return s
+  d.setDate(d.getDate() + (DAY_OFFSET[String(dayName || '').toUpperCase()] ?? 0))
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return iso ? `${d.getFullYear()}-${mm}-${dd}` : `${dd}/${mm}/${d.getFullYear()}`
 }
 
 // Résumé agrégé par avion pour la création des profils
