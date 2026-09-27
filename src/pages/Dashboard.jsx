@@ -489,15 +489,27 @@ export default function Dashboard() {
                 <span className="font-semibold text-slate-700">{dayMembers.length}</span> membre(s)
                 assigné(s) à l'avion du jour
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                {dayMembers.map((m) => (
-                  <span
-                    key={m}
-                    className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-sm text-slate-700"
-                  >
-                    {m}
+              {/* Même style que l'effectif d'Import consignes : bloc avion + pastilles */}
+              <div className="border border-slate-200 rounded-lg overflow-hidden max-w-[420px]">
+                <div
+                  className="px-3 py-1.5 flex items-center justify-between"
+                  style={{ backgroundColor: getZoneColor(activeProfile?.aircraft || 'Avion') }}
+                >
+                  <span className="text-white font-mono font-bold text-sm">
+                    {activeProfile?.aircraft || 'Avion'}
                   </span>
-                ))}
+                  <span className="text-white/90 text-xs font-semibold">{dayMembers.length}</span>
+                </div>
+                <div className="p-2 flex flex-wrap gap-1">
+                  {dayMembers.map((m) => (
+                    <span
+                      key={m}
+                      className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-medium"
+                    >
+                      {m}
+                    </span>
+                  ))}
+                </div>
               </div>
             </>
           )}
