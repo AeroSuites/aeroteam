@@ -339,20 +339,22 @@ export function parseConsignesWorkbook(workbook) {
   return results
 }
 
-// Décalage de chaque jour par rapport au dimanche qui précède la semaine
+// Décalage de chaque jour par rapport au dimanche qui CLÔT la semaine
+// (la « Date » du fichier = le dimanche de fin de semaine, ex. 27/09 pour la
+// semaine du lundi 21/09 au dimanche 27/09).
 const DAY_OFFSET = {
-  DIMANCHE: 7,
-  LUNDI: 1,
-  MARDI: 2,
-  MERCREDI: 3,
-  JEUDI: 4,
-  VENDREDI: 5,
-  SAMEDI: 6,
+  DIMANCHE: 0,
+  LUNDI: -6,
+  MARDI: -5,
+  MERCREDI: -4,
+  JEUDI: -3,
+  VENDREDI: -2,
+  SAMEDI: -1,
 }
 
 // Date propre à chaque jour : les feuilles portent souvent la date du
-// dimanche de la semaine (ex. 27/09/2026) → on décale selon le jour
-// (LUNDI = +1, MARDI = +2, …). Si la date est déjà celle du jour, on la garde.
+// dimanche de fin de semaine (ex. 27/09/2026) → on décale selon le jour
+// (LUNDI = −6, MARDI = −5, …). Si la date est déjà celle du jour, on la garde.
 export function dayDateForDay(refDate, dayName) {
   const s = String(refDate || '').trim()
   if (!s) return ''

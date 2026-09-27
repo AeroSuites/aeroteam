@@ -115,15 +115,15 @@ describe('findSheetDate', () => {
 
 describe('dayDateForDay — dates des jours de la semaine', () => {
   it('décale depuis la date du dimanche de la semaine', () => {
-    expect(dayDateForDay('27/09/2026', 'DIMANCHE')).toBe('04/10/2026')
-    expect(dayDateForDay('27/09/2026', 'LUNDI')).toBe('28/09/2026')
-    expect(dayDateForDay('27/09/2026', 'MERCREDI')).toBe('30/09/2026')
-    expect(dayDateForDay('27/09/2026', 'SAMEDI')).toBe('03/10/2026')
-    expect(dayDateForDay('2026-09-27', 'LUNDI')).toBe('2026-09-28')
+    expect(dayDateForDay('27/09/2026', 'DIMANCHE')).toBe('27/09/2026')
+    expect(dayDateForDay('27/09/2026', 'LUNDI')).toBe('21/09/2026')
+    expect(dayDateForDay('27/09/2026', 'MERCREDI')).toBe('23/09/2026')
+    expect(dayDateForDay('27/09/2026', 'SAMEDI')).toBe('26/09/2026')
+    expect(dayDateForDay('2026-09-27', 'LUNDI')).toBe('2026-09-21')
   })
 
   it('garde la date si elle est déjà celle du jour', () => {
-    expect(dayDateForDay('28/09/2026', 'LUNDI')).toBe('28/09/2026')
+    expect(dayDateForDay('21/09/2026', 'LUNDI')).toBe('21/09/2026')
     expect(dayDateForDay('', 'LUNDI')).toBe('')
   })
 })
