@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import ConsignesAvions from '../components/ConsignesAvions'
-import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen, Pencil, Star } from 'lucide-react'
+import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen, Pencil, Star, ChevronDown, ChevronRight } from 'lucide-react'
 import { consigneDay, logicalToday } from '../utils/helpers'
 
 const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
@@ -24,6 +24,8 @@ export default function Equipes() {
   const [globalCount, setGlobalCount] = useState('')
   const [mergedName, setMergedName] = useState('')
   const [excludedMembers, setExcludedMembers] = useState([])
+  // Cartes d'équipe : section « Ajouter des membres » repliée par défaut
+  const [openAddMember, setOpenAddMember] = useState([])
 
   const activeMembers = tab === 'permanent' ? members : dayMembers
 
@@ -262,6 +264,11 @@ export default function Equipes() {
   const availableForTeam = () =>
     [...new Set([...members, ...dayMembers])].filter(
       (m) => !teams.some((t) => t.members.includes(m))
+    )
+
+  const toggleAddMember = (teamId) =>
+    setOpenAddMember((prev) =>
+      prev.includes(teamId) ? prev.filter((id) => id !== teamId) : [...prev, teamId]
     )
 
   const addToTeam = (teamId, name) => {
@@ -743,18 +750,31 @@ export default function Equipes() {
 
               {availableForTeam().length > 0 && (
                 <div>
-                  <p className="text-xs text-slate-500 mb-1">Ajouter depuis les membres :</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {availableForTeam().map((m) => (
-                      <button
-                        key={m}
-                        onClick={() => addToTeam(team.id, m)}
-                        className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-xs hover:bg-sky-100 hover:text-sky-700"
-                      >
-                        + {m}
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => toggleAddMember(team.id)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-sky-700 hover:text-sky-900"
+                    title="Afficher/masquer la liste des membres à ajouter"
+                  >
+                    {openAddMember.includes(team.id) ? (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    )}
+                    Ajouter des membres ({availableForTeam().length})
+                  </button>
+                  {openAddMember.includes(team.id) && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {availableForTeam().map((m) => (
+                        <button
+                          key={m}
+                          onClick={() => addToTeam(team.id, m)}
+                          className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-xs hover:bg-sky-100 hover:text-sky-700"
+                        >
+                          + {m}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
