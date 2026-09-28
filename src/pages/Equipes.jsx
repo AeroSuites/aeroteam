@@ -66,6 +66,25 @@ export default function Equipes() {
     [dayConsignes, teams]
   )
 
+  const taskCountByTeam = (teamId) =>
+    Object.values(assignments).filter((id) => id === teamId).length
+
+  // Membres de l'onglet actif non encore affectés à une équipe
+  const availableMembers = activeMembers.filter(
+    (m) => !teams.some((t) => t.members.includes(m))
+  )
+
+  // Recherche par nom (insensible à la casse et aux accents)
+  const normSearch = (s) =>
+    String(s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+  const searchKey = normSearch(memberSearch.trim())
+  const visibleMembers = searchKey
+    ? availableMembers.filter((m) => normSearch(m).includes(searchKey))
+    : availableMembers
+
   // ---- Création modulable d'équipes d'après les consignes ----
   // Toutes les consignes proposées sont cochées par défaut
   useEffect(() => {
@@ -131,24 +150,6 @@ export default function Equipes() {
     })
   }
 
-  const taskCountByTeam = (teamId) =>
-    Object.values(assignments).filter((id) => id === teamId).length
-
-  // Membres de l'onglet actif non encore affectés à une équipe
-  const availableMembers = activeMembers.filter(
-    (m) => !teams.some((t) => t.members.includes(m))
-  )
-
-  // Recherche par nom (insensible à la casse et aux accents)
-  const normSearch = (s) =>
-    String(s || '')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-  const searchKey = normSearch(memberSearch.trim())
-  const visibleMembers = searchKey
-    ? availableMembers.filter((m) => normSearch(m).includes(searchKey))
-    : availableMembers
 
   const toggleSelected = (name) => {
     setSelected((prev) =>
