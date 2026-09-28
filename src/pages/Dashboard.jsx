@@ -174,7 +174,7 @@ export default function Dashboard() {
             [
               {
                 content: `${zone} (${zoneTasks.length})`,
-                colSpan: 6,
+                colSpan: 7,
                 styles: {
                   fillColor: hexToRgb(getZoneColor(zone)),
                   textColor: [255, 255, 255],
@@ -191,6 +191,7 @@ export default function Dashboard() {
             t.taskBarcode || '—',
             t.description || '',
             t.registration || '—',
+            t.note || '',
           ]),
           styles: { fontSize: 8, cellPadding: 1.2, textColor: [0, 0, 0], fontStyle: 'bold' },
           columnStyles: {
@@ -199,6 +200,7 @@ export default function Dashboard() {
             2: { cellWidth: 16 },
             3: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
             5: { cellWidth: 26 },
+            6: { cellWidth: 40, textColor: [0, 0, 0], fontStyle: 'bolditalic' },
           },
           didDrawCell: (data) => {
             drawCheckboxCell(doc, data)
@@ -883,6 +885,14 @@ export default function Dashboard() {
                                       </span>
                                     )}
                                   </span>
+                                  {task.note && (
+                                    <span
+                                      className="mt-0.5 block truncate text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5"
+                                      title={task.note}
+                                    >
+                                      📝 {task.note}
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="px-3 py-2 whitespace-nowrap text-slate-600">
                                   {task.registration || '—'}
