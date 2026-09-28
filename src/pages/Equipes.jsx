@@ -99,32 +99,28 @@ export default function Equipes() {
       prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
     )
 
-  // Nombre de membres par équipe proposé (réparti sur les membres non assignés)
-  const suggestedPerTeam = Math.max(
-    1,
-    Math.ceil(availableMembers.length / Math.max(1, pickedConsignes.length))
-  )
-
-  // Nombre de membres choisi pour une consigne (vide = proposition auto)
+  // Nombre de membres choisi pour une consigne (0 par défaut ; plafonné au
+  // nombre de membres du jour non assignés)
   const countFor = (c) => {
     const v = perTeamCounts[c]
+    const max = availableMembers.length
     if (v !== undefined && v !== '' && !isNaN(Number(v))) {
-      return Math.max(0, Math.floor(Number(v)))
+      return Math.max(0, Math.min(Math.floor(Number(v)), max))
     }
-    return suggestedPerTeam
+    return 0
   }
 
-  // Valeurs par défaut des compteurs quand la sélection change
+  // Valeurs par défaut des compteurs quand la sélection change : 0 membre
   useEffect(() => {
     setPerTeamCounts((prev) => {
       const next = {}
       pickedConsignes.forEach((c) => {
-        next[c] = prev[c] !== undefined ? prev[c] : String(suggestedPerTeam)
+        next[c] = prev[c] !== undefined ? prev[c] : '0'
       })
       return next
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickedConsignes.join('|'), suggestedPerTeam])
+  }, [pickedConsignes.join('|')])
 
   // Applique un nombre à toutes les consignes cochées
   const applyToAll = (v) => {
@@ -482,7 +478,8 @@ export default function Equipes() {
               <p className="text-sm text-slate-500 mb-2">
                 Coche les consignes à transformer en équipes ({pickedConsignes.length}/
                 {proposedTeams.length} sélectionnée(s)) · membres du jour non assignés :{' '}
-                <span className="font-semibold text-slate-700">{availableMembers.length}</span>
+                <span className="font-semibold text-slate-700">{availableMembers.length}</span>{' '}
+                <span className="text-slate-400">(maximum par consigne)</span>
               </p>
 
               <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-md p-2 space-y-1 mb-3">
@@ -512,11 +509,12 @@ export default function Equipes() {
                           <input
                             type="number"
                             min="0"
+                            max={availableMembers.length}
                             value={perTeamCounts[c] ?? ''}
                             onChange={(e) =>
                               setPerTeamCounts((prev) => ({ ...prev, [c]: e.target.value }))
                             }
-                            placeholder={String(suggestedPerTeam)}
+                            placeholder="0"
                             className="w-16 border border-slate-300 rounded px-1.5 py-1 text-sm"
                             title="Nombre de membres pour cette consigne"
                           />
@@ -534,12 +532,13 @@ export default function Equipes() {
                   <input
                     type="number"
                     min="0"
+                    max={availableMembers.length}
                     value={globalCount}
                     onChange={(e) => {
                       setGlobalCount(e.target.value)
                       applyToAll(e.target.value)
                     }}
-                    placeholder={`auto (${suggestedPerTeam})`}
+                    placeholder="0"
                     className="ml-2 w-24 border border-slate-300 rounded-md px-2 py-1.5 text-sm"
                     title="Applique le même nombre de membres à toutes les consignes cochées"
                   />
