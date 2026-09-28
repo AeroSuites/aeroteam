@@ -20,7 +20,8 @@ export default function Equipes() {
   const [memberSearch, setMemberSearch] = useState('')
   // Création d'équipes d'après les consignes : sélection + répartition auto
   const [pickedConsignes, setPickedConsignes] = useState([])
-  const [perTeam, setPerTeam] = useState('')
+  const [perTeamCounts, setPerTeamCounts] = useState({})
+  const [globalCount, setGlobalCount] = useState('')
   const [mergedName, setMergedName] = useState('')
 
   const activeMembers = tab === 'permanent' ? members : dayMembers
@@ -104,33 +105,59 @@ export default function Equipes() {
     Math.ceil(availableMembers.length / Math.max(1, pickedConsignes.length))
   )
 
-  const effectivePerTeam = () => {
-    const v = Number(perTeam)
-    if (perTeam !== '' && !isNaN(v)) return Math.max(0, Math.floor(v))
+  // Nombre de membres choisi pour une consigne (vide = proposition auto)
+  const countFor = (c) => {
+    const v = perTeamCounts[c]
+    if (v !== undefined && v !== '' && !isNaN(Number(v))) {
+      return Math.max(0, Math.floor(Number(v)))
+    }
     return suggestedPerTeam
   }
 
-  // Répartition automatique en tourniquet : 1 membre par équipe, puis on
-  // recommence jusqu'à `n` par équipe (ex. 6 personnes / 3 équipes = 2 chacune)
-  const distributeMembers = (teamsCount, n) => {
+  // Valeurs par défaut des compteurs quand la sélection change
+  useEffect(() => {
+    setPerTeamCounts((prev) => {
+      const next = {}
+      pickedConsignes.forEach((c) => {
+        next[c] = prev[c] !== undefined ? prev[c] : String(suggestedPerTeam)
+      })
+      return next
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickedConsignes.join('|'), suggestedPerTeam])
+
+  // Applique un nombre à toutes les consignes cochées
+  const applyToAll = (v) => {
+    setPerTeamCounts((prev) => {
+      const next = { ...prev }
+      pickedConsignes.forEach((c) => {
+        next[c] = v
+      })
+      return next
+    })
+  }
+
+  // Répartition automatique en tourniquet : 1 membre par équipe à chaque tour,
+  // jusqu'au nombre demandé pour chaque consigne
+  const distributeByCounts = (items) => {
     const pool = [...availableMembers]
-    const groups = Array.from({ length: Math.max(1, teamsCount) }, () => [])
-    const max = Math.max(0, Number(n) || 0)
-    for (let round = 0; round < max && pool.length; round++) {
-      for (let t = 0; t < groups.length && pool.length; t++) {
-        groups[t].push(pool.shift())
-      }
+    const groups = items.map(() => [])
+    const maxRounds = Math.max(0, ...items.map((it) => it.count))
+    for (let round = 0; round < maxRounds && pool.length; round++) {
+      items.forEach((it, i) => {
+        if (round < it.count && pool.length) groups[i].push(pool.shift())
+      })
     }
     return groups
   }
 
   const createTeamsFromSelection = () => {
     if (!pickedConsignes.length) return
-    const n = effectivePerTeam()
-    const groups = distributeMembers(pickedConsignes.length, n)
-    pickedConsignes.forEach((name, i) => {
+    const items = pickedConsignes.map((c) => ({ name: c, count: countFor(c) }))
+    const groups = distributeByCounts(items)
+    items.forEach((it, i) => {
       addTeam({
-        name: name.slice(0, 60),
+        name: it.name.slice(0, 60),
         members: groups[i] || [],
         color: defaultColors[(teams.length + i) % defaultColors.length],
       })
@@ -141,8 +168,8 @@ export default function Equipes() {
   const createMergedTeam = () => {
     const name = mergedName.trim()
     if (!name || !pickedConsignes.length) return
-    const n = effectivePerTeam() * pickedConsignes.length
-    const groups = distributeMembers(1, n)
+    const total = pickedConsignes.reduce((acc, c) => acc + countFor(c), 0)
+    const groups = distributeByCounts([{ name, count: total }])
     addTeam({
       name: name.slice(0, 60),
       members: groups[0] || [],
@@ -467,44 +494,67 @@ export default function Equipes() {
                 {proposedTeams.map((c) => {
                   const checked = pickedConsignes.includes(c)
                   return (
-                    <label
+                    <div
                       key={c}
-                      className="flex items-start gap-2 px-2 py-1 rounded hover:bg-slate-50 cursor-pointer text-sm"
+                      className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-50"
                     >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => togglePicked(c)}
-                        className="mt-0.5 h-4 w-4 accent-sky-600"
-                      />
-                      <span className="flex-1">{c}</span>
-                    </label>
+                      <label className="flex items-start gap-2 cursor-pointer text-sm flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => togglePicked(c)}
+                          className="mt-0.5 h-4 w-4 accent-sky-600"
+                        />
+                        <span className="flex-1">{c}</span>
+                      </label>
+                      {checked && (
+                        <label className="flex items-center gap-1 text-[11px] text-slate-500 shrink-0">
+                          <input
+                            type="number"
+                            min="0"
+                            value={perTeamCounts[c] ?? ''}
+                            onChange={(e) =>
+                              setPerTeamCounts((prev) => ({ ...prev, [c]: e.target.value }))
+                            }
+                            placeholder={String(suggestedPerTeam)}
+                            className="w-16 border border-slate-300 rounded px-1.5 py-1 text-sm"
+                            title="Nombre de membres pour cette consigne"
+                          />
+                          membre(s)
+                        </label>
+                      )}
+                    </div>
                   )
                 })}
               </div>
 
               <div className="flex flex-wrap items-end gap-3">
                 <label className="text-sm font-medium text-slate-700">
-                  Membres par équipe
+                  Appliquer à toutes
                   <input
                     type="number"
                     min="0"
-                    value={perTeam}
-                    onChange={(e) => setPerTeam(e.target.value)}
+                    value={globalCount}
+                    onChange={(e) => {
+                      setGlobalCount(e.target.value)
+                      applyToAll(e.target.value)
+                    }}
                     placeholder={`auto (${suggestedPerTeam})`}
                     className="ml-2 w-24 border border-slate-300 rounded-md px-2 py-1.5 text-sm"
-                    title="Nombre de membres à répartir automatiquement dans chaque équipe (vide = proposition automatique)"
+                    title="Applique le même nombre de membres à toutes les consignes cochées"
                   />
                 </label>
                 <button
                   onClick={createTeamsFromSelection}
                   disabled={pickedConsignes.length === 0}
                   className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
-                  title="Crée une équipe vide (ou remplie automatiquement) par consigne cochée"
+                  title="Crée une équipe par consigne cochée, avec la répartition automatique des membres"
                 >
                   Créer {pickedConsignes.length} équipe{pickedConsignes.length > 1 ? 's' : ''}
                   {pickedConsignes.length > 0
-                    ? ` (${effectivePerTeam()} membre${effectivePerTeam() > 1 ? 's' : ''}/équipe)`
+                    ? ` (${pickedConsignes.reduce((a, c) => a + countFor(c), 0)} membre${
+                        pickedConsignes.reduce((a, c) => a + countFor(c), 0) > 1 ? 's' : ''
+                      } au total)`
                     : ''}
                 </button>
               </div>
@@ -526,14 +576,15 @@ export default function Equipes() {
                   title="Une seule équipe avec toutes les consignes cochées (membres cumulés)"
                 >
                   Créer l'équipe fusionnée (
-                  {effectivePerTeam() * Math.max(1, pickedConsignes.length)} membre
-                  {effectivePerTeam() * Math.max(1, pickedConsignes.length) > 1 ? 's' : ''})
+                  {pickedConsignes.reduce((a, c) => a + countFor(c), 0)} membre
+                  {pickedConsignes.reduce((a, c) => a + countFor(c), 0) > 1 ? 's' : ''})
                 </button>
               </div>
               <p className="text-[11px] text-slate-400 mt-2">
-                La répartition est en tourniquet sur les membres du jour non assignés (ex. 6
-                personnes / 3 équipes = 2 par équipe) ; les membres restants peuvent être ajoutés
-                à la main (« + Ajouter à cette équipe »).
+                Le nombre de membres peut être réglé pour chaque consigne (vide = proposition
+                automatique). La répartition se fait en tourniquet sur les membres du jour non
+                assignés (ex. 6 personnes / 3 consignes = 2 par équipe) ; les membres restants
+                s'ajoutent à la main (« + Ajouter à cette équipe »).
               </p>
             </>
           )}
