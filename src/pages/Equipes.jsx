@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import ConsignesAvions from '../components/ConsignesAvions'
 import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen, Pencil, Star } from 'lucide-react'
@@ -18,6 +18,10 @@ export default function Equipes() {
   const [selected, setSelected] = useState([])
   const [memberInput, setMemberInput] = useState('')
   const [memberSearch, setMemberSearch] = useState('')
+  // Création d'équipes d'après les consignes : sélection + répartition auto
+  const [pickedConsignes, setPickedConsignes] = useState([])
+  const [perTeam, setPerTeam] = useState('')
+  const [mergedName, setMergedName] = useState('')
 
   const activeMembers = tab === 'permanent' ? members : dayMembers
 
@@ -62,13 +66,68 @@ export default function Equipes() {
     [dayConsignes, teams]
   )
 
-  const createTeamsFromConsignes = () => {
-    proposedTeams.forEach((name, i) => {
+  // ---- Création modulable d'équipes d'après les consignes ----
+  // Toutes les consignes proposées sont cochées par défaut
+  useEffect(() => {
+    setPickedConsignes(proposedTeams)
+    setMergedName(proposedTeams[0] || '')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposedTeams.join('|')])
+
+  const togglePicked = (c) =>
+    setPickedConsignes((prev) =>
+      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
+    )
+
+  // Nombre de membres par équipe proposé (réparti sur les membres non assignés)
+  const suggestedPerTeam = Math.max(
+    1,
+    Math.ceil(availableMembers.length / Math.max(1, pickedConsignes.length))
+  )
+
+  const effectivePerTeam = () => {
+    const v = Number(perTeam)
+    if (perTeam !== '' && !isNaN(v)) return Math.max(0, Math.floor(v))
+    return suggestedPerTeam
+  }
+
+  // Répartition automatique en tourniquet : 1 membre par équipe, puis on
+  // recommence jusqu'à `n` par équipe (ex. 6 personnes / 3 équipes = 2 chacune)
+  const distributeMembers = (teamsCount, n) => {
+    const pool = [...availableMembers]
+    const groups = Array.from({ length: Math.max(1, teamsCount) }, () => [])
+    const max = Math.max(0, Number(n) || 0)
+    for (let round = 0; round < max && pool.length; round++) {
+      for (let t = 0; t < groups.length && pool.length; t++) {
+        groups[t].push(pool.shift())
+      }
+    }
+    return groups
+  }
+
+  const createTeamsFromSelection = () => {
+    if (!pickedConsignes.length) return
+    const n = effectivePerTeam()
+    const groups = distributeMembers(pickedConsignes.length, n)
+    pickedConsignes.forEach((name, i) => {
       addTeam({
         name: name.slice(0, 60),
-        members: [],
+        members: groups[i] || [],
         color: defaultColors[(teams.length + i) % defaultColors.length],
       })
+    })
+  }
+
+  // Fusion : toutes les consignes cochées → une seule équipe (membres cumulés)
+  const createMergedTeam = () => {
+    const name = mergedName.trim()
+    if (!name || !pickedConsignes.length) return
+    const n = effectivePerTeam() * pickedConsignes.length
+    const groups = distributeMembers(1, n)
+    addTeam({
+      name: name.slice(0, 60),
+      members: groups[0] || [],
+      color: defaultColors[teams.length % defaultColors.length],
     })
   }
 
@@ -376,47 +435,105 @@ export default function Equipes() {
       </div>
 
 
-      {/* Proposition : équipes vides d'après les consignes du jour */}
+      {/* Proposition : équipes d'après les consignes du jour (sélection + répartition) */}
       {tab === 'jour' && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6 border-l-4 border-l-sky-500">
           <h2 className="font-semibold flex items-center gap-2 mb-1">
-            <Users className="h-5 w-5 text-sky-500" /> Équipes d'après les consignes du jour
+            <Users className="h-5 w-5 text-sky-500" /> Équipes d'après les consignes
             {consignesDay && (
               <span className="text-sm font-normal text-slate-400">({consignesDay})</span>
             )}
-            {proposedTeams.length > 0 && (
-              <span className="text-sm font-normal text-slate-400">· {proposedTeams.length}</span>
-            )}
           </h2>
-          {proposedTeams.length === 0 ? (
+          {dayConsignes.length === 0 ? (
             <p className="text-sm text-slate-500">
-              {dayConsignes.length === 0
-                ? "Aucune consigne trouvée dans ce profil. Les consignes arrivent avec le fichier (Import consignes → envoi au profil)."
-                : 'Toutes les consignes du jour ont déjà une équipe du même nom.'}
+              Aucune consigne trouvée dans ce profil. Les consignes arrivent avec le fichier
+              (Import consignes → envoi au profil).
             </p>
           ) : (
             <>
-              <p className="text-sm text-slate-500 mb-3">
-                {proposedTeams.length} consigne(s) sans équipe du même nom : créez une équipe vide
-                par consigne, puis ajoutez les membres (bouton « + Ajouter à cette équipe »).
+              <p className="text-sm text-slate-500 mb-2">
+                Coche les consignes à transformer en équipes ({pickedConsignes.length}/
+                {proposedTeams.length} sélectionnée(s)) · membres du jour non assignés :{' '}
+                <span className="font-semibold text-slate-700">{availableMembers.length}</span>
               </p>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {proposedTeams.map((c) => (
-                  <span
-                    key={c}
-                    className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-[11px] text-slate-700"
-                  >
-                    {c}
-                  </span>
-                ))}
+
+              <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-md p-2 space-y-1 mb-3">
+                {proposedTeams.length === 0 && (
+                  <p className="text-sm text-slate-400 italic px-2 py-1">
+                    Toutes les consignes ont déjà une équipe du même nom.
+                  </p>
+                )}
+                {proposedTeams.map((c) => {
+                  const checked = pickedConsignes.includes(c)
+                  return (
+                    <label
+                      key={c}
+                      className="flex items-start gap-2 px-2 py-1 rounded hover:bg-slate-50 cursor-pointer text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => togglePicked(c)}
+                        className="mt-0.5 h-4 w-4 accent-sky-600"
+                      />
+                      <span className="flex-1">{c}</span>
+                    </label>
+                  )
+                })}
               </div>
-              <button
-                onClick={createTeamsFromConsignes}
-                className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
-              >
-                Créer {proposedTeams.length} équipe{proposedTeams.length > 1 ? 's' : ''} vide
-                {proposedTeams.length > 1 ? 's' : ''}
-              </button>
+
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="text-sm font-medium text-slate-700">
+                  Membres par équipe
+                  <input
+                    type="number"
+                    min="0"
+                    value={perTeam}
+                    onChange={(e) => setPerTeam(e.target.value)}
+                    placeholder={`auto (${suggestedPerTeam})`}
+                    className="ml-2 w-24 border border-slate-300 rounded-md px-2 py-1.5 text-sm"
+                    title="Nombre de membres à répartir automatiquement dans chaque équipe (vide = proposition automatique)"
+                  />
+                </label>
+                <button
+                  onClick={createTeamsFromSelection}
+                  disabled={pickedConsignes.length === 0}
+                  className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
+                  title="Crée une équipe vide (ou remplie automatiquement) par consigne cochée"
+                >
+                  Créer {pickedConsignes.length} équipe{pickedConsignes.length > 1 ? 's' : ''}
+                  {pickedConsignes.length > 0
+                    ? ` (${effectivePerTeam()} membre${effectivePerTeam() > 1 ? 's' : ''}/équipe)`
+                    : ''}
+                </button>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-end gap-3">
+                <label className="text-sm font-medium text-slate-700 flex-1 min-w-[240px]">
+                  Fusionner la sélection en une seule équipe
+                  <input
+                    value={mergedName}
+                    onChange={(e) => setMergedName(e.target.value)}
+                    placeholder="Nom de l'équipe fusionnée"
+                    className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
+                  />
+                </label>
+                <button
+                  onClick={createMergedTeam}
+                  disabled={!mergedName.trim() || pickedConsignes.length === 0}
+                  className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:opacity-50 text-sm font-semibold"
+                  title="Une seule équipe avec toutes les consignes cochées (membres cumulés)"
+                >
+                  Créer l'équipe fusionnée (
+                  {effectivePerTeam() * Math.max(1, pickedConsignes.length)} membre
+                  {effectivePerTeam() * Math.max(1, pickedConsignes.length) > 1 ? 's' : ''})
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-2">
+                La répartition est en tourniquet sur les membres du jour non assignés (ex. 6
+                personnes / 3 équipes = 2 par équipe) ; les membres restants peuvent être ajoutés
+                à la main (« + Ajouter à cette équipe »).
+              </p>
             </>
           )}
         </div>
