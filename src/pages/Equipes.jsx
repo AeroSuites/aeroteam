@@ -23,6 +23,7 @@ export default function Equipes() {
   const [perTeamCounts, setPerTeamCounts] = useState({})
   const [globalCount, setGlobalCount] = useState('')
   const [mergedName, setMergedName] = useState('')
+  const [excludedMembers, setExcludedMembers] = useState([])
 
   const activeMembers = tab === 'permanent' ? members : dayMembers
 
@@ -99,44 +100,79 @@ export default function Equipes() {
       prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
     )
 
-  // Nombre de membres choisi pour une consigne (0 par défaut ; plafonné au
-  // nombre de membres du jour non assignés)
-  const countFor = (c) => {
+  // Membres masqués de l'assignation automatique (ajoutables à la main plus tard)
+  const assignableMembers = availableMembers.filter(
+    (m) => !excludedMembers.includes(m)
+  )
+
+  const toggleExcluded = (m) =>
+    setExcludedMembers((prev) =>
+      prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]
+    )
+
+  // Valeur brute saisie pour une consigne (0 si vide)
+  const rawCount = (c) => {
     const v = perTeamCounts[c]
-    const max = availableMembers.length
-    if (v !== undefined && v !== '' && !isNaN(Number(v))) {
-      return Math.max(0, Math.min(Math.floor(Number(v)), max))
-    }
-    return 0
+    const n = Number(v)
+    return v !== undefined && v !== '' && !isNaN(n) ? Math.max(0, Math.floor(n)) : 0
   }
 
-  // Valeurs par défaut des compteurs quand la sélection change : 0 membre
+  // Nombre de membres choisi pour une consigne (plafonné aux membres à répartir)
+  const countFor = (c) => Math.min(rawCount(c), assignableMembers.length)
+
+  const totalCounts = pickedConsignes.reduce((acc, c) => acc + countFor(c), 0)
+  const remainingToAssign = Math.max(0, assignableMembers.length - totalCounts)
+
+  // Valeurs par défaut des compteurs quand la sélection change : champ vide
   useEffect(() => {
     setPerTeamCounts((prev) => {
       const next = {}
       pickedConsignes.forEach((c) => {
-        next[c] = prev[c] !== undefined ? prev[c] : '0'
+        next[c] = prev[c] !== undefined ? prev[c] : ''
       })
       return next
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pickedConsignes.join('|')])
 
-  // Applique un nombre à toutes les consignes cochées
+  // Saisie d'un compteur : bloquée si le total dépasse les membres à répartir
+  const setCount = (c, raw) => {
+    const max = assignableMembers.length
+    let v = String(raw ?? '')
+    if (v !== '') {
+      const n = Number(v)
+      if (isNaN(n)) return
+      const others = pickedConsignes
+        .filter((x) => x !== c)
+        .reduce((acc, x) => acc + rawCount(x), 0)
+      v = String(Math.max(0, Math.min(Math.floor(n), max - others)))
+    }
+    setPerTeamCounts((prev) => ({ ...prev, [c]: v }))
+  }
+
+  // Applique un nombre à toutes les consignes cochées (total plafonné)
   const applyToAll = (v) => {
+    const max = assignableMembers.length
+    const k = Math.max(1, pickedConsignes.length)
+    let next = ''
+    if (String(v ?? '') !== '') {
+      const n = Number(v)
+      if (isNaN(n)) return
+      next = String(Math.max(0, Math.min(Math.floor(n), Math.floor(max / k))))
+    }
     setPerTeamCounts((prev) => {
-      const next = { ...prev }
+      const out = { ...prev }
       pickedConsignes.forEach((c) => {
-        next[c] = v
+        out[c] = next
       })
-      return next
+      return out
     })
   }
 
   // Répartition automatique en tourniquet : 1 membre par équipe à chaque tour,
   // jusqu'au nombre demandé pour chaque consigne
   const distributeByCounts = (items) => {
-    const pool = [...availableMembers]
+    const pool = [...assignableMembers]
     const groups = items.map(() => [])
     const maxRounds = Math.max(0, ...items.map((it) => it.count))
     for (let round = 0; round < maxRounds && pool.length; round++) {
@@ -221,8 +257,12 @@ export default function Equipes() {
   }
 
   // Membres (permanents + du jour) pas encore affectés à cette équipe
-  const availableForTeam = (team) =>
-    [...new Set([...members, ...dayMembers])].filter((m) => !team.members.includes(m))
+  // Membres proposables pour une équipe : uniquement ceux non assignés
+  // (retirer un membre d'une équipe le fait réapparaître ici)
+  const availableForTeam = () =>
+    [...new Set([...members, ...dayMembers])].filter(
+      (m) => !teams.some((t) => t.members.includes(m))
+    )
 
   const addToTeam = (teamId, name) => {
     const team = teams.find((t) => t.id === teamId)
@@ -477,10 +517,43 @@ export default function Equipes() {
             <>
               <p className="text-sm text-slate-500 mb-2">
                 Coche les consignes à transformer en équipes ({pickedConsignes.length}/
-                {proposedTeams.length} sélectionnée(s)) · membres du jour non assignés :{' '}
-                <span className="font-semibold text-slate-700">{availableMembers.length}</span>{' '}
-                <span className="text-slate-400">(maximum par consigne)</span>
+                {proposedTeams.length}) · membres non assignés :{' '}
+                <span className="font-semibold text-slate-700">{availableMembers.length}</span> ·
+                à répartir : <span className="font-semibold text-slate-700">{assignableMembers.length}</span> ·
+                restants : <span className="font-semibold text-sky-700">{remainingToAssign}</span>
               </p>
+
+              {availableMembers.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-[11px] text-slate-500 mb-1">
+                    Cliquer un membre pour le masquer de l'assignation automatique (il restera
+                    ajoutable à la main plus tard) :
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {availableMembers.map((m) => {
+                      const off = excludedMembers.includes(m)
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => toggleExcluded(m)}
+                          className={`px-2 py-0.5 rounded-full text-[11px] border transition-colors ${
+                            off
+                              ? 'bg-slate-100 border-slate-200 text-slate-400 line-through'
+                              : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                          }`}
+                          title={
+                            off
+                              ? 'Masqué : ne sera pas assigné automatiquement'
+                              : 'Disponible pour l\'assignation automatique (cliquer pour masquer)'
+                          }
+                        >
+                          {m}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-md p-2 space-y-1 mb-3">
                 {proposedTeams.length === 0 && (
@@ -509,14 +582,11 @@ export default function Equipes() {
                           <input
                             type="number"
                             min="0"
-                            max={availableMembers.length}
+                            max={assignableMembers.length}
                             value={perTeamCounts[c] ?? ''}
-                            onChange={(e) =>
-                              setPerTeamCounts((prev) => ({ ...prev, [c]: e.target.value }))
-                            }
-                            placeholder="0"
+                            onChange={(e) => setCount(c, e.target.value)}
                             className="w-16 border border-slate-300 rounded px-1.5 py-1 text-sm"
-                            title="Nombre de membres pour cette consigne"
+                            title="Nombre de membres pour cette consigne (bloqué si le total dépasse les membres à répartir)"
                           />
                           membre(s)
                         </label>
@@ -532,15 +602,14 @@ export default function Equipes() {
                   <input
                     type="number"
                     min="0"
-                    max={availableMembers.length}
+                    max={assignableMembers.length}
                     value={globalCount}
                     onChange={(e) => {
                       setGlobalCount(e.target.value)
                       applyToAll(e.target.value)
                     }}
-                    placeholder="0"
                     className="ml-2 w-24 border border-slate-300 rounded-md px-2 py-1.5 text-sm"
-                    title="Applique le même nombre de membres à toutes les consignes cochées"
+                    title="Applique le même nombre de membres à toutes les consignes cochées (total plafonné)"
                   />
                 </label>
                 <button
@@ -551,9 +620,7 @@ export default function Equipes() {
                 >
                   Créer {pickedConsignes.length} équipe{pickedConsignes.length > 1 ? 's' : ''}
                   {pickedConsignes.length > 0
-                    ? ` (${pickedConsignes.reduce((a, c) => a + countFor(c), 0)} membre${
-                        pickedConsignes.reduce((a, c) => a + countFor(c), 0) > 1 ? 's' : ''
-                      } au total)`
+                    ? ` (${totalCounts} membre${totalCounts > 1 ? 's' : ''} au total)`
                     : ''}
                 </button>
               </div>
@@ -574,15 +641,13 @@ export default function Equipes() {
                   className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:opacity-50 text-sm font-semibold"
                   title="Une seule équipe avec toutes les consignes cochées (membres cumulés)"
                 >
-                  Créer l'équipe fusionnée (
-                  {pickedConsignes.reduce((a, c) => a + countFor(c), 0)} membre
-                  {pickedConsignes.reduce((a, c) => a + countFor(c), 0) > 1 ? 's' : ''})
+                  Créer l'équipe fusionnée ({totalCounts} membre{totalCounts > 1 ? 's' : ''})
                 </button>
               </div>
               <p className="text-[11px] text-slate-400 mt-2">
-                Le nombre de membres peut être réglé pour chaque consigne (vide = proposition
-                automatique). La répartition se fait en tourniquet sur les membres du jour non
-                assignés (ex. 6 personnes / 3 consignes = 2 par équipe) ; les membres restants
+                Le nombre de membres se règle pour chaque consigne (case vide = 0). La saisie est
+                bloquée si le total dépasse les membres à répartir. Répartition en tourniquet
+                (ex. 6 personnes / 3 consignes = 2 par équipe) ; les membres masqués ou restants
                 s'ajoutent à la main (« + Ajouter à cette équipe »).
               </p>
             </>
@@ -676,11 +741,11 @@ export default function Equipes() {
                 ))}
               </ul>
 
-              {availableForTeam(team).length > 0 && (
+              {availableForTeam().length > 0 && (
                 <div>
                   <p className="text-xs text-slate-500 mb-1">Ajouter depuis les membres :</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {availableForTeam(team).map((m) => (
+                    {availableForTeam().map((m) => (
                       <button
                         key={m}
                         onClick={() => addToTeam(team.id, m)}
