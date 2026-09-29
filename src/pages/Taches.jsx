@@ -117,6 +117,17 @@ export default function Taches() {
     })
   }
 
+  // Renomme une sous-tâche (zone) pour toutes ses lignes
+  const renameZone = (oldZone) => {
+    const next = window.prompt('Nouveau nom de la sous-tâche :', oldZone)
+    if (next === null) return
+    const name = String(next).trim()
+    if (!name || name === oldZone) return
+    tasks
+      .filter((t) => (t.workArea || 'Autre') === oldZone)
+      .forEach((t) => updateTask(t.id, { workArea: name }))
+  }
+
   const transferToPrep = () => {
     const fresh = filterNewPrepTasks(prepTasks, followTasks)
     const ignored = followTasks.length - fresh.length
@@ -559,6 +570,13 @@ export default function Taches() {
                         <span className="text-[10px] font-bold whitespace-nowrap">à suivre</span>
                       </button>
                       <button
+                        onClick={() => renameZone(zone)}
+                        className="bg-white/20 hover:bg-white/40 text-white p-1 rounded-full"
+                        title={`Renommer la sous-tâche ${zone} (toutes ses lignes)`}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
                         onClick={() => {
                           if (
                             window.confirm(
@@ -635,17 +653,27 @@ export default function Taches() {
                                       <Plus className="h-3 w-3" />
                                       <span className="text-[10px] font-bold whitespace-nowrap">à suivre</span>
                                     </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        if (
-                                          window.confirm(
-                                            `Supprimer toute la sous-tâche ${subZone} du bloc Found Fault (${subTasks.length} tâche(s)) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
-                                          )
-                                        ) {
-                                          removeTasksByZone(subZone, 'CORR')
-                                        }
-                                      }}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    renameZone(subZone)
+                                  }}
+                                  className="text-white/80 hover:text-white"
+                                  title={`Renommer la sous-tâche ${subZone} (toutes ses lignes)`}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (
+                                      window.confirm(
+                                        `Supprimer toute la sous-tâche ${subZone} du bloc Found Fault (${subTasks.length} tâche(s)) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
+                                      )
+                                    ) {
+                                      removeTasksByZone(subZone, 'CORR')
+                                    }
+                                  }}
                                       className="text-white/80 hover:text-white"
                                       title={`Supprimer toute la sous-tâche ${subZone} (Found Fault)`}
                                     >

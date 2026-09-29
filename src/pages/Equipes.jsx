@@ -99,11 +99,11 @@ export default function Equipes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposedTeams.join('|')])
 
-  // Le nom de l'équipe fusionnée suit la 1ère consigne COCHÉE
+  // Le nom de l'équipe fusionnée = les consignes cochées séparées par « + »
   // (tant que l'utilisateur ne l'a pas modifié lui-même)
   useEffect(() => {
     if (mergedNameTouched) return
-    setMergedName(pickedConsignes[0] || '')
+    setMergedName(pickedConsignes.join(' + '))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pickedConsignes.join('|'), mergedNameTouched])
 
