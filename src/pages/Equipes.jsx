@@ -23,6 +23,7 @@ export default function Equipes() {
   const [perTeamCounts, setPerTeamCounts] = useState({})
   const [globalCount, setGlobalCount] = useState('')
   const [mergedName, setMergedName] = useState('')
+  const [mergedNameTouched, setMergedNameTouched] = useState(false)
   const [excludedMembers, setExcludedMembers] = useState([])
   // Cartes d'équipe : section « Ajouter des membres » repliée par défaut
   const [openAddMember, setOpenAddMember] = useState([])
@@ -93,9 +94,18 @@ export default function Equipes() {
   // Toutes les consignes proposées sont cochées par défaut
   useEffect(() => {
     setPickedConsignes(proposedTeams)
+    setMergedNameTouched(false)
     setMergedName(proposedTeams[0] || '')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposedTeams.join('|')])
+
+  // Le nom de l'équipe fusionnée suit la 1ère consigne COCHÉE
+  // (tant que l'utilisateur ne l'a pas modifié lui-même)
+  useEffect(() => {
+    if (mergedNameTouched) return
+    setMergedName(pickedConsignes[0] || '')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickedConsignes.join('|'), mergedNameTouched])
 
   const togglePicked = (c) =>
     setPickedConsignes((prev) =>
@@ -637,7 +647,10 @@ export default function Equipes() {
                   Fusionner la sélection en une seule équipe
                   <input
                     value={mergedName}
-                    onChange={(e) => setMergedName(e.target.value)}
+                    onChange={(e) => {
+                      setMergedNameTouched(true)
+                      setMergedName(e.target.value)
+                    }}
                     placeholder="Nom de l'équipe fusionnée"
                     className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
                   />
