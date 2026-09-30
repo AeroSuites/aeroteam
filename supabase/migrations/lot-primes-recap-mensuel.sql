@@ -47,7 +47,6 @@ declare
   v_total integer := 0;
   v_t1 integer := 0;
   v_t2 integer := 0;
-  v_validees integer := 0;
   rec record;
   line record;
 begin
@@ -77,7 +76,7 @@ begin
     '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1e293b;line-height:1.5">'
     || '<h2 style="margin:0 0 4px">Récap mensuel des primes toilettes — ' || v_label || '</h2>'
     || '<p style="margin:0 0 14px;color:#64748b;font-size:12px">'
-    || 'Primes DÉCLARÉES par personne et par type (T1 = V034, T2 = V035) et total des validées.</p>';
+    || 'Primes VALIDÉES par personne et par type (T1 = V034, T2 = V035), déclarées sur le mois.</p>';
 
   -- Tableau récapitulatif : 1 ligne par agent
   v_html := v_html
@@ -88,22 +87,19 @@ begin
     || '<th style="padding:8px 10px;border:1px solid #002157;text-align:center">T1</th>'
     || '<th style="padding:8px 10px;border:1px solid #002157;text-align:center">T2</th>'
     || '<th style="padding:8px 10px;border:1px solid #002157;text-align:center">Total</th>'
-    || '<th style="padding:8px 10px;border:1px solid #002157;text-align:center">Validées</th>'
     || '</tr>';
 
   for rec in
     select coalesce(nullif(trim(d.agent_nom), ''), d.agent_identifiant, 'Agent inconnu') as nom,
-           count(*) as total,
-           count(*) filter (where d.statut = 'validee') as validees,
-           count(*) filter (where d.statut = 'refusee') as refusees,
-           count(*) filter (where coalesce(d.statut, '') not in ('validee', 'refusee')) as attente,
-           count(*) filter (where d.categorie = 'V034') as t1,
-           count(*) filter (where d.categorie = 'V035') as t2
+           count(*) filter (where d.statut = 'validee') as total,
+           count(*) filter (where d.statut = 'validee' and d.categorie = 'V034') as t1,
+           count(*) filter (where d.statut = 'validee' and d.categorie = 'V035') as t2
     from public.declarations d
     where coalesce(d.manager_hidden, false) = false
-      -- Même logique que l'appli : mois de la DATE D'INTERVENTION (sinon date d'envoi)
-      and coalesce(d.date_intervention, (d.created_at at time zone 'Europe/Paris')::date) >= v_start
-      and coalesce(d.date_intervention, (d.created_at at time zone 'Europe/Paris')::date) < v_end
+      and d.statut = 'validee'
+      -- Mois de la DATE DE DÉCLARATION (envoi), heure de Paris
+      and (d.created_at at time zone 'Europe/Paris')::date >= v_start
+      and (d.created_at at time zone 'Europe/Paris')::date < v_end
     group by 1
     order by 1
   loop
@@ -111,7 +107,6 @@ begin
     v_total := v_total + rec.total;
     v_t1 := v_t1 + rec.t1;
     v_t2 := v_t2 + rec.t2;
-    v_validees := v_validees + rec.validees;
 
     v_html := v_html
       || '<tr>'
@@ -123,15 +118,13 @@ begin
       || rec.t2 || '</td>'
       || '<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;font-weight:bold">'
       || rec.total || '</td>'
-      || '<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">'
-      || rec.validees || '</td>'
       || '</tr>';
   end loop;
 
   if v_agents = 0 then
     v_html := v_html
-      || '<tr><td colspan="5" style="padding:10px;border:1px solid #e2e8f0;color:#64748b">'
-      || 'Aucune déclaration sur ce mois.</td></tr>';
+      || '<tr><td colspan="4" style="padding:10px;border:1px solid #e2e8f0;color:#64748b">'
+      || 'Aucune prime validée sur ce mois.</td></tr>';
   end if;
 
   if v_agents > 0 then
@@ -141,7 +134,6 @@ begin
       || '<td style="padding:8px 10px;border:1px solid #e2e8f0;text-align:center">' || v_t1 || '</td>'
       || '<td style="padding:8px 10px;border:1px solid #e2e8f0;text-align:center">' || v_t2 || '</td>'
       || '<td style="padding:8px 10px;border:1px solid #e2e8f0;text-align:center">' || v_total || '</td>'
-      || '<td style="padding:8px 10px;border:1px solid #e2e8f0;text-align:center">' || v_validees || '</td>'
       || '</tr>';
   end if;
 
@@ -150,7 +142,7 @@ begin
   if v_agents > 0 then
     v_html := v_html
       || '<p style="margin:0 0 14px;font-weight:bold">Total du mois : '
-      || v_total || ' déclaration(s), ' || v_agents || ' agent(s).</p>';
+      || v_total || ' prime(s) validée(s), ' || v_agents || ' agent(s).</p>';
   end if;
 
   v_html := v_html
