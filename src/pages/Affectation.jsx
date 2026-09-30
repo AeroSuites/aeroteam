@@ -255,6 +255,13 @@ export default function Affectation() {
       .forEach((t) => manualAssign(t.id, teamId))
   }
 
+  // Vide la charge d'une équipe : toutes ses lignes sont désassignées
+  const clearTeamCharge = (teamId) => {
+    tasks
+      .filter((t) => assignmentTeams(assignments, t.id).includes(teamId))
+      .forEach((t) => unassignTask(t.id, teamId))
+  }
+
   const manualAssign = (taskId, teamId) => {
     setLastAutoAssignments(null)
     assignTask(taskId, teamId)
@@ -486,6 +493,53 @@ export default function Affectation() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Charge par équipe : vider une équipe en un clic */}
+      {teams.length > 0 && (
+        <div className="bg-white rounded-xl shadow p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <Users className="h-4 w-4 text-sky-500" /> Charge par équipe
+            </h2>
+            <span className="text-xs text-slate-400">
+              Corbeille = vider la charge de l'équipe d'un coup (les lignes restent dans les tâches)
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {teams.map((t) => {
+              const n = tasks.filter((x) =>
+                assignmentTeams(assignments, x.id).includes(t.id)
+              ).length
+              return (
+                <span
+                  key={t.id}
+                  className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold"
+                  style={{ borderColor: t.color || '#0ea5e9', color: t.color || '#0ea5e9' }}
+                >
+                  {t.name} · {n}
+                  {n > 0 && (
+                    <button
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Vider la charge de l'équipe « ${t.name} » (${n} tâche(s)) ?\n\nLes lignes seront désassignées (elles restent dans les tâches).`
+                          )
+                        ) {
+                          clearTeamCharge(t.id)
+                        }
+                      }}
+                      className="text-slate-400 hover:text-red-600"
+                      title={`Vider la charge de ${t.name}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </span>
+              )
+            })}
+          </div>
         </div>
       )}
 
