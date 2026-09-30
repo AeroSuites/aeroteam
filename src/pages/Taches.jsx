@@ -119,14 +119,20 @@ export default function Taches() {
     })
   }
 
-  // Renomme une sous-tâche (zone) pour toutes ses lignes
-  const renameZone = (oldZone) => {
+  // Renomme une sous-tâche (zone) : uniquement les lignes du bloc visé
+  // (bloc précis pour le Found Fault, sinon tous les blocs de la zone sauf CORR)
+  const renameZone = (oldZone, block) => {
     const next = window.prompt('Nouveau nom de la sous-tâche :', oldZone)
     if (next === null) return
     const name = String(next).trim()
     if (!name || name === oldZone) return
     tasks
-      .filter((t) => (t.workArea || 'Autre') === oldZone)
+      .filter((t) => {
+        if ((t.workArea || 'Autre') !== oldZone) return false
+        const blk = t.taskType || 'AUTRE'
+        if (block) return blk === block
+        return blk !== 'CORR'
+      })
       .forEach((t) => updateTask(t.id, { workArea: name }))
   }
 
@@ -660,7 +666,7 @@ export default function Taches() {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    renameZone(subZone)
+                                    renameZone(subZone, 'CORR')
                                   }}
                                   className="text-white/80 hover:text-white"
                                   title={`Renommer la sous-tâche ${subZone} (toutes ses lignes)`}
