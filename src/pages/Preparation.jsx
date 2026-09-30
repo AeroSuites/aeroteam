@@ -823,28 +823,24 @@ export default function Preparation() {
                   className={`bg-white rounded-xl shadow overflow-hidden${expanded ? ' ring-2 ring-black' : ''}`}
                 >
                   <div
-                    className="px-3 sm:px-5 py-2 sm:py-3 flex items-center justify-between flex-wrap gap-2 cursor-pointer"
+                    className="px-3 sm:px-4 py-2 flex items-center justify-between flex-wrap gap-2 cursor-pointer"
                     style={{ backgroundColor: zoneColor }}
                     onClick={() => toggleZone(zone)}
                     title={expanded ? 'Replier cette zone' : 'Déplier cette zone'}
                   >
                     <div className="flex items-center gap-2">
                       {expanded ? (
-                        <ChevronDown className="h-5 sm:h-6 w-5 sm:w-6 text-white" />
+                        <ChevronDown className="h-5 w-5 text-white" />
                       ) : (
-                        <ChevronRight className="h-5 sm:h-6 w-5 sm:w-6 text-white" />
+                        <ChevronRight className="h-5 w-5 text-white" />
                       )}
-                      <div>
-                        <h2 className="font-bold text-white text-base sm:text-lg">
-                          {zone}{' '}
-                          <span className="font-normal opacity-80">({zoneTasks.length})</span>
-                        </h2>
+                      <h2 className="font-bold text-white text-sm">
+                        {zone}{' '}
+                        <span className="font-normal opacity-80">({zoneTasks.length})</span>
                         {zoneHours > 0 && (
-                          <p className="text-white font-bold text-sm mt-0.5">
-                            {formatHours(zoneHours)} h
-                          </p>
+                          <span className="font-normal opacity-80"> · {formatHours(zoneHours)} h</span>
                         )}
-                      </div>
+                      </h2>
                     </div>
                     <div
                       className="flex items-center gap-1.5 flex-wrap"
