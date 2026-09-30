@@ -76,7 +76,7 @@ begin
     '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1e293b;line-height:1.5">'
     || '<h2 style="margin:0 0 4px">Récap mensuel des primes toilettes — ' || v_label || '</h2>'
     || '<p style="margin:0 0 14px;color:#64748b;font-size:12px">'
-    || 'Primes VALIDÉES par personne et par type (T1 = V034, T2 = V035), déclarées sur le mois.</p>';
+    || 'Primes VALIDÉES sur le mois (date de validation), par personne et par type (T1 = V034, T2 = V035).</p>';
 
   -- Tableau récapitulatif : 1 ligne par agent
   v_html := v_html
@@ -97,9 +97,9 @@ begin
     from public.declarations d
     where coalesce(d.manager_hidden, false) = false
       and d.statut = 'validee'
-      -- Mois de la DATE DE DÉCLARATION (envoi), heure de Paris
-      and (d.created_at at time zone 'Europe/Paris')::date >= v_start
-      and (d.created_at at time zone 'Europe/Paris')::date < v_end
+      -- Mois de la DATE DE VALIDATION (heure de Paris ; repli sur l'envoi si absente)
+      and (coalesce(d.decided_at, d.created_at) at time zone 'Europe/Paris')::date >= v_start
+      and (coalesce(d.decided_at, d.created_at) at time zone 'Europe/Paris')::date < v_end
     group by 1
     order by 1
   loop
