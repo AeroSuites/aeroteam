@@ -24,7 +24,7 @@ export default function Taches() {
   const [prioFilter, setPrioFilter] = useState([])
   const [descTask, setDescTask] = useState(null)
   // Déplacement d'une ligne : bloc / sous-tâche
-  const [editMoveTask, setEditMoveTask] = useState(null)
+  const [editMoveIds, setEditMoveIds] = useState(null)
   const [editMoveBlk, setEditMoveBlk] = useState('')
   const [editMoveZone, setEditMoveZone] = useState('')
   const [selectedBlocks, setSelectedBlocks] = useState([])
@@ -280,6 +280,18 @@ export default function Taches() {
                 title="Ajouter ces lignes à la préparation de la vac suivante (classement et notes conservés, doublons ignorés)"
               >
                 Transférer vers Préparation ({followTasks.length})
+              </button>
+              <button
+                onClick={() => {
+                  const first = followTasks[0]
+                  setEditMoveIds(followTasks.map((t) => t.id))
+                  setEditMoveBlk(first?.taskType || 'JIC')
+                  setEditMoveZone(first?.workArea || '')
+                }}
+                className="bg-white text-slate-700 border border-slate-300 px-3 py-1.5 rounded-md hover:bg-slate-50 text-xs font-semibold"
+                title="Déplacer toutes les lignes cochées vers un autre bloc / une autre sous-tâche"
+              >
+                Déplacer les lignes cochées ({followTasks.length})
               </button>
               <button
                 onClick={() => setFollowSelected({})}
@@ -846,7 +858,7 @@ export default function Taches() {
                             <span className="inline-flex items-center gap-1">
                               <button
                                 onClick={() => {
-                                  setEditMoveTask(task)
+                                  setEditMoveIds([task.id])
                                   setEditMoveBlk(task.taskType || 'JIC')
                                   setEditMoveZone(task.workArea || '')
                                 }}
@@ -882,10 +894,10 @@ export default function Taches() {
           )
       })}
 
-      {editMoveTask && (
+      {editMoveIds?.length > 0 && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setEditMoveTask(null)}
+          onClick={() => setEditMoveIds(null)}
         >
           <div
             className="bg-white rounded-xl shadow-xl w-full max-w-md"
@@ -893,13 +905,22 @@ export default function Taches() {
           >
             <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
               <div className="min-w-0">
-                <h2 className="font-bold truncate">Déplacer la ligne</h2>
+                <h2 className="font-bold truncate">
+                  Déplacer {editMoveIds.length} ligne{editMoveIds.length > 1 ? 's' : ''}
+                </h2>
                 <p className="text-xs text-slate-300 truncate">
-                  N° {editMoveTask.seq || '—'} · {editMoveTask.description}
+                  {(() => {
+                    const first = tasks.find((t) => t.id === editMoveIds[0])
+                    return first
+                      ? `N° ${first.seq || '—'} · ${first.description}${
+                          editMoveIds.length > 1 ? ` (+${editMoveIds.length - 1} autre(s))` : ''
+                        }`
+                      : ''
+                  })()}
                 </p>
               </div>
               <button
-                onClick={() => setEditMoveTask(null)}
+                onClick={() => setEditMoveIds(null)}
                 className="text-slate-300 hover:text-white shrink-0"
                 title="Fermer"
               >
@@ -938,22 +959,24 @@ export default function Taches() {
               </label>
               <div className="flex justify-end gap-2">
                 <button
-                  onClick={() => setEditMoveTask(null)}
+                  onClick={() => setEditMoveIds(null)}
                   className="px-4 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-100"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={() => {
-                    updateTask(editMoveTask.id, {
+                    const updates = {
                       taskType: editMoveBlk,
                       workArea: editMoveZone.trim(),
-                    })
-                    setEditMoveTask(null)
+                    }
+                    editMoveIds.forEach((id) => updateTask(id, updates))
+                    setEditMoveIds(null)
+                    setFollowSelected({})
                   }}
                   className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
                 >
-                  Enregistrer
+                  Enregistrer {editMoveIds.length > 1 ? `(${editMoveIds.length} lignes)` : ''}
                 </button>
               </div>
             </div>
