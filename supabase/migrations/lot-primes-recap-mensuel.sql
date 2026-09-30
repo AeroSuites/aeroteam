@@ -45,6 +45,8 @@ declare
   v_html text;
   v_agents integer := 0;
   v_total integer := 0;
+  v_t1 integer := 0;
+  v_t2 integer := 0;
   rec record;
   line record;
 begin
@@ -73,14 +75,28 @@ begin
   v_html :=
     '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1e293b;line-height:1.5">'
     || '<h2 style="margin:0 0 4px">Récap mensuel des primes toilettes — ' || v_label || '</h2>'
-    || '<p style="margin:0 0 14px;color:#64748b;font-size:12px">Récapitulatif par agent des déclarations du mois.</p>';
+    || '<p style="margin:0 0 14px;color:#64748b;font-size:12px">'
+    || 'Nombre de primes VALIDÉES par personne et par type (T1 = V034, T2 = V035).</p>';
+
+  -- Tableau récapitulatif : 1 ligne par agent
+  v_html := v_html
+    || '<table role="presentation" cellpadding="0" cellspacing="0" border="0" '
+    || 'style="width:100%;border-collapse:collapse;font-size:13px;margin:0 0 12px">'
+    || '<tr style="background:#002157;color:#ffffff;text-align:left">'
+    || '<th style="padding:8px 10px;border:1px solid #002157">Agent</th>'
+    || '<th style="padding:8px 10px;border:1px solid #002157;text-align:center">T1</th>'
+    || '<th style="padding:8px 10px;border:1px solid #002157;text-align:center">T2</th>'
+    || '<th style="padding:8px 10px;border:1px solid #002157;text-align:center">Total</th>'
+    || '</tr>';
 
   for rec in
     select coalesce(nullif(trim(d.agent_nom), ''), d.agent_identifiant, 'Agent inconnu') as nom,
            count(*) as total,
            count(*) filter (where d.statut = 'validee') as validees,
            count(*) filter (where d.statut = 'refusee') as refusees,
-           count(*) filter (where coalesce(d.statut, '') not in ('validee', 'refusee')) as attente
+           count(*) filter (where coalesce(d.statut, '') not in ('validee', 'refusee')) as attente,
+           count(*) filter (where d.statut = 'validee' and d.categorie = 'V034') as t1,
+           count(*) filter (where d.statut = 'validee' and d.categorie = 'V035') as t2
     from public.declarations d
     where coalesce(d.manager_hidden, false) = false
       and d.created_at >= v_start
@@ -90,55 +106,41 @@ begin
   loop
     v_agents := v_agents + 1;
     v_total := v_total + rec.total;
+    v_t1 := v_t1 + rec.t1;
+    v_t2 := v_t2 + rec.t2;
 
     v_html := v_html
-      || '<div style="margin:0 0 16px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px">'
-      || '<p style="margin:0 0 6px;font-weight:bold">'
-      || replace(rec.nom, '<', '&lt;') || ' — ' || rec.total || ' déclaration(s)</p>'
-      || '<p style="margin:0 0 8px;font-size:12px;color:#475569">'
-      || rec.validees || ' validée(s) · ' || rec.refusees || ' refusée(s) · '
-      || rec.attente || ' en attente</p>'
-      || '<table role="presentation" cellpadding="0" cellspacing="0" border="0" '
-      || 'style="width:100%;border-collapse:collapse;font-size:12px">'
-      || '<tr style="text-align:left;color:#64748b">'
-      || '<th style="padding:2px 10px 4px 0">Date</th>'
-      || '<th style="padding:2px 10px 4px 0">Élément</th>'
-      || '<th style="padding:2px 10px 4px 0">TRFX</th>'
-      || '<th style="padding:2px 10px 4px 0">Avion</th>'
-      || '<th style="padding:2px 10px 4px 0">Statut</th></tr>';
-
-    for line in
-      select d.date_intervention, d.element, d.trfx, d.avion, d.statut
-      from public.declarations d
-      where coalesce(d.manager_hidden, false) = false
-        and d.created_at >= v_start
-        and d.created_at < v_end
-        and coalesce(nullif(trim(d.agent_nom), ''), d.agent_identifiant, 'Agent inconnu') = rec.nom
-      order by d.date_intervention nulls last, d.created_at
-    loop
-      v_html := v_html
-        || '<tr>'
-        || '<td style="padding:2px 10px 2px 0">'
-        || coalesce(to_char(line.date_intervention, 'DD/MM'), '—') || '</td>'
-        || '<td style="padding:2px 10px 2px 0">' || replace(coalesce(line.element, '—'), '<', '&lt;') || '</td>'
-        || '<td style="padding:2px 10px 2px 0;font-family:monospace">'
-        || replace(coalesce(nullif(trim(line.trfx), ''), '—'), '<', '&lt;') || '</td>'
-        || '<td style="padding:2px 10px 2px 0">' || replace(coalesce(line.avion, '—'), '<', '&lt;') || '</td>'
-        || '<td style="padding:2px 10px 2px 0">'
-        || case line.statut
-             when 'validee' then 'Validée'
-             when 'refusee' then 'Refusée'
-             else 'En attente'
-           end
-        || '</td></tr>';
-    end loop;
-
-    v_html := v_html || '</table></div>';
+      || '<tr>'
+      || '<td style="padding:6px 10px;border:1px solid #e2e8f0">'
+      || replace(rec.nom, '<', '&lt;') || '</td>'
+      || '<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">'
+      || rec.t1 || '</td>'
+      || '<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">'
+      || rec.t2 || '</td>'
+      || '<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;font-weight:bold">'
+      || rec.validees || '</td>'
+      || '</tr>';
   end loop;
 
   if v_agents = 0 then
-    v_html := v_html || '<p style="margin:0 0 14px">Aucune déclaration sur ce mois.</p>';
-  else
+    v_html := v_html
+      || '<tr><td colspan="4" style="padding:10px;border:1px solid #e2e8f0;color:#64748b">'
+      || 'Aucune déclaration sur ce mois.</td></tr>';
+  end if;
+
+  if v_agents > 0 then
+    v_html := v_html
+      || '<tr style="background:#f1f5f9;font-weight:bold">'
+      || '<td style="padding:8px 10px;border:1px solid #e2e8f0">Total</td>'
+      || '<td style="padding:8px 10px;border:1px solid #e2e8f0;text-align:center">' || v_t1 || '</td>'
+      || '<td style="padding:8px 10px;border:1px solid #e2e8f0;text-align:center">' || v_t2 || '</td>'
+      || '<td style="padding:8px 10px;border:1px solid #e2e8f0;text-align:center">' || (v_t1 + v_t2) || '</td>'
+      || '</tr>';
+  end if;
+
+  v_html := v_html || '</table>';
+
+  if v_agents > 0 then
     v_html := v_html
       || '<p style="margin:0 0 14px;font-weight:bold">Total du mois : '
       || v_total || ' déclaration(s), ' || v_agents || ' agent(s).</p>';
