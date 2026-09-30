@@ -244,9 +244,14 @@ export default function Affectation() {
   }, [filteredTasks])
 
   // Affecter à une équipe toutes les tâches d'une sous-tâche (tous blocs confondus)
+  // Affecte toute une sous-tâche : hors Found Fault (les CORR restent dans
+  // leur bloc, affectables via « tout le bloc »)
   const assignZoneAll = (zone, teamId) => {
     tasks
-      .filter((t) => (t.workArea || 'Autre') === zone)
+      .filter(
+        (t) =>
+          (t.workArea || 'Autre') === zone && (t.taskType || 'AUTRE') !== 'CORR'
+      )
       .forEach((t) => manualAssign(t.id, teamId))
   }
 

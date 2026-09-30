@@ -99,17 +99,19 @@ export default function Taches() {
     })
   }
 
-  // Ajoute toute une sous-tâche (zone) à suivre — d'un bloc précis ou tous blocs
+  // Ajoute toute une sous-tâche (zone) à suivre — d'un bloc précis ou tous
+  // les blocs de la zone (sauf Found Fault : il a ses propres sous-tâches)
   const addZoneToFollow = (zone, block) => {
     setTransferMsg('')
     setFollowSelected((prev) => {
       const next = { ...prev }
       tasks
-        .filter(
-          (t) =>
-            (t.workArea || 'Autre') === zone &&
-            (!block || (t.taskType || 'AUTRE') === block)
-        )
+        .filter((t) => {
+          if ((t.workArea || 'Autre') !== zone) return false
+          const blk = t.taskType || 'AUTRE'
+          if (block) return blk === block
+          return blk !== 'CORR'
+        })
         .forEach((t) => {
           next[t.id] = true
         })
@@ -580,14 +582,16 @@ export default function Taches() {
                         onClick={() => {
                           if (
                             window.confirm(
-                              `Supprimer toute la sous-tâche ${zone} (${zoneTasks.length} tâche(s), tous blocs) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
+                              `Supprimer toute la sous-tâche ${zone} (${zoneTasks.length} tâche(s)) ?\n\nCes tâches disparaîtront partout (affectations comprises). Le bloc Found Fault n'est pas concerné.`
                             )
                           ) {
-                            removeTasksByZone(zone)
+                            ;[...new Set(zoneTasks.map((t) => t.taskType || 'AUTRE'))]
+                              .filter((blk) => blk !== 'CORR')
+                              .forEach((blk) => removeTasksByZone(zone, blk))
                           }
                         }}
                         className="bg-white/20 hover:bg-white/40 text-white p-1 rounded-full"
-                        title={`Supprimer toute la sous-tâche ${zone}`}
+                        title={`Supprimer toute la sous-tâche ${zone} (hors Found Fault)`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
