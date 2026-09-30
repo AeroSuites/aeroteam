@@ -823,13 +823,12 @@ export default function Preparation() {
                   className={`bg-white rounded-xl shadow overflow-hidden${expanded ? ' ring-2 ring-black' : ''}`}
                 >
                   <div
-                    className="px-3 sm:px-5 py-2 sm:py-3 flex items-center justify-between flex-wrap gap-2"
+                    className="px-3 sm:px-5 py-2 sm:py-3 flex items-center justify-between flex-wrap gap-2 cursor-pointer"
                     style={{ backgroundColor: zoneColor }}
+                    onClick={() => toggleZone(zone)}
+                    title={expanded ? 'Replier cette zone' : 'Déplier cette zone'}
                   >
-                    <div
-                      className="flex items-center gap-2 cursor-pointer"
-                      onClick={() => toggleZone(zone)}
-                    >
+                    <div className="flex items-center gap-2">
                       {expanded ? (
                         <ChevronDown className="h-5 sm:h-6 w-5 sm:w-6 text-white" />
                       ) : (
@@ -847,7 +846,10 @@ export default function Preparation() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div
+                      className="flex items-center gap-1.5 flex-wrap"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <PocketChips
                         dark
                         counts={pocketCounts(zoneTaskIds)}
@@ -878,7 +880,7 @@ export default function Preparation() {
                                   removePrepTasksByBlock(blk)
                                 }
                               }}
-                              className="bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-xs font-semibold text-white flex items-center gap-1"
+                              className="bg-white/25 hover:bg-white/40 px-1.5 py-0.5 rounded-full text-[10px] font-semibold text-white flex items-center gap-1"
                               title={`Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} lignes, toutes zones confondues)`}
                             >
                               {getCategoryLabel(blk)} · {n}
@@ -1338,7 +1340,7 @@ function PocketSelect({ pockets, placeholder, onSelect, variant = 'light', compa
           compact
             ? 'border border-slate-300 rounded-md px-1.5 py-1 text-xs text-slate-700 max-w-[120px] bg-white'
             : dark
-              ? 'border border-white/60 rounded-md px-2 py-1.5 text-xs font-medium bg-white text-slate-800 hover:border-white max-w-[200px]'
+              ? 'border border-white/60 rounded-md px-2 py-1 text-xs font-medium bg-white text-slate-800 hover:border-white max-w-[200px]'
               : 'border border-slate-300 rounded-md px-2 py-1.5 text-xs font-medium text-slate-700 bg-white hover:border-sky-400 max-w-[200px]'
         }
         title={pockets.length === 0 ? "Créez d'abord une pochette" : placeholder}
@@ -1369,7 +1371,7 @@ function PocketChips({ counts, pocketById, onRemove, dark }) {
             key={pid}
             className={
               dark
-                ? 'inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-full text-xs font-bold text-white bg-slate-900 border border-white/90 shadow'
+                ? 'inline-flex items-center gap-1.5 pl-1.5 pr-1.5 py-0.5 rounded-full text-[10px] font-bold text-white bg-slate-900 border border-white/90 shadow'
                 : 'inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-full text-xs font-bold text-sky-950 bg-sky-100 border-2 border-sky-500 shadow-sm'
             }
             title={`Dans la pochette « ${p.name} » (${n}) — cliquez pour retirer`}
