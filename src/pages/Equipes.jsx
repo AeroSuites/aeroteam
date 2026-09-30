@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import ConsignesAvions from '../components/ConsignesAvions'
 import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen, Pencil, Star, ChevronDown, ChevronRight } from 'lucide-react'
-import { consigneDay, logicalToday } from '../utils/helpers'
+import { consigneDay, logicalToday, assignmentTeams } from '../utils/helpers'
 
 const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
 
 export default function Equipes() {
   const {
-    teams, members, dayMembers, dayLeaders, assignments, notes,
-    addTeam, updateTeam, removeTeam,
+    teams, members, dayMembers, dayLeaders, assignments, notes, tasks,
+    addTeam, updateTeam, removeTeam, unassignTask,
     addMembers, addDayMembers, clearDayMembers, removeMember,
   } = useApp()
   const [tab, setTab] = useState('permanent')
@@ -71,8 +71,15 @@ export default function Equipes() {
     [dayConsignes, teams]
   )
 
+  // Vide la charge d'une équipe : toutes ses lignes sont désassignées
+  const clearTeamCharge = (teamId) => {
+    tasks
+      .filter((t) => assignmentTeams(assignments, t.id).includes(teamId))
+      .forEach((t) => unassignTask(t.id, teamId))
+  }
+
   const taskCountByTeam = (teamId) =>
-    Object.values(assignments).filter((id) => id === teamId).length
+    tasks.filter((t) => assignmentTeams(assignments, t.id).includes(teamId)).length
 
   // Membres de l'onglet actif non encore affectés à une équipe
   const availableMembers = activeMembers.filter(
@@ -736,8 +743,32 @@ export default function Equipes() {
                 <span className="text-sm text-slate-600">
                   <span className="font-semibold">{team.members.length}</span> membre(s)
                 </span>
-                <span className="text-sm text-slate-600">
-                  <span className="font-semibold">{taskCountByTeam(team.id)}</span> tâche(s) assignée(s)
+                <span className="flex items-center gap-2 text-sm text-slate-600">
+                  <span>
+                    <span className="font-semibold">{taskCountByTeam(team.id)}</span> tâche(s)
+                    assignée(s)
+                  </span>
+                  {taskCountByTeam(team.id) > 0 && (
+                    <button
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Vider la charge de l'équipe « ${team.name} » (${taskCountByTeam(
+                              team.id
+                            )} tâche(s)) ?\n\nLes lignes seront désassignées (elles restent dans les tâches).`
+                          )
+                        ) {
+                          clearTeamCharge(team.id)
+                        }
+                      }}
+                      className="text-slate-400 hover:text-red-600"
+                      title={`Vider la charge de l'équipe (désassigner ses ${taskCountByTeam(
+                        team.id
+                      )} tâche(s))`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </span>
               </div>
 
