@@ -101,8 +101,9 @@ begin
            count(*) filter (where d.categorie = 'V035') as t2
     from public.declarations d
     where coalesce(d.manager_hidden, false) = false
-      and d.created_at >= v_start
-      and d.created_at < v_end
+      -- Même logique que l'appli : mois de la DATE D'INTERVENTION (sinon date d'envoi)
+      and coalesce(d.date_intervention, (d.created_at at time zone 'Europe/Paris')::date) >= v_start
+      and coalesce(d.date_intervention, (d.created_at at time zone 'Europe/Paris')::date) < v_end
     group by 1
     order by 1
   loop
