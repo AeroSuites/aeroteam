@@ -267,6 +267,48 @@ export default function Preparation() {
     addTasksToPocket(pocketId, taskIds)
   }
 
+  // ---------- Déplacement de lignes (bloc / sous-tâche) ----------
+  const [moveSelected, setMoveSelected] = useState({})
+  const [moveIds, setMoveIds] = useState(null)
+  const [moveBlk, setMoveBlk] = useState('')
+  const [moveZone, setMoveZone] = useState('')
+  const [moveZoneNew, setMoveZoneNew] = useState(false)
+
+  const toggleMoveSel = (id) =>
+    setMoveSelected((prev) => {
+      const next = { ...prev }
+      if (next[id]) delete next[id]
+      else next[id] = true
+      return next
+    })
+
+  const selectedMoveIds = prepTasks.filter((t) => moveSelected[t.id]).map((t) => t.id)
+
+  const selectZoneForMove = (list) =>
+    setMoveSelected((prev) => {
+      const next = { ...prev }
+      list.forEach((t) => {
+        next[t.id] = true
+      })
+      return next
+    })
+
+  const openMove = (ids) => {
+    if (!ids || ids.length === 0) return
+    const first = prepTasks.find((t) => t.id === ids[0])
+    setMoveIds(ids)
+    setMoveBlk(first?.taskType || 'JIC')
+    setMoveZone(first?.workArea || '')
+    setMoveZoneNew(false)
+  }
+
+  const applyMove = () => {
+    const updates = { taskType: moveBlk, workArea: moveZone.trim() }
+    ;(moveIds || []).forEach((id) => updatePrepTask(id, updates))
+    setMoveIds(null)
+    setMoveSelected({})
+  }
+
   const pocketTaskIds = (p) => (Array.isArray(p?.taskIds) ? p.taskIds : [])
 
   // { pocketId: nbTaches } pour un ensemble de tâches donné
@@ -506,6 +548,31 @@ export default function Preparation() {
           </button>
         )}
       </div>
+
+      {/* Barre de déplacement multiple */}
+      {selectedMoveIds.length > 0 && (
+        <div className="bg-white rounded-xl shadow p-3 border-l-4 border-l-sky-600 flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm text-slate-700">
+            <strong>{selectedMoveIds.length}</strong> ligne(s) sélectionnée(s) — déplacer vers un
+            autre bloc / une autre sous-tâche :
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => openMove(selectedMoveIds)}
+              className="bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 text-xs font-semibold"
+              title="Déplacer toutes les lignes cochées"
+            >
+              Déplacer ({selectedMoveIds.length})
+            </button>
+            <button
+              onClick={() => setMoveSelected({})}
+              className="text-xs text-slate-500 hover:text-red-600 border border-slate-200 rounded-md px-2 py-1.5"
+            >
+              Vider la sélection
+            </button>
+          </div>
+        </div>
+      )}
 
       <div
         className="border-2 border-dashed border-slate-300 rounded-xl p-6 sm:p-8 text-center bg-white hover:border-sky-400 transition-colors cursor-pointer"
@@ -860,6 +927,17 @@ export default function Preparation() {
                           onSelect={(pid) => assignToPocket(pid, zoneTaskIds)}
                         />
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          selectZoneForMove(zoneTasks)
+                        }}
+                        className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5"
+                        title={`Sélectionner toutes les lignes de la zone ${zone} (déplacement multiple)`}
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span className="text-[10px] font-bold whitespace-nowrap">sél.</span>
+                      </button>
                       {[...new Set(zoneTasks.map((t) => t.taskType).filter(Boolean))].map((blk) => {
                         const n = zoneTasks.filter((t) => t.taskType === blk).length
                         const total = prepTasks.filter((t) => t.taskType === blk).length
@@ -904,7 +982,7 @@ export default function Preparation() {
                       <table className="w-full text-sm min-w-[760px]">
                         <thead>
                           <tr className="text-left bg-slate-50">
-                            <th className="px-2 py-2 border-b">N°</th>
+                            <th className="px-1 py-2 border-b text-[10px] text-slate-500" title="Cocher pour sélectionner (déplacement multiple)">sél.</th>`r`n                          <th className="px-2 py-2 border-b">N°</th>
                             <th className="px-2 py-2 border-b">Tâche</th>
                             <th className="px-0.5 py-2 border-b">Bloc</th>
                             <th className="px-0.5 py-2 border-b">Skills</th>
@@ -926,14 +1004,14 @@ export default function Preparation() {
                                 {group.isFF && (
                                   <>
                                     <tr>
-                                      <td colSpan={10} style={{ height: 10 }} className="p-0" />
+                                      <td colSpan={11} style={{ height: 10 }} className="p-0" />
                                     </tr>
                                     <tr
                                       className="border-b border-slate-100 cursor-pointer hover:brightness-110"
                                       onClick={() => toggleSubZone(`${group.key}::${subZone}`)}
                                       title={subOpen ? 'Replier cette sous-tâche' : 'Déplier cette sous-tâche'}
                                     >
-                                      <td colSpan={10} className="px-2 py-0.5">
+                                      <td colSpan={11} className="px-2 py-0.5">
                                         <span
                                           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold uppercase tracking-wide text-white"
                                           style={{ backgroundColor: getZoneColor(subZone, allZones) }}
@@ -998,6 +1076,15 @@ export default function Preparation() {
                                     : undefined
                                 }
                               >
+                                <td className="px-1 py-2 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={!!moveSelected[task.id]}
+                                    onChange={() => toggleMoveSel(task.id)}
+                                    className="h-3.5 w-3.5 accent-sky-600"
+                                    title="Sélectionner pour un déplacement multiple"
+                                  />
+                                </td>
                                 <td className="px-2 py-2 font-bold text-slate-500">
                                   {task.seq || '-'}
                                 </td>
@@ -1098,6 +1185,13 @@ export default function Preparation() {
                                 <td className="px-2 py-2">
                                   <div className="flex items-center gap-1.5">
                                     <button
+                                      onClick={() => openMove([task.id])}
+                                      className="text-slate-400 hover:text-sky-600"
+                                      title="Déplacer cette ligne (bloc / sous-tâche)"
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </button>
+                                    <button
                                       onClick={() => reintegrerTasks([task])}
                                       className="text-slate-400 hover:text-emerald-600"
                                       title="Réintégrer cette ligne dans Tâches (annuler le transfert)"
@@ -1129,6 +1223,111 @@ export default function Preparation() {
                 </div>
               )
             })}
+        </div>
+      )}
+
+      {/* ------- Modal de déplacement (bloc / sous-tâche) ------- */}
+      {moveIds?.length > 0 && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setMoveIds(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
+              <div className="min-w-0">
+                <h2 className="font-bold truncate">
+                  Déplacer {moveIds.length} ligne{moveIds.length > 1 ? 's' : ''}
+                </h2>
+                <p className="text-xs text-slate-300 truncate">
+                  {(() => {
+                    const first = prepTasks.find((t) => t.id === moveIds[0])
+                    return first
+                      ? `N° ${first.seq || '—'} · ${first.description}${
+                          moveIds.length > 1 ? ` (+${moveIds.length - 1} autre(s))` : ''
+                        }`
+                      : ''
+                  })()}
+                </p>
+              </div>
+              <button
+                onClick={() => setMoveIds(null)}
+                className="text-slate-300 hover:text-white shrink-0"
+                title="Fermer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <label className="block text-sm font-medium text-slate-700">
+                Bloc
+                <select
+                  value={moveBlk}
+                  onChange={(e) => setMoveBlk(e.target.value)}
+                  className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
+                >
+                  {['JIC', 'CORR', 'MPC', 'ADHOC', 'EO', 'AUTRE'].map((b) => (
+                    <option key={b} value={b}>
+                      {getCategoryLabel(b)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-sm font-medium text-slate-700">
+                Sous-tâche / zone
+                <select
+                  value={moveZoneNew ? '__new__' : moveZone}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    if (v === '__new__') {
+                      setMoveZoneNew(true)
+                      setMoveZone('')
+                    } else {
+                      setMoveZoneNew(false)
+                      setMoveZone(v)
+                    }
+                  }}
+                  className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
+                >
+                  <option value="">— Choisir une sous-tâche —</option>
+                  {allZones.map((z) => (
+                    <option key={z} value={z}>
+                      {z}
+                    </option>
+                  ))}
+                  <option value="__new__">➕ Nouvelle sous-tâche…</option>
+                </select>
+              </label>
+              {moveZoneNew && (
+                <label className="block text-sm font-medium text-slate-700">
+                  Nom de la nouvelle sous-tâche
+                  <input
+                    autoFocus
+                    value={moveZone}
+                    onChange={(e) => setMoveZone(e.target.value)}
+                    placeholder="Ex : CAB SECURITY"
+                    className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
+                  />
+                </label>
+              )}
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setMoveIds(null)}
+                  className="px-4 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-100"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={applyMove}
+                  className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
+                >
+                  Enregistrer {moveIds.length > 1 ? `(${moveIds.length} lignes)` : ''}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
