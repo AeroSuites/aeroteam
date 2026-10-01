@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import { assignmentTeams, isAssignedTo, priorityToken } from './helpers'
+import { assignmentTeams, isAssignedTo, priorityToken, cleanShortValue } from './helpers'
 
 export function exportToExcel({ tasks, teams, assignments }) {
   const wsData = [
@@ -21,7 +21,7 @@ export function exportToExcel({ tasks, teams, assignments }) {
       .map((id) => teams.find((t) => t.id === id))
       .filter(Boolean)
     wsData.push([
-      task.seq ?? '',
+      cleanShortValue(task.seq) ?? '',
       task.description ?? '',
       priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) || '',
       task.workArea ?? '',

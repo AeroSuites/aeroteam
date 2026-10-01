@@ -14,6 +14,7 @@ import {
   hexToRgb,
   makeId,
   filterNewPrepTasks,
+  cleanShortValue,
   priorityToken,
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
@@ -429,7 +430,7 @@ export default function Preparation() {
           ],
           body: zoneTasks.map((t) => [
             '',
-            t.seq !== undefined && t.seq !== '' ? String(t.seq) : '—',
+            cleanShortValue(t.seq) || '—',
             priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`),
             t.taskBarcode || '—',
             t.description || '',
@@ -1086,7 +1087,7 @@ export default function Preparation() {
                                   />
                                 </td>
                                 <td className="px-2 py-2 font-bold text-slate-500">
-                                  {task.seq || '-'}
+                                  {cleanShortValue(task.seq) || '-'}
                                 </td>
                                 <td className="px-2 py-2 font-medium max-w-md" title={task.description}>
                                   <span className="flex items-center gap-1 min-w-0">

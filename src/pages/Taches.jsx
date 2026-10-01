@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, priorityToken, cleanTaskText } from '../utils/helpers'
+import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, priorityToken, cleanTaskText, cleanShortValue } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
 import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check, FileText, Pencil } from 'lucide-react'
@@ -742,7 +742,7 @@ export default function Taches() {
                               />
                             )}
                           </td>
-                          <td className="px-2 py-2 font-bold text-slate-500">{task.seq || '-'}</td>
+                          <td className="px-2 py-2 font-bold text-slate-500">{cleanShortValue(task.seq) || '-'}</td>
                           <td className="px-2 py-2 font-medium max-w-md" title={task.description}>
                             <span className="flex items-center gap-1 min-w-0">
                               <span
