@@ -947,16 +947,25 @@ export default function Preparation() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
+                                // Carte de zone : on ne supprime que le bloc de CETTE zone
+                                // (le bloc Found Fault reste global, il n'a pas de zone unique)
                                 if (
                                   window.confirm(
-                                    `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} ligne(s) au total, toutes zones) ?`
+                                    group.isFF
+                                      ? `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} ligne(s)) ?`
+                                      : `Supprimer les ${n} ligne(s) ${getCategoryLabel(blk)} de la zone ${zone} ?`
                                   )
                                 ) {
-                                  removePrepTasksByBlock(blk)
+                                  if (group.isFF) removePrepTasksByBlock(blk)
+                                  else removePrepTasksByZone(zone, blk)
                                 }
                               }}
                               className="bg-white/25 hover:bg-white/40 px-1.5 py-0.5 rounded-full text-[10px] font-semibold text-white flex items-center gap-1"
-                              title={`Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} lignes, toutes zones confondues)`}
+                              title={
+                                group.isFF
+                                  ? `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} lignes)`
+                                  : `Supprimer les ${n} ligne(s) ${getCategoryLabel(blk)} de la zone ${zone}`
+                              }
                             >
                               {getCategoryLabel(blk)} · {n}
                               <Trash2 className="h-3 w-3 opacity-80" />

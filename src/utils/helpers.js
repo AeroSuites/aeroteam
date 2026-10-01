@@ -78,11 +78,13 @@ export function cleanTaskText(text) {
 // sont ignorés. Renvoie « MEL », « EXMP », « NSRE » ou '' si non prioritaire.
 export function priorityToken(text) {
   const s = String(text || '')
-  const m = s.match(/(^|[^A-Z0-9_])(EXMP|MEL|NSRE)(?![A-Z0-9])/i)
+  // Le mot peut être suivi directement d'une référence (ex. « EXMP25x54 »)
+  // mais pas d'une lettre (pour ne pas confondre avec un autre mot).
+  const m = s.match(/(^|[^A-Z0-9_])(EXMP|MEL|NSRE)(?![A-Z])/i)
   if (!m) return ''
   const after = s
     .slice(m.index + m[0].length)
-    .replace(/^\s*\/\s*(?:EXMP|MEL|NSRE)(?![A-Z0-9])/i, '')
+    .replace(/^\s*\/\s*(?:EXMP|MEL|NSRE)(?![A-Z])/i, '')
     .replace(/^\s*RDY\s*\/\s*IPR/i, '')
     .replace(/^[\s:·\-–]*/, '')
   return /[a-z0-9]/i.test(after) ? m[2].toUpperCase() : ''
