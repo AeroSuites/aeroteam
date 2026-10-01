@@ -983,7 +983,8 @@ export default function Preparation() {
                       <table className="w-full text-sm min-w-[760px]">
                         <thead>
                           <tr className="text-left bg-slate-50">
-                            <th className="px-1 py-2 border-b text-[10px] text-slate-500" title="Cocher pour sélectionner (déplacement multiple)">sél.</th>`r`n                          <th className="px-2 py-2 border-b">N°</th>
+                            <th className="px-1 py-2 border-b text-[10px] text-slate-500" title="Cocher pour sélectionner (déplacement multiple)">sél.</th>
+                            <th className="px-2 py-2 border-b">N°</th>
                             <th className="px-2 py-2 border-b">Tâche</th>
                             <th className="px-0.5 py-2 border-b">Bloc</th>
                             <th className="px-0.5 py-2 border-b">Skills</th>
