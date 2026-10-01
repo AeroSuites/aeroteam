@@ -1,3 +1,0 @@
-Le fichier Excel des consignes → l'effectif du jour, avion par avion. AeroTeam.
-
-(données d'exemple : noms de membres fictifs)
