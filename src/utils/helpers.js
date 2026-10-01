@@ -369,6 +369,18 @@ export function filterRow(row, columns) {
   return true
 }
 
+// Nettoie une valeur courte (n° de ligne, TRFX…) : retire espaces insécables,
+// caractères de contrôle et symboles parasites
+export function cleanShortValue(v) {
+  const s = String(v ?? '')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001F\u007F\u00A0\u200B-\u200F\u2028\u2029\uFEFF]/g, ' ')
+    .replace(/[^\dA-Za-z°\-./_ ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return s
+}
+
 export function parseExcelRows(rows, columns) {
   const result = []
 
@@ -389,7 +401,7 @@ export function parseExcelRows(rows, columns) {
 
     const task = {
       id: makeId('task'),
-      seq: get('seq') !== undefined ? String(get('seq')) : undefined,
+      seq: get('seq') !== undefined ? cleanShortValue(get('seq')) || undefined : undefined,
       description,
       skills: get('skills') ? String(get('skills')) : undefined,
       mtxStatus: get('mtxStatus') ? String(get('mtxStatus')) : undefined,
@@ -413,7 +425,7 @@ export function parseExcelRows(rows, columns) {
         : undefined,
       taskSteps: get('taskSteps') ? cleanTaskText(String(get('taskSteps'))) : undefined,
       // Alias compatibilité
-      ref: get('seq') !== undefined ? String(get('seq')) : undefined,
+      ref: get('seq') !== undefined ? cleanShortValue(get('seq')) || undefined : undefined,
       zone: get('workArea') ? String(get('workArea')) : undefined,
       avion: get('registration') ? String(get('registration')) : undefined,
       category: get('taskType') ? String(get('taskType')) : undefined,

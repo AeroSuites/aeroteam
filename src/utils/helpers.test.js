@@ -15,6 +15,7 @@ import {
   filterNewPrepTasks,
   priorityToken,
   cleanTaskText,
+  cleanShortValue,
   consigneDay,
   logicalToday,
 } from './helpers'
@@ -208,6 +209,17 @@ describe('cleanTaskText — textes du Workpackage', () => {
     expect(cleanTaskText('A&nbsp;B &amp; C')).toBe('A B & C')
     expect(cleanTaskText('<b>Gras</b> suite')).toBe('Gras suite')
     expect(cleanTaskText('  espaces  ')).toBe('espaces')
+  })
+})
+
+describe('cleanShortValue — n° de ligne et valeurs courtes', () => {
+  it('retire les caractères parasites et espaces insécables', () => {
+    expect(cleanShortValue(' 332 ')).toBe('332')
+    expect(cleanShortValue('332\u00A0')).toBe('332')
+    expect(cleanShortValue('\u200B333')).toBe('333')
+    expect(cleanShortValue('33\u00002')).toBe('33 2')
+    expect(cleanShortValue('12/3')).toBe('12/3')
+    expect(cleanShortValue('N°12')).toBe('N°12')
   })
 })
 
