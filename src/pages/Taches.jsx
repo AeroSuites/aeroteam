@@ -27,6 +27,7 @@ export default function Taches() {
   const [editMoveIds, setEditMoveIds] = useState(null)
   const [editMoveBlk, setEditMoveBlk] = useState('')
   const [editMoveZone, setEditMoveZone] = useState('')
+  const [editMoveZoneNew, setEditMoveZoneNew] = useState(false)
   const [selectedBlocks, setSelectedBlocks] = useState([])
   const [expandedZones, setExpandedZones] = useState([])
   const [expandedSubZones, setExpandedSubZones] = useState([])
@@ -285,6 +286,7 @@ export default function Taches() {
                 onClick={() => {
                   const first = followTasks[0]
                   setEditMoveIds(followTasks.map((t) => t.id))
+                  setEditMoveZoneNew(false)
                   setEditMoveBlk(first?.taskType || 'JIC')
                   setEditMoveZone(first?.workArea || '')
                 }}
@@ -859,6 +861,7 @@ export default function Taches() {
                               <button
                                 onClick={() => {
                                   setEditMoveIds([task.id])
+                                  setEditMoveZoneNew(false)
                                   setEditMoveBlk(task.taskType || 'JIC')
                                   setEditMoveZone(task.workArea || '')
                                 }}
@@ -944,19 +947,41 @@ export default function Taches() {
               </label>
               <label className="block text-sm font-medium text-slate-700">
                 Sous-tâche / zone
-                <input
-                  list="zones-disponibles"
-                  value={editMoveZone}
-                  onChange={(e) => setEditMoveZone(e.target.value)}
-                  placeholder="Ex : CAB SECURITY (ou une nouvelle zone)"
-                  className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
-                />
-                <datalist id="zones-disponibles">
+                <select
+                  value={editMoveZoneNew ? '__new__' : editMoveZone}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    if (v === '__new__') {
+                      setEditMoveZoneNew(true)
+                      setEditMoveZone('')
+                    } else {
+                      setEditMoveZoneNew(false)
+                      setEditMoveZone(v)
+                    }
+                  }}
+                  className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
+                >
+                  <option value="">— Choisir une sous-tâche —</option>
                   {zones.map((z) => (
-                    <option key={z} value={z} />
+                    <option key={z} value={z}>
+                      {z}
+                    </option>
                   ))}
-                </datalist>
+                  <option value="__new__">➕ Nouvelle sous-tâche…</option>
+                </select>
               </label>
+              {editMoveZoneNew && (
+                <label className="block text-sm font-medium text-slate-700">
+                  Nom de la nouvelle sous-tâche
+                  <input
+                    autoFocus
+                    value={editMoveZone}
+                    onChange={(e) => setEditMoveZone(e.target.value)}
+                    placeholder="Ex : CAB SECURITY"
+                    className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
+                  />
+                </label>
+              )}
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setEditMoveIds(null)}
