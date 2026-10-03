@@ -254,12 +254,18 @@ function buildRecapPdf(profile, data) {
               doc.setTextColor(71, 85, 105)
               doc.text(String(t.seq || '—'), x + 4, yy + 3)
               doc.setTextColor(30, 41, 59)
-              // Description tronquée AVANT l'immatriculation (jamais de chevauchement)
+              // Description tronquée AVANT le code TRFX (jamais de chevauchement)
               doc.setFont('helvetica', 'normal')
+              // Fin de TRFX : après « TRFX900 » (ex. TRFX900ABCD → ABCD)
+              const rawBarcode = String(t.taskBarcode || '')
+              const trfxMatch = rawBarcode.match(/TRFX900(.*)$/i)
+              const tail = trfxMatch
+                ? trfxMatch[1] || rawBarcode
+                : rawBarcode || String(t.registration || '')
               let immatW = 0
-              if (t.registration) {
+              if (tail) {
                 doc.setFont('helvetica', 'bold')
-                immatW = doc.getTextWidth(String(t.registration)) + 3
+                immatW = doc.getTextWidth(tail) + 3
                 doc.setFont('helvetica', 'normal')
               }
               const maxDescW = Math.max(20, colW - 16 - immatW)
@@ -272,14 +278,10 @@ function buildRecapPdf(profile, data) {
                 desc += '…'
               }
               doc.text(desc, x + 12, yy + 3)
-              if (t.registration) {
+              if (tail) {
                 doc.setFont('helvetica', 'bold')
                 doc.setTextColor(3, 105, 161)
-                doc.text(
-                  `${t.registration}`,
-                  x + colW - 4 - doc.getTextWidth(`${t.registration}`),
-                  yy + 3
-                )
+                doc.text(tail, x + colW - 4 - doc.getTextWidth(tail), yy + 3)
                 doc.setTextColor(30, 41, 59)
               }
             },

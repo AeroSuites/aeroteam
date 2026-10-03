@@ -2,6 +2,7 @@ import { Fragment, useMemo, useEffect, useState } from 'react'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell, drawPriorityBadge, hidePriorityCellText } from '../utils/pdfPrint'
+import TeamChargeCards from '../components/TeamChargeCards'
 import { useApp } from '../context/AppContext'
 import {
   getCategoryColor,
@@ -751,6 +752,16 @@ export default function Dashboard() {
             Charge moyenne : {stats.avgPerTeam} tâches / équipe ·{' '}
             {stats.totalMembers} technicien(s) au total
           </p>
+        </div>
+      )}
+
+      {/* Détail des équipes en cartes (même récap que la vue manager) */}
+      {teams.length > 0 && (
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Users className="h-5 w-5 text-sky-500" /> Équipes et charge (détail)
+          </h2>
+          <TeamChargeCards teams={teams} tasks={tasks} assignments={assignments} />
         </div>
       )}
 
