@@ -109,7 +109,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint }) {
             ))}
           </div>
           {teamTasks.length > 0 && (
-            <div className="mt-2 space-y-2 max-h-72 overflow-y-auto">
+            <div className="mt-2 space-y-2">
               {zoneGroups.map(({ zone, blocks }) => (
                 <div key={zone}>
                   <p className="mb-1 inline-flex items-center gap-1.5">
@@ -171,17 +171,25 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint }) {
 // Liste des cartes d'équipes avec leur charge
 export default function TeamChargeCards({ teams, tasks, assignments, onExportPdf, onPrint }) {
   if (!(teams || []).length) return null
+  const columns = [[], []]
+  ;(teams || []).forEach((team, i) => {
+    columns[i % 2].push(team)
+  })
   return (
-    <div className="grid gap-3 md:grid-cols-2">
-      {(teams || []).map((team) => (
-        <TeamCard
-          key={team.id}
-          team={team}
-          tasks={tasks}
-          assignments={assignments}
-          onExportPdf={onExportPdf}
-          onPrint={onPrint}
-        />
+    <div className="flex flex-col md:flex-row items-start gap-3">
+      {columns.map((column, ci) => (
+        <div key={ci} className="flex w-full flex-col gap-3 md:flex-1">
+          {column.map((team) => (
+            <TeamCard
+              key={team.id}
+              team={team}
+              tasks={tasks}
+              assignments={assignments}
+              onExportPdf={onExportPdf}
+              onPrint={onPrint}
+            />
+          ))}
+        </div>
       ))}
     </div>
   )
