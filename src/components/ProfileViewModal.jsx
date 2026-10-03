@@ -10,6 +10,7 @@ hexToRgb,
 makeId,
 isAssignedTo,
 priorityToken,
+cleanShortValue,
 } from '../utils/helpers'
 import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell, drawPriorityBadge, hidePriorityCellText } from '../utils/pdfPrint'
 import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw, FolderKanban, Plane } from 'lucide-react'
@@ -20,18 +21,6 @@ function StatBox({ label, value }) {
       <div className="text-xl font-bold text-slate-900">{value}</div>
       <div className="text-[11px] text-slate-500">{label}</div>
     </div>
-  )
-}
-
-const groupBySubTask = (tasks) => {
-  const groups = {}
-  tasks.forEach((t) => {
-    const z = t.workArea || 'Autre'
-    if (!groups[z]) groups[z] = []
-    groups[z].push(t)
-  })
-  return Object.entries(groups).sort(
-    (a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0])
   )
 }
 
@@ -141,83 +130,134 @@ function buildRecapPdf(profile, data) {
     const teamTasks = (data?.tasks || []).filter((t) =>
       isAssignedTo(data.assignments, t.id, team.id)
     )
-    ensureRoom(16)
-    doc.setFillColor(...hexToRgb(team.color || '#64748b'))
-    doc.rect(margin, y - 4.5, contentWidth, 7, 'F')
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(255, 255, 255)
-    doc.text(
-      `${team.name} · ${teamTasks.length} tâche${teamTasks.length > 1 ? 's' : ''}`,
-      margin + 2,
-      y
-    )
-    doc.setTextColor(0, 0, 0)
-    y += 3
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8)
-    const memberLine = team.members.join(', ') || '—'
-    doc.text(`Membres : ${memberLine}`, margin, y + 4)
-    y += 7
-    groupByBlock(teamTasks).forEach(([blk, tasks]) => {
-      ensureRoom(12)
-      doc.setFontSize(9)
-      doc.setFont('helvetica', 'bold')
-      doc.text(
-        `${getCategoryLabel(blk)} (${tasks.length})`,
-        margin + 2,
-        y
-      )
-      y += 3
-      groupBySubTask(tasks).forEach(([zone, zoneTasks]) => {
-        autoTable(doc, {
-          startY: y,
-          pageBreak: 'auto',
-          margin: { left: margin + 4, right: margin },
-          head: [
-            [
-              {
-                content: `${zone} (${zoneTasks.length})`,
-                colSpan: 5,
-                styles: {
-                  fillColor: hexToRgb(getZoneColor(zone)),
-                  textColor: [255, 255, 255],
-                  fontStyle: 'bold',
-                  fontSize: 8,
-                },
-              },
-            ],
-          ],
-          body: zoneTasks.map((t) => [
+    // Une carte par équipe (même présentation que le récap à l'écran) :
+    // en-tête équipe, membres, puis zones → blocs → lignes
+    const body = []
+    const rowTasks = []
+    body.push([
+      {
+        content: `Membres : ${team.members.join(', ') || 'aucun'}`,
+        colSpan: 5,
+        styles: {
+          fillColor: [248, 250, 252],
+          textColor: [51, 65, 85],
+          fontStyle: 'normal',
+          fontSize: 7.5,
+        },
+      },
+    ])
+    rowTasks.push(null)
+
+    const zoneMap = {}
+    teamTasks.forEach((t) => {
+      const z = t.workArea || 'Autre'
+      const b = t.taskType || 'AUTRE'
+      if (!zoneMap[z]) zoneMap[z] = {}
+      if (!zoneMap[z][b]) zoneMap[z][b] = []
+      zoneMap[z][b].push(t)
+    })
+
+    Object.entries(zoneMap).forEach(([zone, blocksMap]) => {
+      const zoneCount = Object.values(blocksMap).flat().length
+      body.push([
+        {
+          content: `📍 ${zone} (${zoneCount})`,
+          colSpan: 5,
+          styles: {
+            fillColor: hexToRgb(getZoneColor(zone)),
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            fontSize: 8,
+          },
+        },
+      ])
+      rowTasks.push(null)
+      Object.entries(blocksMap).forEach(([blk, list]) => {
+        body.push([
+          {
+            content: `${getCategoryLabel(blk)} (${list.length})`,
+            colSpan: 5,
+            styles: {
+              fillColor: [241, 245, 249],
+              textColor: [30, 41, 59],
+              fontStyle: 'bold',
+              fontSize: 7.5,
+            },
+          },
+        ])
+        rowTasks.push(null)
+        list.forEach((t) => {
+          body.push([
             '',
-            t.seq !== undefined && t.seq !== '' ? String(t.seq) : '—',
+            cleanShortValue(t.seq) || '—',
             priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`),
             t.description || '',
             t.registration || '',
-          ]),
-          styles: { fontSize: 7.5, cellPadding: 1, textColor: [0, 0, 0], fontStyle: 'bold' },
-          columnStyles: {
-            0: { cellWidth: 7 },
-            1: { cellWidth: 12 },
-            2: { cellWidth: 14 },
-            4: { cellWidth: 22 },
-          },
-          didDrawCell: (data) => {
-            drawCheckboxCell(doc, data)
-            const t = zoneTasks[data.row.index]
-            drawPriorityBadge(
-              doc,
-              data,
-              t ? priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`) : ''
-            )
-          },
-          didParseCell: (data) => hidePriorityCellText(data),
+          ])
+          rowTasks.push(t)
         })
-        y = doc.lastAutoTable.finalY + 3
-        ensureRoom(6)
       })
     })
-    y += 4
+
+    ensureRoom(20)
+    autoTable(doc, {
+      startY: y,
+      pageBreak: 'auto',
+      margin: { left: margin, right: margin },
+      head: [
+        [
+          {
+            content: `${team.name} · ${teamTasks.length} tâche${
+              teamTasks.length > 1 ? 's' : ''
+            }`,
+            colSpan: 5,
+            styles: {
+              fillColor: hexToRgb(team.color || '#64748b'),
+              textColor: [255, 255, 255],
+              fontStyle: 'bold',
+              fontSize: 9,
+            },
+          },
+        ],
+      ],
+      body,
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 1.1,
+        lineWidth: 0.1,
+        lineColor: [226, 232, 240],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { cellWidth: 7 },
+        1: { cellWidth: 12 },
+        2: { cellWidth: 14 },
+        4: { cellWidth: 22 },
+      },
+      didDrawCell: (data) => {
+        drawCheckboxCell(doc, data)
+        const t = rowTasks[data.row.index]
+        drawPriorityBadge(
+          doc,
+          data,
+          t ? priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`) : ''
+        )
+      },
+      didParseCell: (data) => {
+        hidePriorityCellText(data)
+        // N° coloré selon le statut (comme à l'écran)
+        if (data.section === 'body' && data.column.index === 1) {
+          const t = rowTasks[data.row.index]
+          if (t && t.mtxStatus === 'COMPLETE') {
+            data.cell.styles.textColor = [22, 163, 74]
+          } else if (t && t.mtxStatus === 'PAUSE') {
+            data.cell.styles.textColor = [217, 119, 6]
+          }
+        }
+      },
+    })
+    y = doc.lastAutoTable.finalY + 6
   })
 
   return doc
