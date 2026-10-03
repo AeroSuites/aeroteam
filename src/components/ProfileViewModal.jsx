@@ -9,7 +9,6 @@ hexToRgb,
 makeId,
 isAssignedTo,
 priorityToken,
-cleanShortValue,
 } from '../utils/helpers'
 import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
 import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw, FolderKanban, Plane } from 'lucide-react'
@@ -118,48 +117,26 @@ function buildRecapPdf(profile, data) {
     y += 8
   }
 
-  // Équipes — une carte par équipe (même présentation que le récap à l'écran)
+  // Équipes — une CARTE par équipe avec sa charge (résumé par zone/bloc)
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
   ensureRoom(12)
   doc.text(`Équipes (${(data?.teams || []).length})`, margin, y)
   y += 8
 
+  const hoursOf = (list) =>
+    list.reduce((acc, t) => {
+      const h = parseFloat(t.scheduledHours)
+      return acc + (isNaN(h) ? 0 : h)
+    }, 0)
+  const fmtH = (n) => (Math.round(n * 10) / 10).toString().replace('.', ',') + ' h'
+
   ;(data?.teams || []).forEach((team) => {
     const teamTasks = (data?.tasks || []).filter((t) =>
       isAssignedTo(data.assignments, t.id, team.id)
     )
 
-    // En-tête de la carte (bandeau couleur de l'équipe)
-    ensureRoom(14)
-    doc.setFillColor(...hexToRgb(team.color || '#64748b'))
-    doc.roundedRect(margin, y, contentWidth, 7.5, 1.5, 1.5, 'F')
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(255, 255, 255)
-    doc.text(
-      `${team.name} · ${teamTasks.length} tâche${teamTasks.length > 1 ? 's' : ''}`,
-      margin + 2.5,
-      y + 5
-    )
-    doc.setTextColor(30, 41, 59)
-    y += 11
-
-    // Membres
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8)
-    const memberLines = doc.splitTextToSize(
-      `Membres : ${team.members.join(', ') || '—'}`,
-      contentWidth - 5
-    )
-    memberLines.forEach((l) => {
-      ensureRoom(4)
-      doc.text(l, margin + 3, y)
-      y += 3.8
-    })
-    y += 2
-
-    // Zones → blocs → lignes (comme le pop-up)
+    // Regroupement zone -> bloc (comme le récap à l'écran)
     const zoneMap = {}
     teamTasks.forEach((t) => {
       const z = t.workArea || 'Autre'
@@ -169,79 +146,88 @@ function buildRecapPdf(profile, data) {
       zoneMap[z][b].push(t)
     })
 
-    Object.entries(zoneMap).forEach(([zone, blocksMap]) => {
-      const zoneCount = Object.values(blocksMap).flat().length
-      const zoneText = `📍 ${zone} (${zoneCount})`
-      ensureRoom(10)
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(7.5)
-      const zw = doc.getTextWidth(zoneText) + 4
-      doc.setFillColor(...hexToRgb(getZoneColor(zone)))
-      doc.roundedRect(margin + 3, y - 3, zw, 4.6, 1.2, 1.2, 'F')
-      doc.setTextColor(255, 255, 255)
-      doc.text(zoneText, margin + 5, y)
-      doc.setTextColor(30, 41, 59)
-      y += 6
-
-      Object.entries(blocksMap).forEach(([blk, list]) => {
-        const blkText = `${getCategoryLabel(blk)} (${list.length})`
-        ensureRoom(9)
-        const bw = doc.getTextWidth(blkText) + 4
-        doc.setFillColor(...hexToRgb(getCategoryColor(blk)))
-        doc.roundedRect(margin + 7, y - 3, bw, 4.4, 1.2, 1.2, 'F')
+    // Contenu de la carte : lignes à dessiner (avec leur hauteur)
+    const rows = []
+    rows.push({
+      h: 8.5,
+      draw: (yy) => {
+        doc.setFillColor(...hexToRgb(team.color || '#64748b'))
+        doc.roundedRect(margin + 1.5, yy, contentWidth - 3, 7.5, 1.5, 1.5, 'F')
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(9)
         doc.setTextColor(255, 255, 255)
-        doc.text(blkText, margin + 9, y)
+        doc.text(
+          `${team.name} · ${teamTasks.length} tâche${teamTasks.length > 1 ? 's' : ''}${
+            teamTasks.length ? ` · ${fmtH(hoursOf(teamTasks))}` : ''
+          }`,
+          margin + 4,
+          yy + 5
+        )
         doc.setTextColor(30, 41, 59)
-        y += 5.5
+      },
+    })
+    rows.push({
+      h: 4,
+      draw: (yy) => {
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.text(`Membres : ${team.members.join(', ') || '—'}`, margin + 4, yy + 3)
+      },
+    })
 
-        list.forEach((t) => {
-          ensureRoom(5)
-          const tok = priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
-          // Case à cocher en début de ligne
-          doc.setDrawColor(100, 116, 139)
-          doc.setLineWidth(0.2)
-          doc.rect(margin + 9, y - 2.6, 2.6, 2.6)
-          // N° (couleur selon le statut)
+    Object.entries(zoneMap).forEach(([zone, blocksMap]) => {
+      const zoneTasks = Object.values(blocksMap).flat()
+      rows.push({
+        h: 5.5,
+        draw: (yy) => {
+          const txt = `${zone} (${zoneTasks.length} · ${fmtH(hoursOf(zoneTasks))})`
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(7.5)
-          if (t.mtxStatus === 'COMPLETE') doc.setTextColor(22, 163, 74)
-          else if (t.mtxStatus === 'PAUSE') doc.setTextColor(217, 119, 6)
-          else doc.setTextColor(100, 116, 139)
-          doc.text(cleanShortValue(t.seq) || '—', margin + 13, y)
+          const w = doc.getTextWidth(txt) + 4
+          doc.setFillColor(...hexToRgb(getZoneColor(zone)))
+          doc.roundedRect(margin + 4, yy + 0.4, w, 4.4, 1.2, 1.2, 'F')
+          doc.setTextColor(255, 255, 255)
+          doc.text(txt, margin + 6, yy + 3.7)
           doc.setTextColor(30, 41, 59)
-          // Description (tronquée à la largeur disponible)
-          doc.setFont('helvetica', 'normal')
-          const rightReserve = 20 + (tok ? 12 : 0)
-          const avail = contentWidth - 15 - rightReserve
-          const desc =
-            doc.splitTextToSize(String(t.description || ''), Math.max(30, avail))[0] || ''
-          doc.text(desc, margin + 19, y)
-          // Badge de priorité
-          if (tok) {
-            const tw = doc.getTextWidth(tok) + 3.5
-            doc.setFillColor(220, 38, 38)
-            doc.roundedRect(margin + contentWidth - rightReserve + 1, y - 2.8, tw, 3.8, 1, 1, 'F')
-            doc.setTextColor(255, 255, 255)
-            doc.setFont('helvetica', 'bold')
-            doc.setFontSize(6.5)
-            doc.text(tok, margin + contentWidth - rightReserve + 2.8, y - 0.3)
-            doc.setTextColor(30, 41, 59)
-            doc.setFontSize(7.5)
-          }
-          // Immatriculation
-          if (t.registration) {
-            doc.setFont('helvetica', 'bold')
-            doc.setTextColor(3, 105, 161)
-            doc.text(String(t.registration), margin + contentWidth - 18, y)
-            doc.setTextColor(30, 41, 59)
-          }
-          y += 4
-        })
-        y += 1.5
+        },
       })
-      y += 1.5
+      Object.entries(blocksMap).forEach(([blk, list]) => {
+        rows.push({
+          h: 5,
+          draw: (yy) => {
+            const txt = `${getCategoryLabel(blk)} (${list.length} · ${fmtH(hoursOf(list))})`
+            doc.setFont('helvetica', 'bold')
+            doc.setFontSize(7.5)
+            const w = doc.getTextWidth(txt) + 4
+            doc.setFillColor(...hexToRgb(getCategoryColor(blk)))
+            doc.roundedRect(margin + 8, yy + 0.5, w, 4.2, 1.2, 1.2, 'F')
+            doc.setTextColor(255, 255, 255)
+            doc.text(txt, margin + 10, yy + 3.7)
+            doc.setTextColor(30, 41, 59)
+          },
+        })
+      })
+      rows.push({ h: 1.5, draw: () => {} })
     })
-    y += 4
+
+    const totalH = rows.reduce((a, r) => a + r.h, 0) + 6
+    const fitsOnPage = totalH <= pageHeight - 24
+
+    if (fitsOnPage) {
+      ensureRoom(totalH + 4)
+      // Cadre de la carte
+      doc.setDrawColor(203, 213, 225)
+      doc.setLineWidth(0.3)
+      doc.roundedRect(margin, y, contentWidth, totalH, 2.5, 2.5, 'S')
+      y += 3
+    }
+
+    rows.forEach((r) => {
+      if (!fitsOnPage) ensureRoom(r.h + 2)
+      r.draw(y)
+      y += r.h
+    })
+    y += 6
   })
   return doc
 }
