@@ -636,6 +636,18 @@ export async function addMessage(dossierId, contenu, contenuHtml, images, auteur
   return data
 }
 
+export async function updateMessage(id, contenu, contenuHtml, auteurKey, adminCode) {
+  const { data, error } = await supabase.rpc('update_message', {
+    p_id: id,
+    p_contenu: contenu,
+    p_contenu_html: contenuHtml,
+    p_auteur_key: auteurKey,
+    p_admin_code: adminCode || null,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function deleteMessage(id, auteurKey, adminCode) {
   const { data, error } = await supabase.rpc('delete_message', {
     p_id: id,

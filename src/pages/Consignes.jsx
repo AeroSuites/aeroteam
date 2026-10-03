@@ -95,6 +95,38 @@ export default function Consignes() {
   // Insertion de pochettes virtuelles dans la consigne
   const [pocketPickerOpen, setPocketPickerOpen] = useState(false)
   const [pocketPick, setPocketPick] = useState([])
+  // Modification d'un message envoyé
+  const [editMsgId, setEditMsgId] = useState(null)
+  const [editMsgHtml, setEditMsgHtml] = useState('')
+  const [editMsgText, setEditMsgText] = useState('')
+  const [editMsgBusy, setEditMsgBusy] = useState(false)
+  const [editMsgError, setEditMsgError] = useState('')
+
+  const saveEditedMessage = async () => {
+    if (!editMsgId) return
+    setEditMsgBusy(true)
+    setEditMsgError('')
+    try {
+      const res = await profileStore.updateMessage(
+        editMsgId,
+        editMsgText,
+        editMsgHtml,
+        myKey,
+        activeProfile?.code
+      )
+      if (res?.error === 'not_allowed') setEditMsgError('Vous ne pouvez modifier que vos messages.')
+      else if (res?.error) setEditMsgError('Échec de la modification.')
+      else {
+        setEditMsgId(null)
+        setEditMsgHtml('')
+        setEditMsgText('')
+        await loadMessages(selectedDossierId)
+      }
+    } catch {
+      setEditMsgError('Échec de la modification (hors ligne ?).')
+    }
+    setEditMsgBusy(false)
+  }
 
   // Lignes d'une pochette (les tâches référencées, préparation puis tâches)
   const pocketLines = (pocket) => {
@@ -663,24 +695,74 @@ export default function Consignes() {
                             {m.auteur || '—'}{' '}
                             <span className="font-normal text-slate-400">
                               · {new Date(m.created_at).toLocaleString('fr-FR')}
+                              {m.edited_at ? ' · modifié' : ''}
                             </span>
                           </span>
-                          {canDelete && (
-                            <button
-                              onClick={() => removeReply(m)}
-                              className="text-slate-400 hover:text-red-600"
-                              title={
-                                mine
-                                  ? 'Supprimer votre réponse'
-                                  : 'Supprimer cette réponse (administrateur)'
-                              }
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                          {(mine || isAdmin) && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditMsgId(m.id)
+                                  setEditMsgHtml(m.contenu_html || '')
+                                  setEditMsgText(m.contenu || '')
+                                  setEditMsgError('')
+                                }}
+                                className="text-slate-400 hover:text-sky-600"
+                                title="Modifier ce message"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              {canDelete && (
+                                <button
+                                  onClick={() => removeReply(m)}
+                                  className="text-slate-400 hover:text-red-600"
+                                  title={
+                                    mine
+                                      ? 'Supprimer votre réponse'
+                                      : 'Supprimer cette réponse (administrateur)'
+                                  }
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                         <div className="p-3">
-                          {m.contenu_html ? (
+                          {editMsgId === m.id ? (
+                            <div>
+                              <RichEditor
+                                value={editMsgHtml}
+                                onChange={(html, text) => {
+                                  setEditMsgHtml(html)
+                                  setEditMsgText(text)
+                                }}
+                                placeholder="Modifier le message…"
+                                minHeight={70}
+                              />
+                              {editMsgError && (
+                                <p className="text-sm text-red-600 mt-2">{editMsgError}</p>
+                              )}
+                              <div className="flex items-center gap-2 mt-2">
+                                <button
+                                  onClick={saveEditedMessage}
+                                  disabled={editMsgBusy || (!editMsgText && !editMsgHtml)}
+                                  className="bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 disabled:opacity-50 text-xs font-semibold"
+                                >
+                                  {editMsgBusy ? 'Enregistrement…' : 'Enregistrer'}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditMsgId(null)
+                                    setEditMsgError('')
+                                  }}
+                                  className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5"
+                                >
+                                  Annuler
+                                </button>
+                              </div>
+                            </div>
+                          ) : m.contenu_html ? (
                             <div
                               className="message-html text-sm text-slate-800"
                               dangerouslySetInnerHTML={{
