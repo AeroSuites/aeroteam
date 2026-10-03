@@ -528,28 +528,29 @@ export default function Taches() {
               className={`bg-white rounded-xl shadow overflow-hidden${expanded ? ' ring-2 ring-black' : ''}`}
             >
               <div
-                className="px-3 sm:px-5 py-2 sm:py-3 flex items-center justify-between flex-wrap gap-2 cursor-pointer"
+                className="px-3 sm:px-5 py-2 flex items-center justify-between flex-wrap gap-2 cursor-pointer"
                 style={{ backgroundColor: zoneColor }}
                 onClick={() => toggleZone(zone)}
                 title={expanded ? 'Replier cette zone' : 'Déplier cette zone'}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   {expanded ? (
-                    <ChevronDown className="h-5 sm:h-6 w-5 sm:w-6 text-white" />
+                    <ChevronDown className="h-5 w-5 text-white shrink-0" />
                   ) : (
-                    <ChevronRight className="h-5 sm:h-6 w-5 sm:w-6 text-white" />
+                    <ChevronRight className="h-5 w-5 text-white shrink-0" />
                   )}
-                  <div>
-                    <h2 className="font-bold text-white text-base sm:text-lg">
-                      {zone}{' '}
-                      <span className="font-normal opacity-80">({zoneTasks.length})</span>
-                    </h2>
-                    {memberNames.length > 0 && (
-                      <p className="text-white font-bold text-sm mt-0.5">
-                        Membres : {memberNames.join(', ')}
-                      </p>
-                    )}
-                  </div>
+                  <h2 className="font-bold text-white text-sm shrink-0">
+                    {zone}{' '}
+                    <span className="font-normal opacity-80">({zoneTasks.length})</span>
+                  </h2>
+                  {memberNames.length > 0 && (
+                    <span
+                      className="text-white/90 text-xs font-semibold truncate"
+                      title={`Membres : ${memberNames.join(', ')}`}
+                    >
+                      Membres : {memberNames.join(', ')}
+                    </span>
+                  )}
                 </div>
                 <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                   {transferredCount > 0 && (
