@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell, drawPriorityBadge, hidePriorityCellText } from '../utils/pdfPrint'
 import TeamChargeCards from '../components/TeamChargeCards'
+import { buildRecapPdf } from '../utils/recapPdf'
 import { useApp } from '../context/AppContext'
 import {
   getCategoryColor,
@@ -47,7 +48,7 @@ function groupByZone(blockTasks) {
 }
 
 export default function Dashboard() {
-  const { tasks, teams, assignments, notes, updateNote, removeNote, dayMembers, dayLeaders, activeProfile } = useApp()
+  const { tasks, teams, assignments, notes, updateNote, removeNote, members, dayMembers, dayLeaders, pockets, activeProfile } = useApp()
   const [selectedTeamId, setSelectedTeamId] = useState(null)
   const [editingConsigneId, setEditingConsigneId] = useState(null)
   const [consigneText, setConsigneText] = useState('')
@@ -758,9 +759,57 @@ export default function Dashboard() {
       {/* Détail des équipes en cartes (même récap que la vue manager) */}
       {teams.length > 0 && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Users className="h-5 w-5 text-sky-500" /> Équipes et charge (détail)
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5 text-sky-500" /> Équipes et charge (détail)
+            </h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const doc = buildRecapPdf(activeProfile, {
+                    teams,
+                    tasks,
+                    assignments,
+                    members,
+                    dayMembers,
+                    notes,
+                    pockets,
+                  })
+                  doc.save(
+                    `recap-${
+                      (activeProfile?.name || 'profil')
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-|-$/g, '') || 'profil'
+                    }-${new Date().toISOString().slice(0, 10)}.pdf`
+                  )
+                }}
+                className="flex items-center gap-1.5 bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 text-sm font-semibold"
+                title="Télécharger le récap des équipes en PDF (même présentation que la vue manager)"
+              >
+                <FileDown className="h-4 w-4" /> Exporter en PDF
+              </button>
+              <button
+                onClick={() =>
+                  openPdfPrint(
+                    buildRecapPdf(activeProfile, {
+                      teams,
+                      tasks,
+                      assignments,
+                      members,
+                      dayMembers,
+                      notes,
+                      pockets,
+                    })
+                  )
+                }
+                className="flex items-center gap-1.5 text-sky-700 border border-sky-200 hover:bg-sky-50 px-3 py-1.5 rounded-md text-sm font-semibold"
+                title="Imprimer le récap des équipes"
+              >
+                <Printer className="h-4 w-4" /> Imprimer
+              </button>
+            </div>
+          </div>
           <TeamChargeCards teams={teams} tasks={tasks} assignments={assignments} />
         </div>
       )}
