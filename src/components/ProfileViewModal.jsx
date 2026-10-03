@@ -83,9 +83,9 @@ function buildRecapPdf(profile, data) {
   let y = 28
 
   const ensureRoom = (needed) => {
-    if (y + needed > pageHeight - 15) {
+    if (y + needed > pageHeight - 11) {
       doc.addPage()
-      y = 14
+      y = 12
     }
   }
 
@@ -96,19 +96,19 @@ function buildRecapPdf(profile, data) {
     doc.text('Consignes', margin, y)
     y += 6
     notes.forEach((n) => {
-      ensureRoom(12)
-      doc.setFontSize(10)
+      ensureRoom(10)
+      doc.setFontSize(8.5)
       doc.setFont('helvetica', 'bold')
       doc.text(String(n.title).replace('[C] ', ''), margin, y)
-      y += 4
+      y += 3.5
       doc.setFont('helvetica', 'normal')
       const lines = doc.splitTextToSize(n.content || '', contentWidth)
       lines.forEach((line) => {
-        ensureRoom(4)
+        ensureRoom(3.5)
         doc.text(line, margin, y)
-        y += 4
+        y += 3.5
       })
-      y += 3
+      y += 2.5
     })
   } else {
     doc.setFontSize(10)
@@ -127,7 +127,7 @@ function buildRecapPdf(profile, data) {
   const gap = 6
   const colW = (contentWidth - gap) / 2
   const colX = [margin, margin + colW + gap]
-  const chipH = 4.2
+  const chipH = 3.9
 
   const drawChip = (txt, x, yy, fill, opts = {}) => {
     const fs = opts.fontSize || 6.5
@@ -160,7 +160,7 @@ function buildRecapPdf(profile, data) {
 
     const items = []
     items.push({
-      h: 9,
+      h: 8.5,
       draw: (x, yy) => {
         doc.setFillColor(...hexToRgb(team.color || '#64748b'))
         doc.roundedRect(x + 1.5, yy + 1, colW - 3, 7.5, 1.5, 1.5, 'F')
@@ -169,9 +169,9 @@ function buildRecapPdf(profile, data) {
         doc.setTextColor(255, 255, 255)
         const label = `${team.name}`
         const count = `${teamTasks.length} tâche${teamTasks.length > 1 ? 's' : ''}`
-        doc.text(doc.splitTextToSize(label, colW - 30)[0], x + 4, yy + 6)
+        doc.text(doc.splitTextToSize(label, colW - 30)[0], x + 4, yy + 5.6)
         doc.setFontSize(7)
-        doc.text(count, x + colW - 4 - doc.getTextWidth(count), yy + 6)
+        doc.text(count, x + colW - 4 - doc.getTextWidth(count), yy + 5.6)
         doc.setTextColor(30, 41, 59)
       },
     })
@@ -247,23 +247,39 @@ function buildRecapPdf(profile, data) {
         })
         list.forEach((t) => {
           items.push({
-            h: 4,
+            h: 3.7,
             draw: (x, yy) => {
               doc.setFont('helvetica', 'bold')
               doc.setFontSize(6.5)
               doc.setTextColor(71, 85, 105)
               doc.text(String(t.seq || '—'), x + 4, yy + 3)
               doc.setTextColor(30, 41, 59)
+              // Description tronquée AVANT l'immatriculation (jamais de chevauchement)
               doc.setFont('helvetica', 'normal')
-              const immat = t.registration ? `  ${t.registration}` : ''
-              const avail = colW - 12 - doc.getTextWidth(immat)
-              const desc =
-                doc.splitTextToSize(String(t.description || ''), Math.max(20, avail))[0] || ''
+              let immatW = 0
+              if (t.registration) {
+                doc.setFont('helvetica', 'bold')
+                immatW = doc.getTextWidth(String(t.registration)) + 3
+                doc.setFont('helvetica', 'normal')
+              }
+              const maxDescW = Math.max(20, colW - 16 - immatW)
+              const fullDesc = String(t.description || '')
+              let desc = fullDesc
+              if (doc.getTextWidth(desc) > maxDescW) {
+                while (desc.length > 1 && doc.getTextWidth(desc + '…') > maxDescW) {
+                  desc = desc.slice(0, -1)
+                }
+                desc += '…'
+              }
               doc.text(desc, x + 12, yy + 3)
               if (t.registration) {
                 doc.setFont('helvetica', 'bold')
                 doc.setTextColor(3, 105, 161)
-                doc.text(`${t.registration}`, x + colW - 4 - doc.getTextWidth(`${t.registration}`), yy + 3)
+                doc.text(
+                  `${t.registration}`,
+                  x + colW - 4 - doc.getTextWidth(`${t.registration}`),
+                  yy + 3
+                )
                 doc.setTextColor(30, 41, 59)
               }
             },
@@ -272,7 +288,7 @@ function buildRecapPdf(profile, data) {
       })
     })
 
-    const h = items.reduce((a, it) => a + it.h, 0) + 6
+    const h = items.reduce((a, it) => a + it.h, 0) + 5
     return { h, items }
   }
 
@@ -280,7 +296,7 @@ function buildRecapPdf(profile, data) {
     const pair = [data.teams[i], data.teams[i + 1]].filter(Boolean)
     const cards = pair.map((team) => buildTeamCard(team))
     const rowH = Math.max(...cards.map((c) => c.h))
-    ensureRoom(rowH + 6)
+    ensureRoom(rowH + 4)
     cards.forEach((card, k) => {
       const x = colX[k]
       doc.setDrawColor(203, 213, 225)
@@ -292,7 +308,7 @@ function buildRecapPdf(profile, data) {
         cy += it.h
       })
     })
-    y += rowH + 6
+    y += rowH + 4
   }
   return doc
 }
