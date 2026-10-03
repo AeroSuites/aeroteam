@@ -1,3 +1,4 @@
+import { FileDown, Printer } from 'lucide-react'
 import {
   getCategoryColor,
   getCategoryLabel,
@@ -39,7 +40,13 @@ function groupTeamTasks(teamTasks) {
 }
 
 // Cartes d'équipes avec leur charge (même présentation que le récap manager)
-export default function TeamChargeCards({ teams, tasks, assignments }) {
+export default function TeamChargeCards({
+  teams,
+  tasks,
+  assignments,
+  onExportPdf,
+  onPrint,
+}) {
   if (!(teams || []).length) return null
   return (
     <div className="grid gap-3 md:grid-cols-2">
@@ -55,8 +62,32 @@ export default function TeamChargeCards({ teams, tasks, assignments }) {
               style={{ backgroundColor: team.color || '#64748b' }}
             >
               <span className="font-bold text-sm truncate">{team.name}</span>
-              <span className="text-xs opacity-90 shrink-0">
-                {teamTasks.length} tâche{teamTasks.length > 1 ? 's' : ''}
+              <span className="flex items-center gap-1.5 shrink-0">
+                {(onExportPdf || onPrint) && (
+                  <span className="flex items-center gap-0.5">
+                    {onExportPdf && (
+                      <button
+                        onClick={() => onExportPdf(team)}
+                        className="text-white/80 hover:text-white p-1"
+                        title={`Exporter la charge de « ${team.name} » en PDF (mise en page tableau)`}
+                      >
+                        <FileDown className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {onPrint && (
+                      <button
+                        onClick={() => onPrint(team)}
+                        className="text-white/80 hover:text-white p-1"
+                        title={`Imprimer la charge de « ${team.name} »`}
+                      >
+                        <Printer className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </span>
+                )}
+                <span className="text-xs opacity-90">
+                  {teamTasks.length} tâche{teamTasks.length > 1 ? 's' : ''}
+                </span>
               </span>
             </div>
             <div className="p-3">

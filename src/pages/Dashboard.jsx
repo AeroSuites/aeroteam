@@ -1,7 +1,7 @@
-import { Fragment, useMemo, useEffect, useState } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell, drawPriorityBadge, hidePriorityCellText } from '../utils/pdfPrint'
+import { openPdfPrint, drawCheckboxCell, drawPriorityBadge, hidePriorityCellText } from '../utils/pdfPrint'
 import TeamChargeCards from '../components/TeamChargeCards'
 import { buildRecapPdf } from '../utils/recapPdf'
 import { useApp } from '../context/AppContext'
@@ -9,15 +9,13 @@ import {
   getCategoryColor,
   getZoneColor,
   groupTasksByCategory,
-getFirstName,
-getCategoryLabel,
-hexToRgb,
-isAssignedTo,
-assignmentTeams,
-assignedTaskCount,
-consigneDay,
-priorityToken,
-logicalToday,
+  getCategoryLabel,
+  hexToRgb,
+  isAssignedTo,
+  assignedTaskCount,
+  consigneDay,
+  priorityToken,
+  logicalToday,
 } from '../utils/helpers'
 import {
   ClipboardList,
@@ -27,10 +25,8 @@ import {
   Clock,
   ChevronDown,
   ChevronRight,
-  X,
   Printer,
   FileDown,
-  Image as ImageIcon,
   Pencil,
   Trash2,
   Check,
@@ -49,7 +45,6 @@ function groupByZone(blockTasks) {
 
 export default function Dashboard() {
   const { tasks, teams, assignments, notes, updateNote, removeNote, members, dayMembers, dayLeaders, pockets, activeProfile } = useApp()
-  const [selectedTeamId, setSelectedTeamId] = useState(null)
   const [editingConsigneId, setEditingConsigneId] = useState(null)
   const [consigneText, setConsigneText] = useState('')
 
@@ -96,31 +91,8 @@ export default function Dashboard() {
       prev.includes(block) ? prev.filter((b) => b !== block) : [...prev, block]
     )
 
-  const selectedTeam = teams.find((t) => t.id === selectedTeamId) || null
-  const selectedTeamTasks = selectedTeam
-    ? tasks.filter((t) => isAssignedTo(assignments, t.id, selectedTeam.id))
-    : []
-
-  // Tâches structurées comme le PDF : bloc -> sous-tâche (zone) -> lignes
-  const buildTeamStructured = (tasksList) => {
-    const blocks = {}
-    tasksList.forEach((t) => {
-      const b = t.taskType || 'AUTRE'
-      if (!blocks[b]) blocks[b] = {}
-      const z = t.workArea || 'Autre'
-      if (!blocks[b][z]) blocks[b][z] = []
-      blocks[b][z].push(t)
-    })
-    return Object.entries(blocks).map(([blk, zones]) => ({
-      blk,
-      zones: Object.entries(zones)
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([zone, tasks]) => ({ zone, tasks })),
-    }))
-  }
-  const teamStructured = buildTeamStructured(selectedTeamTasks)
-
-  const buildTeamPdf = () => {
+  const buildTeamPdf = (team) => {
+    const teamTasks = tasks.filter((x) => isAssignedTo(assignments, x.id, team.id))
     const doc = new jsPDF()
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
@@ -129,19 +101,19 @@ export default function Dashboard() {
 
     doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
-    doc.text(selectedTeam.name, margin, 15)
+    doc.text(team.name, margin, 15)
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
     doc.text(
-      `${selectedTeamTasks.length} tâche(s) · ${selectedTeam.members.length} membre(s) : ${
-        selectedTeam.members.join(', ') || '—'
+      `${teamTasks.length} tâche(s) · ${team.members.length} membre(s) : ${
+        team.members.join(', ') || '—'
       } · ${new Date().toLocaleDateString('fr-FR')}`,
       margin,
       21
     )
 
     const groups = {}
-    selectedTeamTasks.forEach((t) => {
+    teamTasks.forEach((t) => {
       const blk = t.taskType || 'AUTRE'
       const zone = t.workArea || 'Sans zone'
       if (!groups[blk]) groups[blk] = { zones: {} }
@@ -238,26 +210,6 @@ export default function Dashboard() {
     return doc
   }
 
-  const exportTeamPdf = () => {
-    if (!selectedTeam || !selectedTeamTasks.length) return
-    const doc = buildTeamPdf()
-    doc.save(
-      `equipe-${selectedTeam.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '') || 'sans-nom'}-${new Date().toISOString().slice(0, 10)}.pdf`
-    )
-  }
-
-  const printTeamPdf = () => {
-    if (!selectedTeam || !selectedTeamTasks.length) return
-    openPdfPrint(buildTeamPdf())
-  }
-
-  const zones = useMemo(() => {
-    return [...new Set(tasks.map((t) => t.workArea).filter(Boolean))].sort()
-  }, [tasks])
-
   const stats = useMemo(() => {
     const total = tasks.length
     const assigned = assignedTaskCount(assignments)
@@ -285,50 +237,6 @@ export default function Dashboard() {
       return acc
     }, 0)
   }, [tasks])
-
-  const teamLoad = useMemo(
-    () =>
-      teams.map((team) => {
-        const teamTaskIds = Object.entries(assignments)
-          .filter(([, ids]) =>
-            Array.isArray(ids) ? ids.includes(team.id) : ids === team.id
-          )
-          .map(([taskId]) => taskId)
-        const teamTasks = tasks.filter((t) => teamTaskIds.includes(t.id))
-        const byBlock = {}
-        teamTasks.forEach((t) => {
-          const zone = t.workArea || 'Autre'
-          const key = `${t.taskType || 'AUTRE'} / ${zone}`
-          if (!byBlock[key]) byBlock[key] = { count: 0, seqs: [], done: [], paused: [] }
-          byBlock[key].count += 1
-          if (t.seq !== undefined && t.seq !== '') {
-            const seq = String(t.seq)
-            byBlock[key].seqs.push(seq)
-            if (t.mtxStatus === 'COMPLETE') byBlock[key].done.push(seq)
-            else if (t.mtxStatus === 'PAUSE') byBlock[key].paused.push(seq)
-          }
-        })
-        Object.values(byBlock).forEach((v) =>
-          v.seqs.sort((a, b) => Number(a) - Number(b))
-        )
-        return {
-          ...team,
-          count: teamTasks.length,
-          membersCount: team.members.length,
-          memberFirstNames: team.members.map(getFirstName),
-          byBlock,
-          perMember: team.members.length
-            ? (teamTasks.length / team.members.length).toFixed(1)
-            : '0',
-        }
-      }),
-    [teams, tasks, assignments]
-  )
-
-  const allUnassigned = useMemo(
-    () => tasks.filter((t) => assignmentTeams(assignments, t.id).length === 0),
-    [tasks, assignments]
-  )
 
   return (
     <div className="space-y-6">
@@ -648,120 +556,12 @@ export default function Dashboard() {
         )}
       </div>
 
-      {teams.length > 0 && (
-        <div className="bg-white rounded-xl shadow p-4 sm:p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-500" /> Récap détaillé de la charge par équipe
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[560px]">
-              <thead>
-                <tr className="text-left bg-slate-50 border-b">
-                  <th className="px-4 py-2 font-semibold text-slate-700">Équipe</th>
-                  <th className="px-4 py-2 font-semibold text-slate-700">Tâches</th>
-                  <th className="px-4 py-2 font-semibold text-slate-700">Membres</th>
-                  <th className="px-4 py-2 font-semibold text-slate-700">Par membre</th>
-                  <th className="px-4 py-2 font-semibold text-slate-700">Blocs (répartition)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teamLoad
-                  .sort((a, b) => b.count - a.count)
-                  .map((team) => (
-                    <tr key={team.id} className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => setSelectedTeamId(team.id)}>
-                      <td className="px-4 py-2 font-medium underline decoration-dotted underline-offset-4" style={{ color: team.color }}>
-                        {team.name}
-                        {team.memberFirstNames.length > 0 && (
-                          <div className="text-xs font-normal text-slate-500 underline-none pt-0.5">
-                            {team.memberFirstNames.join(', ')}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-2">{team.count}</td>
-                      <td className="px-4 py-2">{team.membersCount}</td>
-                      <td className="px-4 py-2">{team.perMember}</td>
-                      <td className="px-4 py-2">
-                        <div className="flex flex-col gap-1">
-                          {Object.keys(team.byBlock).length === 0 && (
-                            <span className="text-xs text-slate-400 italic">—</span>
-                          )}
-                          {Object.entries(team.byBlock)
-                            .sort((a, b) => b[1].count - a[1].count)
-                            .map(([key, info]) => {
-                              const [blk, zone] = key.split(' / ')
-                              const blkColor = getCategoryColor(blk)
-                              const zoneColor = getZoneColor(zone, zones)
-                              return (
-                                <div key={key} className="flex flex-col gap-0.5">
-                                  <div className="flex items-center gap-1.5">
-                                    <span
-                                      className="px-2 py-0.5 rounded-full text-xs font-bold text-white whitespace-nowrap"
-                                      style={{ backgroundColor: blkColor }}
-                                    >
-                                      {getCategoryLabel(blk)}
-                                    </span>
-                                    <span
-                                      className="px-2 py-0.5 rounded-full text-xs font-bold text-white whitespace-nowrap"
-                                      style={{ backgroundColor: zoneColor }}
-                                    >
-                                      {zone}
-                                    </span>
-                                    <span className="text-xs text-slate-500">
-                                      · {info.count}
-                                    </span>
-                                  </div>
-                                  {info.seqs.length > 0 && (
-                                    <div className="flex flex-wrap items-center gap-1 ml-1">
-                                      {info.seqs.map((s) => {
-                                        const isDone = info.done.includes(s)
-                                        const isPause = info.paused.includes(s)
-                                        return (
-                                          <span
-                                            key={s}
-                                            className={`text-[10px] font-bold rounded-full px-1.5 py-0.5 whitespace-nowrap ${
-                                              isDone
-                                                ? 'bg-green-600 text-white'
-                                                : isPause
-                                                ? 'bg-amber-500 text-white'
-                                                : 'bg-slate-100 text-slate-600 border border-slate-200'
-                                            }`}
-                                            title={
-                                              isDone
-                                                ? `N° ${s} — COMPLETE`
-                                                : isPause
-                                                ? `N° ${s} — en PAUSE`
-                                                : `N° ${s}`
-                                            }
-                                          >
-                                            {s}
-                                          </span>
-                                        )
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              )
-                            })}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="text-xs text-slate-400 pt-3">
-            Charge moyenne : {stats.avgPerTeam} tâches / équipe ·{' '}
-            {stats.totalMembers} technicien(s) au total
-          </p>
-        </div>
-      )}
-
-      {/* Détail des équipes en cartes (même récap que la vue manager) */}
+      {/* Équipes et charge : cartes + exports (individuel tableau / récap complet) */}
       {teams.length > 0 && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Users className="h-5 w-5 text-sky-500" /> Équipes et charge (détail)
+              <Users className="h-5 w-5 text-sky-500" /> Équipes et charge
             </h2>
             <div className="flex items-center gap-2">
               <button
@@ -785,9 +585,9 @@ export default function Dashboard() {
                   )
                 }}
                 className="flex items-center gap-1.5 bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 text-sm font-semibold"
-                title="Télécharger le récap des équipes en PDF (même présentation que la vue manager)"
+                title="Récap complet de toutes les équipes (cartes) — même document que la vue manager"
               >
-                <FileDown className="h-4 w-4" /> Exporter en PDF
+                <FileDown className="h-4 w-4" /> Récap complet (PDF)
               </button>
               <button
                 onClick={() =>
@@ -804,171 +604,24 @@ export default function Dashboard() {
                   )
                 }
                 className="flex items-center gap-1.5 text-sky-700 border border-sky-200 hover:bg-sky-50 px-3 py-1.5 rounded-md text-sm font-semibold"
-                title="Imprimer le récap des équipes"
+                title="Imprimer le récap complet"
               >
                 <Printer className="h-4 w-4" /> Imprimer
               </button>
             </div>
           </div>
-          <TeamChargeCards teams={teams} tasks={tasks} assignments={assignments} />
-        </div>
-      )}
-
-      {selectedTeam && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 print-target" onClick={() => setSelectedTeamId(null)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 py-3 flex items-center justify-between border-b" style={{ backgroundColor: selectedTeam.color }}>
-              <div className="text-white">
-                <h2 className="font-bold text-lg">{selectedTeam.name}</h2>
-                <p className="text-white/90 text-xs">
-                  {selectedTeamTasks.length} tâche(s) assignée(s) ·{' '}
-                  {selectedTeam.members.length} membre(s) : {selectedTeam.members.join(', ') || '—'}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={exportTeamPdf}
-                  disabled={selectedTeamTasks.length === 0}
-                  className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-1.5 disabled:opacity-50"
-                  title="Exporter la charge de l'équipe en PDF"
-                >
-                  <FileDown className="h-4 w-4" /> Exporter en PDF
-                </button>
-                <button
-                  onClick={() => {
-                    if (!selectedTeam || !selectedTeamTasks.length) return
-                    downloadPdfAsJpeg(
-                      buildTeamPdf(),
-                      `equipe-${selectedTeam.name.replace(/[^a-z0-9]+/gi, '-') || 'sans-nom'}.pdf`
-                    )
-                  }}
-                  className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-1.5 disabled:opacity-50"
-                  title="Exporter la charge de l'équipe en image JPEG"
-                >
-                  <ImageIcon className="h-4 w-4" /> JPEG
-                </button>
-                <button
-                  onClick={printTeamPdf}
-                  className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-1.5"
-                  title="Imprimer la charge de l'équipe"
-                >
-                  <Printer className="h-4 w-4" /> Imprimer
-                </button>
-                <button onClick={() => setSelectedTeamId(null)} className="text-white/80 hover:text-white">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-            <div className="overflow-y-auto p-4">
-              {selectedTeamTasks.length === 0 && (
-                <p className="text-slate-500">Aucune tâche assignée à cette équipe.</p>
-              )}
-              {selectedTeamTasks.length > 0 && (
-                <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[520px]">
-                  <thead>
-                    <tr className="text-left bg-slate-100 rounded">
-                                <th className="px-3 py-2 font-bold text-black">TRFX</th>
-                      <th className="px-3 py-2 font-semibold text-slate-700">N°</th>
-                      <th className="px-3 py-2 font-semibold text-slate-700">Type</th>
-                      <th className="px-3 py-2 font-semibold text-slate-700">Bloc</th>
-                      <th className="px-3 py-2 font-semibold text-slate-700">Tâche</th>
-                      <th className="px-3 py-2 font-semibold text-slate-700">Appareil</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {teamStructured.map(({ blk, zones }) => (
-                      <Fragment key={blk}>
-                        <tr className="bg-slate-200/70">
-                          <td colSpan={6} className="px-3 py-1 text-xs font-bold text-white" style={{ backgroundColor: getCategoryColor(blk) }}>
-                            Bloc {getCategoryLabel(blk)}{' '}
-                            <span className="font-normal opacity-90">
-                              ({zones.reduce((a, z) => a + z.tasks.length, 0)} tâche
-                              {zones.reduce((a, z) => a + z.tasks.length, 0) > 1 ? 's' : ''})
-                            </span>
-                          </td>
-                        </tr>
-                        {zones.map(({ zone, tasks }) => (
-                          <Fragment key={zone}>
-                            <tr className="bg-slate-50">
-                              <td colSpan={6} className="px-3 py-1 text-xs font-bold text-slate-700">
-                                {'📍 '}{zone}{' '}
-                                <span className="font-normal text-slate-400">({tasks.length})</span>
-                              </td>
-                            </tr>
-                            {tasks.map((task) => (
-                              <tr key={task.id} className="border-b hover:bg-slate-50">
-                                <td className="px-3 py-2 font-mono font-bold text-xs text-black whitespace-nowrap">
-                                  {task.taskBarcode || '—'}
-                                </td>
-                                <td className="px-3 py-2 whitespace-nowrap">
-                                  {task.mtxStatus === 'COMPLETE' ? (
-                                    <span
-                                      className="inline-flex items-center justify-center min-w-[36px] px-2 py-0.5 rounded-full bg-green-600 text-white text-xs font-bold"
-                                      title="Tâche COMPLETE"
-                                    >
-                                      {task.seq || '—'}
-                                    </span>
-                                  ) : task.mtxStatus === 'PAUSE' ? (
-                                    <span
-                                      className="inline-flex items-center justify-center min-w-[36px] px-2 py-0.5 rounded-full bg-amber-500 text-white text-xs font-bold"
-                                      title="Tâche en PAUSE"
-                                    >
-                                      {task.seq || '—'}
-                                    </span>
-                                  ) : (
-                                    <span className="font-bold text-slate-500">{task.seq || '—'}</span>
-                                  )}
-                                </td>
-                                <td className="px-3 py-2 whitespace-nowrap">
-                                  <span
-                                    className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
-                                    style={{ backgroundColor: getCategoryColor(task.taskType) }}
-                                  >
-                                    {getCategoryLabel(task.taskType) || '—'}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-2 whitespace-nowrap">
-                                  <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: getZoneColor(task.workArea, zones) }}>
-                                    {task.workArea || '—'}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-2 max-w-md text-slate-600 text-xs" title={task.description}>
-                                  <span className="flex items-center gap-1 min-w-0">
-                                    <span className="truncate">{task.description || '—'}</span>
-                                    {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
-                                      <span
-                                        className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
-                                        title="Ligne prioritaire (MEL / EXMP)"
-                                      >
-                                        {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`)}
-                                      </span>
-                                    )}
-                                  </span>
-                                  {task.note && (
-                                    <span
-                                      className="mt-0.5 block truncate text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5"
-                                      title={task.note}
-                                    >
-                                      📝 {task.note}
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="px-3 py-2 whitespace-nowrap text-slate-600">
-                                  {task.registration || '—'}
-                                </td>
-                              </tr>
-                            ))}
-                          </Fragment>
-                        ))}
-                      </Fragment>
-                    ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
+          <TeamChargeCards
+            teams={teams}
+            tasks={tasks}
+            assignments={assignments}
+            onExportPdf={(team) => {
+              const doc = buildTeamPdf(team)
+              doc.save(
+                `equipe-${team.name.replace(/[^a-z0-9]+/gi, '-') || 'sans-nom'}.pdf`
+              )
+            }}
+            onPrint={(team) => openPdfPrint(buildTeamPdf(team))}
+          />
         </div>
       )}
     </div>

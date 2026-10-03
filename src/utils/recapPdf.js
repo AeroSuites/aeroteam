@@ -72,11 +72,6 @@ export function buildRecapPdf(profile, data) {
       })
       y += 2.5
     })
-  } else {
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'italic')
-    doc.text('Aucune consigne importée.', margin, y)
-    y += 8
   }
 
   // Équipes — cartes sur 2 colonnes, comme le récap à l'écran
