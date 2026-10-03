@@ -652,10 +652,17 @@ export default function Equipes() {
                   </p>
                 )}
                 {dayConsignes.map((c) => {
-                  // Consigne déjà consommée : une équipe du même nom existe
-                  const consumed = teams.some(
-                    (t) => String(t.name || '').trim().toLowerCase() === c.toLowerCase()
-                  )
+                  // Consigne déjà assignée : une équipe (simple ou fusionnée) la contient
+                  const consumed = teams.some((t) => {
+                    const name = String(t.name || '').trim().toLowerCase()
+                    const target = c.trim().toLowerCase()
+                    const targetTrunc = c.slice(0, 60).trim().toLowerCase()
+                    return (
+                      name === target ||
+                      name === targetTrunc ||
+                      name.split(' + ').some((part) => part === target || part === targetTrunc)
+                    )
+                  })
                   const checked = !consumed && pickedConsignes.includes(c)
                   const picked = explicitFor(c)
                   return (
@@ -672,7 +679,7 @@ export default function Equipes() {
                           className={`flex items-start gap-2 text-sm flex-1 min-w-0 ${
                             consumed ? 'cursor-default' : 'cursor-pointer'
                           }`}
-                          title={consumed ? 'Consigne déjà consommée par une équipe' : undefined}
+                          title={consumed ? 'Consigne déjà assignée à une équipe' : undefined}
                         >
                           <input
                             type="checkbox"
@@ -688,7 +695,7 @@ export default function Equipes() {
                           </span>
                           {consumed && (
                             <span className="shrink-0 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5">
-                              consommée
+                              assignée
                             </span>
                           )}
                         </label>
