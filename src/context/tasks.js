@@ -41,6 +41,12 @@ export function taskActions({ tasks, setTasks, setAssignments }) {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)))
   }
 
+  // Mise à jour de plusieurs tâches en une seule fois (déplacement multiple)
+  const updateTasks = (ids, updates) => {
+    const set = new Set(ids || [])
+    setTasks((prev) => prev.map((t) => (set.has(t.id) ? { ...t, ...updates } : t)))
+  }
+
   const removeTasksByBlock = (block) => {
     const idsToRemove = tasks.filter((t) => t.taskType === block).map((t) => t.id)
     setTasks((prev) => prev.filter((t) => t.taskType !== block))
@@ -88,5 +94,6 @@ export function taskActions({ tasks, setTasks, setAssignments }) {
     removeTasksByZone,
     removeTasksByIds,
     updateTask,
+    updateTasks,
   }
 }

@@ -49,6 +49,7 @@ export default function Preparation() {
     removePrepTasksByBlock,
     removePrepTasksByZone,
     updatePrepTask,
+    updatePrepTasks,
     clearPrepTasks,
     addTasks,
     addPocket,
@@ -305,7 +306,7 @@ export default function Preparation() {
 
   const applyMove = () => {
     const updates = { taskType: moveBlk, workArea: moveZone.trim() }
-    ;(moveIds || []).forEach((id) => updatePrepTask(id, updates))
+    updatePrepTasks(moveIds || [], updates)
     setMoveIds(null)
     setMoveSelected({})
   }
@@ -973,12 +974,22 @@ export default function Preparation() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
+                                // Carte de zone : on ne réintègre que le bloc de CETTE zone
+                                // (le bloc Found Fault reste global, il n'a pas de zone unique)
                                 reintegrerTasks(
-                                  prepTasks.filter((t) => (t.taskType || 'AUTRE') === blk)
+                                  prepTasks.filter(
+                                    (t) =>
+                                      (t.taskType || 'AUTRE') === blk &&
+                                      (group.isFF || (t.workArea || 'Autre') === zone)
+                                  )
                                 )
                               }}
                               className="bg-white/20 hover:bg-white/40 rounded-full p-1 text-white"
-                              title={`Réintégrer tout le bloc ${getCategoryLabel(blk)} dans Tâches`}
+                              title={`Réintégrer ${
+                                group.isFF
+                                  ? `tout le bloc ${getCategoryLabel(blk)}`
+                                  : `les lignes ${getCategoryLabel(blk)} de la zone ${zone}`
+                              } dans Tâches`}
                             >
                               <Undo2 className="h-3 w-3" />
                             </button>

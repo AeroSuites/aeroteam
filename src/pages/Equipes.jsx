@@ -580,26 +580,45 @@ export default function Equipes() {
               )}
 
               <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-md p-2 space-y-1 mb-3">
-                {proposedTeams.length === 0 && (
+                {dayConsignes.length === 0 && (
                   <p className="text-sm text-slate-400 italic px-2 py-1">
-                    Toutes les consignes ont déjà une équipe du même nom.
+                    Aucune consigne pour ce jour.
                   </p>
                 )}
-                {proposedTeams.map((c) => {
-                  const checked = pickedConsignes.includes(c)
+                {dayConsignes.map((c) => {
+                  // Consigne déjà consommée : une équipe du même nom existe
+                  const consumed = teams.some(
+                    (t) => String(t.name || '').trim().toLowerCase() === c.toLowerCase()
+                  )
+                  const checked = !consumed && pickedConsignes.includes(c)
                   return (
                     <div
                       key={c}
-                      className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-50"
+                      className={`flex items-center gap-2 px-2 py-1 rounded ${
+                        consumed ? 'opacity-60' : 'hover:bg-slate-50'
+                      }`}
                     >
-                      <label className="flex items-start gap-2 cursor-pointer text-sm flex-1 min-w-0">
+                      <label
+                        className={`flex items-start gap-2 text-sm flex-1 min-w-0 ${
+                          consumed ? 'cursor-default' : 'cursor-pointer'
+                        }`}
+                        title={consumed ? 'Consigne déjà consommée par une équipe' : undefined}
+                      >
                         <input
                           type="checkbox"
                           checked={checked}
-                          onChange={() => togglePicked(c)}
+                          disabled={consumed}
+                          onChange={() => !consumed && togglePicked(c)}
                           className="mt-0.5 h-4 w-4 accent-sky-600"
                         />
-                        <span className="flex-1">{c}</span>
+                        <span className={`flex-1 ${consumed ? 'line-through text-slate-400' : ''}`}>
+                          {c}
+                        </span>
+                        {consumed && (
+                          <span className="shrink-0 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5">
+                            consommée
+                          </span>
+                        )}
                       </label>
                       {checked && (
                         <label className="flex items-center gap-1 text-[11px] text-slate-500 shrink-0">

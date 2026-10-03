@@ -46,6 +46,12 @@ export function prepActions({ setPrepTasks, setPockets }) {
     setPrepTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)))
   }
 
+  // Mise a jour de plusieurs lignes en une seule fois (deplacement multiple)
+  const updatePrepTasks = (ids, updates) => {
+    const set = new Set(ids || [])
+    setPrepTasks((prev) => prev.map((t) => (set.has(t.id) ? { ...t, ...updates } : t)))
+  }
+
   const clearPrepTasks = () => {
     setPrepTasks([])
     setPockets([])
@@ -57,6 +63,7 @@ export function prepActions({ setPrepTasks, setPockets }) {
     removePrepTasksByBlock,
     removePrepTasksByZone,
     updatePrepTask,
+    updatePrepTasks,
     clearPrepTasks,
   }
 }

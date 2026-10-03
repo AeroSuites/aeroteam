@@ -14,10 +14,11 @@ export default function Taches() {
     removeTasksByBlock,
     removeTasksByZone,
     removeTasksByIds,
-    addTasks,
-    updateTask,
-    prepTasks,
-    addPrepTasks,
+  addTasks,
+  updateTask,
+  updateTasks,
+  prepTasks,
+  addPrepTasks,
   } = useApp()
   const [filter, setFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -995,7 +996,7 @@ export default function Taches() {
                       taskType: editMoveBlk,
                       workArea: editMoveZone.trim(),
                     }
-                    editMoveIds.forEach((id) => updateTask(id, updates))
+                    updateTasks(editMoveIds, updates)
                     setEditMoveIds(null)
                     setFollowSelected({})
                   }}

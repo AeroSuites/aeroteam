@@ -571,7 +571,7 @@ export function AppProvider({ children }) {
     [code, isConnected, disconnect]
   )
 
-  const { addTasks, assignTask, unassignTask, removeTask, removeTasksByBlock, removeTasksByZone, removeTasksByIds, updateTask } = taskActions({
+  const { addTasks, assignTask, unassignTask, removeTask, removeTasksByBlock, removeTasksByZone, removeTasksByIds, updateTask, updateTasks } = taskActions({
     tasks,
     setTasks,
     setAssignments,
@@ -591,7 +591,7 @@ export function AppProvider({ children }) {
     )
     setDayMembers([])
   }, [dayMembers])
-  const { addPrepTasks, removePrepTask, removePrepTasksByBlock, removePrepTasksByZone, updatePrepTask, clearPrepTasks } = prepActions({
+  const { addPrepTasks, removePrepTask, removePrepTasksByBlock, removePrepTasksByZone, updatePrepTask, updatePrepTasks, clearPrepTasks } = prepActions({
     setPrepTasks,
     setPockets,
   })
@@ -633,9 +633,9 @@ const value = {
     connectProfile, createProfile, requestProfile, disconnect, deleteProfile,
     changeAdminCode, updateOwnProfile,
     addTasks, addTeam, updateTeam, removeTeam, assignTask, unassignTask,
-      removeTask, removeTasksByBlock, removeTasksByZone, removeTasksByIds, updateTask, addMember, addMembers, addDayMember, addDayMembers,
+      removeTask, removeTasksByBlock, removeTasksByZone, removeTasksByIds, updateTask, updateTasks, addMember, addMembers, addDayMember, addDayMembers,
     clearDayMembers, removeMember, resetData,
-      addPrepTasks, removePrepTask, removePrepTasksByBlock, removePrepTasksByZone, updatePrepTask, clearPrepTasks,
+      addPrepTasks, removePrepTask, removePrepTasksByBlock, removePrepTasksByZone, updatePrepTask, updatePrepTasks, clearPrepTasks,
     addPocket, renamePocket, addTasksToPocket, removeTasksFromPocket, removePocket,
     addNote, updateNote, removeNote,
     addPrimeRequest, updatePrimeRequest, removePrimeRequest, clearPrimeRequests,
