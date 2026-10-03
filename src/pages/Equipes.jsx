@@ -226,21 +226,53 @@ export default function Equipes() {
     return groups
   }
 
+  // Regroupement automatique : les consignes qui partagent au moins une
+  // personne choisie sont fusionnées en UNE seule équipe (sinon la même
+  // personne se retrouverait dans plusieurs équipes).
+  const consigneGroups = () => {
+    const items = pickedConsignes.map((c) => ({ c, members: explicitFor(c) }))
+    const parent = items.map((_, i) => i)
+    const find = (i) => {
+      while (parent[i] !== i) {
+        parent[i] = parent[parent[i]]
+        i = parent[i]
+      }
+      return i
+    }
+    const union = (a, b) => {
+      parent[find(a)] = find(b)
+    }
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        if (items[i].members.some((m) => items[j].members.includes(m))) union(i, j)
+      }
+    }
+    const groups = {}
+    items.forEach((it, i) => {
+      const root = find(i)
+      if (!groups[root]) groups[root] = []
+      groups[root].push(it.c)
+    })
+    return Object.values(groups)
+  }
+
   const createTeamsFromSelection = () => {
     if (!pickedConsignes.length) return
-    const items = pickedConsignes.map((c) => {
-      const explicit = explicitFor(c)
+    const groups = consigneGroups()
+    const items = groups.map((group) => {
+      const explicit = [...new Set(group.flatMap((c) => explicitFor(c)))]
+      const target = group.reduce((acc, c) => acc + plannedFor(c), 0)
       return {
-        name: c,
+        name: group.join(' + '),
         explicit,
-        need: Math.max(0, plannedFor(c) - explicit.length),
+        need: Math.max(0, target - explicit.length),
       }
     })
-    const groups = distributeByCounts(items)
+    const auto = distributeByCounts(items)
     items.forEach((it, i) => {
       addTeam({
         name: it.name.slice(0, 60),
-        members: [...it.explicit, ...(groups[i] || [])],
+        members: [...it.explicit, ...(auto[i] || [])],
         color: defaultColors[(teams.length + i) % defaultColors.length],
       })
     })
@@ -727,6 +759,17 @@ export default function Equipes() {
                   )
                 })}
               </div>
+
+              {(() => {
+                const merged = consigneGroups().filter((g) => g.length > 1)
+                if (!merged.length) return null
+                return (
+                  <div className="mb-3 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5">
+                    <strong>Fusion automatique</strong> (personnes en commun) :{' '}
+                    {merged.map((g) => g.join(' + ')).join('  |  ')}
+                  </div>
+                )
+              })()}
 
               <div className="flex flex-wrap items-end gap-3">
                 <label className="text-sm font-medium text-slate-700">
