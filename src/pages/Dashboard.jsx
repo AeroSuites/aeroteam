@@ -13,6 +13,7 @@ import {
   hexToRgb,
   isAssignedTo,
   assignedTaskCount,
+  assignmentTeams,
   consigneDay,
   priorityToken,
   logicalToday,
@@ -218,6 +219,11 @@ export default function Dashboard() {
     const avgPerTeam = teams.length ? (assigned / teams.length).toFixed(1) : '0'
     return { total, assigned, unassigned, totalMembers, avgPerTeam }
   }, [tasks, teams, assignments])
+
+  const allUnassigned = useMemo(
+    () => tasks.filter((t) => assignmentTeams(assignments, t.id).length === 0),
+    [tasks, assignments]
+  )
 
   const byBlock = useMemo(() => {
     const counts = {}

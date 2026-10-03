@@ -1,4 +1,5 @@
-import { FileDown, Printer } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronDown, ChevronRight, FileDown, Printer } from 'lucide-react'
 import {
   getCategoryColor,
   getCategoryLabel,
@@ -40,6 +41,7 @@ function groupTeamTasks(teamTasks) {
 }
 
 // Cartes d'équipes avec leur charge (même présentation que le récap manager)
+// Chaque carte est pliable/dépliable (clic sur le bandeau).
 export default function TeamChargeCards({
   teams,
   tasks,
@@ -47,6 +49,10 @@ export default function TeamChargeCards({
   onExportPdf,
   onPrint,
 }) {
+  const [collapsed, setCollapsed] = useState([])
+  const toggleCard = (id) =>
+    setCollapsed((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+
   if (!(teams || []).length) return null
   return (
     <div className="grid gap-3 md:grid-cols-2">
@@ -55,14 +61,27 @@ export default function TeamChargeCards({
           isAssignedTo(assignments, t.id, team.id)
         )
         const zoneGroups = groupTeamTasks(teamTasks)
+        const isCollapsed = collapsed.includes(team.id)
         return (
           <div key={team.id} className="border border-slate-200 rounded-lg overflow-hidden">
             <div
-              className="px-3 py-2 flex items-center justify-between gap-2 text-white"
+              className="px-3 py-2 flex items-center justify-between gap-2 text-white cursor-pointer select-none"
               style={{ backgroundColor: team.color || '#64748b' }}
+              onClick={() => toggleCard(team.id)}
+              title={isCollapsed ? 'Déplier cette équipe' : 'Replier cette équipe'}
             >
-              <span className="font-bold text-sm truncate">{team.name}</span>
-              <span className="flex items-center gap-1.5 shrink-0">
+              <span className="flex items-center gap-1.5 min-w-0">
+                {isCollapsed ? (
+                  <ChevronRight className="h-4 w-4 shrink-0" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 shrink-0" />
+                )}
+                <span className="font-bold text-sm truncate">{team.name}</span>
+              </span>
+              <span
+                className="flex items-center gap-1.5 shrink-0"
+                onClick={(e) => e.stopPropagation()}
+              >
                 {(onExportPdf || onPrint) && (
                   <span className="flex items-center gap-0.5">
                     {onExportPdf && (
@@ -90,7 +109,8 @@ export default function TeamChargeCards({
                 </span>
               </span>
             </div>
-            <div className="p-3">
+            {!isCollapsed && (
+              <div className="p-3">
               <div className="flex flex-wrap gap-1">
                 {team.members.length === 0 && (
                   <span className="text-xs text-slate-400 italic">—</span>
@@ -155,7 +175,8 @@ export default function TeamChargeCards({
                   ))}
                 </div>
               )}
-            </div>
+              </div>
+            )}
           </div>
         )
       })}
