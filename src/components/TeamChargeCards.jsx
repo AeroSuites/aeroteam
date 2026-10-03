@@ -41,7 +41,7 @@ function groupTeamTasks(teamTasks) {
 }
 
 // Cartes d'équipes avec leur charge (même présentation que le récap manager)
-// Chaque carte est pliable/dépliable (clic sur le bandeau).
+// Chaque carte est pliée par défaut ; clic sur le bandeau pour déplier.
 export default function TeamChargeCards({
   teams,
   tasks,
@@ -49,9 +49,10 @@ export default function TeamChargeCards({
   onExportPdf,
   onPrint,
 }) {
-  const [collapsed, setCollapsed] = useState([])
+  // Par défaut, toutes les cartes sont pliées : on mémorise celles DÉPLIÉES
+  const [expanded, setExpanded] = useState([])
   const toggleCard = (id) =>
-    setCollapsed((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+    setExpanded((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
 
   if (!(teams || []).length) return null
   return (
@@ -61,7 +62,7 @@ export default function TeamChargeCards({
           isAssignedTo(assignments, t.id, team.id)
         )
         const zoneGroups = groupTeamTasks(teamTasks)
-        const isCollapsed = collapsed.includes(team.id)
+        const isCollapsed = !expanded.includes(team.id)
         return (
           <div key={team.id} className="border border-slate-200 rounded-lg overflow-hidden">
             <div
@@ -83,23 +84,23 @@ export default function TeamChargeCards({
                 onClick={(e) => e.stopPropagation()}
               >
                 {(onExportPdf || onPrint) && (
-                  <span className="flex items-center gap-0.5">
+                  <span className="flex items-center gap-1">
                     {onExportPdf && (
                       <button
                         onClick={() => onExportPdf(team)}
-                        className="text-white/80 hover:text-white p-1"
+                        className="flex items-center gap-1 bg-white text-slate-800 rounded-full px-2 py-1 text-[10px] font-bold shadow-sm hover:bg-slate-100"
                         title={`Exporter la charge de « ${team.name} » en PDF (mise en page tableau)`}
                       >
-                        <FileDown className="h-3.5 w-3.5" />
+                        <FileDown className="h-3.5 w-3.5" /> PDF
                       </button>
                     )}
                     {onPrint && (
                       <button
                         onClick={() => onPrint(team)}
-                        className="text-white/80 hover:text-white p-1"
+                        className="flex items-center gap-1 bg-white/20 border border-white/60 text-white rounded-full px-2 py-1 text-[10px] font-bold hover:bg-white/30"
                         title={`Imprimer la charge de « ${team.name} »`}
                       >
-                        <Printer className="h-3.5 w-3.5" />
+                        <Printer className="h-3.5 w-3.5" /> Imprimer
                       </button>
                     )}
                   </span>
