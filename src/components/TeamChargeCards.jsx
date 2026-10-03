@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, FileDown, Printer } from 'lucide-react'
+import { ChevronDown, ChevronRight, FileDown, FileText, Printer, X } from 'lucide-react'
 import {
   getCategoryColor,
   getCategoryLabel,
   getZoneColor,
   isAssignedTo,
   cleanShortValue,
+  cleanTaskText,
 } from '../utils/helpers'
 
 // Fin de TRFX : après « TRFX900 » (ex. TRFX900ABCD → ABCD) ; sinon le code
@@ -43,128 +44,201 @@ function groupTeamTasks(teamTasks) {
 // Une carte d'équipe : pliée par défaut, dépliable individuellement
 function TeamCard({ team, tasks, assignments, onExportPdf, onPrint }) {
   const [open, setOpen] = useState(false)
+  const [descTask, setDescTask] = useState(null)
   const teamTasks = (tasks || []).filter((t) => isAssignedTo(assignments, t.id, team.id))
   const zoneGroups = groupTeamTasks(teamTasks)
 
   return (
-    <div className="border border-slate-200 rounded-lg overflow-hidden">
-      <div
-        className="px-3 py-2 flex items-center justify-between gap-2 text-white cursor-pointer select-none"
-        style={{ backgroundColor: team.color || '#64748b' }}
-        onClick={() => setOpen((v) => !v)}
-        title={open ? 'Replier cette équipe' : 'Déplier cette équipe'}
-      >
-        <span className="flex items-center gap-1.5 min-w-0">
-          {open ? (
-            <ChevronDown className="h-4 w-4 shrink-0" />
-          ) : (
-            <ChevronRight className="h-4 w-4 shrink-0" />
-          )}
-          <span className="font-bold text-sm truncate">{team.name}</span>
-        </span>
-        <span
-          className="flex items-center gap-1.5 shrink-0"
-          onClick={(e) => e.stopPropagation()}
+    <>
+      <div className="border border-slate-200 rounded-lg overflow-hidden">
+        <div
+          className="px-3 py-2 flex items-center justify-between gap-2 text-white cursor-pointer select-none"
+          style={{ backgroundColor: team.color || '#64748b' }}
+          onClick={() => setOpen((v) => !v)}
+          title={open ? 'Replier cette équipe' : 'Déplier cette équipe'}
         >
-          {(onExportPdf || onPrint) && (
-            <span className="flex items-center gap-1">
-              {onExportPdf && (
-                <button
-                  onClick={() => onExportPdf(team)}
-                  className="flex items-center gap-1 bg-white text-slate-800 rounded-full px-2 py-1 text-[10px] font-bold shadow-sm hover:bg-slate-100"
-                  title={`Exporter la charge de « ${team.name} » en PDF (mise en page tableau)`}
-                >
-                  <FileDown className="h-3.5 w-3.5" /> PDF
-                </button>
-              )}
-              {onPrint && (
-                <button
-                  onClick={() => onPrint(team)}
-                  className="flex items-center gap-1 bg-white/20 border border-white/60 text-white rounded-full px-2 py-1 text-[10px] font-bold hover:bg-white/30"
-                  title={`Imprimer la charge de « ${team.name} »`}
-                >
-                  <Printer className="h-3.5 w-3.5" /> Imprimer
-                </button>
-              )}
-            </span>
-          )}
-          <span className="text-xs opacity-90">
-            {teamTasks.length} tâche{teamTasks.length > 1 ? 's' : ''}
-          </span>
-        </span>
-      </div>
-      {open && (
-        <div className="p-3">
-          <div className="flex flex-wrap gap-1">
-            {team.members.length === 0 && (
-              <span className="text-xs text-slate-400 italic">—</span>
+          <span className="flex items-center gap-1.5 min-w-0">
+            {open ? (
+              <ChevronDown className="h-4 w-4 shrink-0" />
+            ) : (
+              <ChevronRight className="h-4 w-4 shrink-0" />
             )}
-            {team.members.map((m, i) => (
-              <span
-                key={i}
-                className="bg-slate-100 text-slate-700 rounded-full px-2 py-0.5 text-[11px]"
-              >
-                {m}
+            <span className="font-bold text-sm truncate">{team.name}</span>
+          </span>
+          <span
+            className="flex items-center gap-1.5 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {(onExportPdf || onPrint) && (
+              <span className="flex items-center gap-1">
+                {onExportPdf && (
+                  <button
+                    onClick={() => onExportPdf(team)}
+                    className="flex items-center gap-1 bg-white text-slate-800 rounded-full px-2 py-1 text-[10px] font-bold shadow-sm hover:bg-slate-100"
+                    title={`Exporter la charge de « ${team.name} » en PDF (mise en page tableau)`}
+                  >
+                    <FileDown className="h-3.5 w-3.5" /> PDF
+                  </button>
+                )}
+                {onPrint && (
+                  <button
+                    onClick={() => onPrint(team)}
+                    className="flex items-center gap-1 bg-white/20 border border-white/60 text-white rounded-full px-2 py-1 text-[10px] font-bold hover:bg-white/30"
+                    title={`Imprimer la charge de « ${team.name} »`}
+                  >
+                    <Printer className="h-3.5 w-3.5" /> Imprimer
+                  </button>
+                )}
               </span>
-            ))}
-          </div>
-          {teamTasks.length > 0 && (
-            <div className="mt-2 space-y-2">
-              {zoneGroups.map(({ zone, blocks }) => (
-                <div key={zone}>
-                  <p className="mb-1 inline-flex items-center gap-1.5">
-                    <span
-                      className="text-[10px] font-bold text-white rounded-full px-2 py-0.5 shadow-sm"
-                      style={{ backgroundColor: getZoneColor(zone) }}
-                    >
-                      {zone}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-semibold">
-                      {blocks.reduce((a, [, b]) => a + b.length, 0)}
-                    </span>
-                  </p>
-                  <div className="space-y-1.5 pl-1">
-                    {blocks.map(([blk, list]) => (
-                      <div key={blk}>
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span
-                            className="text-[10px] font-bold text-white rounded-full px-2 py-0.5"
-                            style={{ backgroundColor: getCategoryColor(blk) }}
-                          >
-                            {getCategoryLabel(blk)}
-                          </span>
-                          <span className="text-[10px] text-slate-400">{list.length}</span>
-                        </div>
-                        <ul className="space-y-0.5 mb-1">
-                          {list.map((t) => (
-                            <li key={t.id} className="text-[11px] text-slate-600 flex gap-1.5">
-                              <span className="font-mono font-bold shrink-0">
-                                {cleanShortValue(t.seq) || '—'}
-                              </span>
-                              <span className="truncate" title={t.description}>
-                                {t.description}
-                              </span>
-                              {(t.taskBarcode || t.registration) && (
-                                <span
-                                  className="shrink-0 ml-auto font-mono text-[10px] font-bold text-sky-700"
-                                  title={t.taskBarcode ? `TRFX ${t.taskBarcode}` : 'Avion'}
-                                >
-                                  {t.taskBarcode || t.registration}
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            )}
+            <span className="text-xs opacity-90">
+              {teamTasks.length} tâche{teamTasks.length > 1 ? 's' : ''}
+            </span>
+          </span>
+        </div>
+        {open && (
+          <div className="p-3">
+            <div className="flex flex-wrap gap-1">
+              {team.members.length === 0 && (
+                <span className="text-xs text-slate-400 italic">—</span>
+              )}
+              {team.members.map((m, i) => (
+                <span
+                  key={i}
+                  className="bg-slate-100 text-slate-700 rounded-full px-2 py-0.5 text-[11px]"
+                >
+                  {m}
+                </span>
               ))}
             </div>
-          )}
+            {teamTasks.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {zoneGroups.map(({ zone, blocks }) => (
+                  <div key={zone}>
+                    <p className="mb-1 inline-flex items-center gap-1.5">
+                      <span
+                        className="text-[10px] font-bold text-white rounded-full px-2 py-0.5 shadow-sm"
+                        style={{ backgroundColor: getZoneColor(zone) }}
+                      >
+                        {zone}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-semibold">
+                        {blocks.reduce((a, [, b]) => a + b.length, 0)}
+                      </span>
+                    </p>
+                    <div className="space-y-1.5 pl-1">
+                      {blocks.map(([blk, list]) => (
+                        <div key={blk}>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span
+                              className="text-[10px] font-bold text-white rounded-full px-2 py-0.5"
+                              style={{ backgroundColor: getCategoryColor(blk) }}
+                            >
+                              {getCategoryLabel(blk)}
+                            </span>
+                            <span className="text-[10px] text-slate-400">{list.length}</span>
+                          </div>
+                          <ul className="space-y-0.5 mb-1">
+                            {list.map((t) => (
+                              <li
+                                key={t.id}
+                                className={`text-[11px] text-slate-600 flex gap-1.5 rounded px-1 -mx-1 ${
+                                  t.taskDescription || t.taskSteps
+                                    ? 'cursor-pointer hover:bg-slate-100'
+                                    : ''
+                                }`}
+                                onClick={() =>
+                                  (t.taskDescription || t.taskSteps) && setDescTask(t)
+                                }
+                              >
+                                <span className="font-mono font-bold shrink-0">
+                                  {cleanShortValue(t.seq) || '—'}
+                                </span>
+                                <span className="truncate" title={t.description}>
+                                  {t.description}
+                                </span>
+                                {(t.taskDescription || t.taskSteps) && (
+                                  <FileText className="h-3 w-3 shrink-0 text-sky-600 mt-0.5" />
+                                )}
+                                {(t.taskBarcode || t.registration) && (
+                                  <span
+                                    className="shrink-0 ml-auto font-mono text-[10px] font-bold text-sky-700"
+                                    title={t.taskBarcode ? `TRFX ${t.taskBarcode}` : 'Avion'}
+                                  >
+                                    {t.taskBarcode || t.registration}
+                                  </span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {descTask && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setDescTask(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
+              <div className="min-w-0">
+                <h2 className="font-bold truncate">
+                  N° {cleanShortValue(descTask.seq) || '—'} · {descTask.description}
+                </h2>
+                <p className="text-xs text-slate-300 truncate">
+                  {[
+                    descTask.taskBarcode ? `TRFX ${descTask.taskBarcode}` : '',
+                    descTask.registration || '',
+                    descTask.workArea || '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </div>
+              <button
+                onClick={() => setDescTask(null)}
+                className="text-slate-300 hover:text-white shrink-0"
+                title="Fermer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-4">
+              {descTask.taskDescription && (
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-wide">
+                    Description détaillée
+                  </p>
+                  <p className="whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
+                    {cleanTaskText(descTask.taskDescription)}
+                  </p>
+                </div>
+              )}
+              {descTask.taskSteps && (
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-wide">
+                    Étapes (Task Steps)
+                  </p>
+                  <p className="whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
+                    {cleanTaskText(descTask.taskSteps)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
@@ -178,7 +252,7 @@ export default function TeamChargeCards({ teams, tasks, assignments, onExportPdf
   return (
     <div className="flex flex-col md:flex-row items-start gap-3">
       {columns.map((column, ci) => (
-        <div key={ci} className="flex w-full flex-col gap-3 md:flex-1">
+        <div key={ci} className="flex w-full min-w-0 flex-col gap-3 md:flex-1">
           {column.map((team) => (
             <TeamCard
               key={team.id}
