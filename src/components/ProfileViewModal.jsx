@@ -292,24 +292,39 @@ function buildRecapPdf(profile, data) {
     return { h, items }
   }
 
-  for (let i = 0; i < (data?.teams || []).length; i += 2) {
-    const pair = [data.teams[i], data.teams[i + 1]].filter(Boolean)
-    const cards = pair.map((team) => buildTeamCard(team))
-    const rowH = Math.max(...cards.map((c) => c.h))
-    ensureRoom(rowH + 4)
-    cards.forEach((card, k) => {
-      const x = colX[k]
-      doc.setDrawColor(203, 213, 225)
-      doc.setLineWidth(0.3)
-      doc.roundedRect(x, y, colW, card.h, 2.5, 2.5, 'S')
-      let cy = y + 3
-      card.items.forEach((it) => {
-        it.draw(x, cy)
-        cy += it.h
-      })
+  // Disposition « maçonnerie » : chaque colonne se remplit indépendamment
+  // (pas de grand vide quand une carte est courte à côté d'une longue)
+  const colY = [y, y]
+  const pageBottom = pageHeight - 11
+  ;(data?.teams || []).forEach((team) => {
+    const card = buildTeamCard(team)
+    // Colonne la moins remplie
+    let col = colY[0] <= colY[1] ? 0 : 1
+    if (colY[col] + card.h > pageBottom) {
+      const other = col === 0 ? 1 : 0
+      if (colY[other] + card.h <= pageBottom) {
+        col = other
+      } else {
+        // Les deux colonnes sont pleines : nouvelle page
+        doc.addPage()
+        colY[0] = 12
+        colY[1] = 12
+        col = 0
+      }
+    }
+    const x = colX[col]
+    const yy0 = colY[col]
+    doc.setDrawColor(203, 213, 225)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(x, yy0, colW, card.h, 2.5, 2.5, 'S')
+    let cy = yy0 + 3
+    card.items.forEach((it) => {
+      it.draw(x, cy)
+      cy += it.h
     })
-    y += rowH + 4
-  }
+    colY[col] = yy0 + card.h + 5
+  })
+  y = Math.max(colY[0], colY[1])
   return doc
 }
 
