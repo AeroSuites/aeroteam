@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import * as profileStore from '../lib/profileStore'
 import {
 getCategoryColor,
@@ -12,7 +11,7 @@ isAssignedTo,
 priorityToken,
 cleanShortValue,
 } from '../utils/helpers'
-import { openPdfPrint, downloadPdfAsJpeg, drawCheckboxCell, drawPriorityBadge, hidePriorityCellText } from '../utils/pdfPrint'
+import { openPdfPrint, downloadPdfAsJpeg } from '../utils/pdfPrint'
 import { X, UserCog, Users, ClipboardList, FileDown, Printer, Eraser, FileImage, RotateCcw, FolderKanban, Plane } from 'lucide-react'
 
 function StatBox({ label, value }) {
@@ -119,35 +118,48 @@ function buildRecapPdf(profile, data) {
     y += 8
   }
 
-  // Équipes
+  // Équipes — une carte par équipe (même présentation que le récap à l'écran)
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
   ensureRoom(12)
   doc.text(`Équipes (${(data?.teams || []).length})`, margin, y)
-  y += 6
+  y += 8
 
   ;(data?.teams || []).forEach((team) => {
     const teamTasks = (data?.tasks || []).filter((t) =>
       isAssignedTo(data.assignments, t.id, team.id)
     )
-    // Une carte par équipe (même présentation que le récap à l'écran) :
-    // en-tête équipe, membres, puis zones → blocs → lignes
-    const body = []
-    const rowTasks = []
-    body.push([
-      {
-        content: `Membres : ${team.members.join(', ') || 'aucun'}`,
-        colSpan: 5,
-        styles: {
-          fillColor: [248, 250, 252],
-          textColor: [51, 65, 85],
-          fontStyle: 'normal',
-          fontSize: 7.5,
-        },
-      },
-    ])
-    rowTasks.push(null)
 
+    // En-tête de la carte (bandeau couleur de l'équipe)
+    ensureRoom(14)
+    doc.setFillColor(...hexToRgb(team.color || '#64748b'))
+    doc.roundedRect(margin, y, contentWidth, 7.5, 1.5, 1.5, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.setTextColor(255, 255, 255)
+    doc.text(
+      `${team.name} · ${teamTasks.length} tâche${teamTasks.length > 1 ? 's' : ''}`,
+      margin + 2.5,
+      y + 5
+    )
+    doc.setTextColor(30, 41, 59)
+    y += 11
+
+    // Membres
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    const memberLines = doc.splitTextToSize(
+      `Membres : ${team.members.join(', ') || '—'}`,
+      contentWidth - 5
+    )
+    memberLines.forEach((l) => {
+      ensureRoom(4)
+      doc.text(l, margin + 3, y)
+      y += 3.8
+    })
+    y += 2
+
+    // Zones → blocs → lignes (comme le pop-up)
     const zoneMap = {}
     teamTasks.forEach((t) => {
       const z = t.workArea || 'Autre'
@@ -159,107 +171,78 @@ function buildRecapPdf(profile, data) {
 
     Object.entries(zoneMap).forEach(([zone, blocksMap]) => {
       const zoneCount = Object.values(blocksMap).flat().length
-      body.push([
-        {
-          content: `📍 ${zone} (${zoneCount})`,
-          colSpan: 5,
-          styles: {
-            fillColor: hexToRgb(getZoneColor(zone)),
-            textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            fontSize: 8,
-          },
-        },
-      ])
-      rowTasks.push(null)
+      const zoneText = `📍 ${zone} (${zoneCount})`
+      ensureRoom(10)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(7.5)
+      const zw = doc.getTextWidth(zoneText) + 4
+      doc.setFillColor(...hexToRgb(getZoneColor(zone)))
+      doc.roundedRect(margin + 3, y - 3, zw, 4.6, 1.2, 1.2, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.text(zoneText, margin + 5, y)
+      doc.setTextColor(30, 41, 59)
+      y += 6
+
       Object.entries(blocksMap).forEach(([blk, list]) => {
-        body.push([
-          {
-            content: `${getCategoryLabel(blk)} (${list.length})`,
-            colSpan: 5,
-            styles: {
-              fillColor: [241, 245, 249],
-              textColor: [30, 41, 59],
-              fontStyle: 'bold',
-              fontSize: 7.5,
-            },
-          },
-        ])
-        rowTasks.push(null)
+        const blkText = `${getCategoryLabel(blk)} (${list.length})`
+        ensureRoom(9)
+        const bw = doc.getTextWidth(blkText) + 4
+        doc.setFillColor(...hexToRgb(getCategoryColor(blk)))
+        doc.roundedRect(margin + 7, y - 3, bw, 4.4, 1.2, 1.2, 'F')
+        doc.setTextColor(255, 255, 255)
+        doc.text(blkText, margin + 9, y)
+        doc.setTextColor(30, 41, 59)
+        y += 5.5
+
         list.forEach((t) => {
-          body.push([
-            '',
-            cleanShortValue(t.seq) || '—',
-            priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`),
-            t.description || '',
-            t.registration || '',
-          ])
-          rowTasks.push(t)
-        })
-      })
-    })
-
-    ensureRoom(20)
-    autoTable(doc, {
-      startY: y,
-      pageBreak: 'auto',
-      margin: { left: margin, right: margin },
-      head: [
-        [
-          {
-            content: `${team.name} · ${teamTasks.length} tâche${
-              teamTasks.length > 1 ? 's' : ''
-            }`,
-            colSpan: 5,
-            styles: {
-              fillColor: hexToRgb(team.color || '#64748b'),
-              textColor: [255, 255, 255],
-              fontStyle: 'bold',
-              fontSize: 9,
-            },
-          },
-        ],
-      ],
-      body,
-      styles: {
-        fontSize: 7.5,
-        cellPadding: 1.1,
-        lineWidth: 0.1,
-        lineColor: [226, 232, 240],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold',
-      },
-      columnStyles: {
-        0: { cellWidth: 7 },
-        1: { cellWidth: 12 },
-        2: { cellWidth: 14 },
-        4: { cellWidth: 22 },
-      },
-      didDrawCell: (data) => {
-        drawCheckboxCell(doc, data)
-        const t = rowTasks[data.row.index]
-        drawPriorityBadge(
-          doc,
-          data,
-          t ? priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`) : ''
-        )
-      },
-      didParseCell: (data) => {
-        hidePriorityCellText(data)
-        // N° coloré selon le statut (comme à l'écran)
-        if (data.section === 'body' && data.column.index === 1) {
-          const t = rowTasks[data.row.index]
-          if (t && t.mtxStatus === 'COMPLETE') {
-            data.cell.styles.textColor = [22, 163, 74]
-          } else if (t && t.mtxStatus === 'PAUSE') {
-            data.cell.styles.textColor = [217, 119, 6]
+          ensureRoom(5)
+          const tok = priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
+          // Case à cocher en début de ligne
+          doc.setDrawColor(100, 116, 139)
+          doc.setLineWidth(0.2)
+          doc.rect(margin + 9, y - 2.6, 2.6, 2.6)
+          // N° (couleur selon le statut)
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(7.5)
+          if (t.mtxStatus === 'COMPLETE') doc.setTextColor(22, 163, 74)
+          else if (t.mtxStatus === 'PAUSE') doc.setTextColor(217, 119, 6)
+          else doc.setTextColor(100, 116, 139)
+          doc.text(cleanShortValue(t.seq) || '—', margin + 13, y)
+          doc.setTextColor(30, 41, 59)
+          // Description (tronquée à la largeur disponible)
+          doc.setFont('helvetica', 'normal')
+          const rightReserve = 20 + (tok ? 12 : 0)
+          const avail = contentWidth - 15 - rightReserve
+          const desc =
+            doc.splitTextToSize(String(t.description || ''), Math.max(30, avail))[0] || ''
+          doc.text(desc, margin + 19, y)
+          // Badge de priorité
+          if (tok) {
+            const tw = doc.getTextWidth(tok) + 3.5
+            doc.setFillColor(220, 38, 38)
+            doc.roundedRect(margin + contentWidth - rightReserve + 1, y - 2.8, tw, 3.8, 1, 1, 'F')
+            doc.setTextColor(255, 255, 255)
+            doc.setFont('helvetica', 'bold')
+            doc.setFontSize(6.5)
+            doc.text(tok, margin + contentWidth - rightReserve + 2.8, y - 0.3)
+            doc.setTextColor(30, 41, 59)
+            doc.setFontSize(7.5)
           }
-        }
-      },
+          // Immatriculation
+          if (t.registration) {
+            doc.setFont('helvetica', 'bold')
+            doc.setTextColor(3, 105, 161)
+            doc.text(String(t.registration), margin + contentWidth - 18, y)
+            doc.setTextColor(30, 41, 59)
+          }
+          y += 4
+        })
+        y += 1.5
+      })
+      y += 1.5
     })
-    y = doc.lastAutoTable.finalY + 6
+    y += 4
   })
-
   return doc
 }
 
