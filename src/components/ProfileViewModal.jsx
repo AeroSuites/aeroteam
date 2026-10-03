@@ -117,26 +117,38 @@ function buildRecapPdf(profile, data) {
     y += 8
   }
 
-  // Équipes — une CARTE par équipe avec sa charge (résumé par zone/bloc)
+  // Équipes — cartes sur 2 colonnes, comme le récap à l'écran
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
   ensureRoom(12)
-  doc.text(`Équipes (${(data?.teams || []).length})`, margin, y)
+  doc.text(`Équipes du profil (${(data?.teams || []).length})`, margin, y)
   y += 8
 
-  const hoursOf = (list) =>
-    list.reduce((acc, t) => {
-      const h = parseFloat(t.scheduledHours)
-      return acc + (isNaN(h) ? 0 : h)
-    }, 0)
-  const fmtH = (n) => (Math.round(n * 10) / 10).toString().replace('.', ',') + ' h'
+  const gap = 6
+  const colW = (contentWidth - gap) / 2
+  const colX = [margin, margin + colW + gap]
+  const chipH = 4.2
 
-  ;(data?.teams || []).forEach((team) => {
+  const drawChip = (txt, x, yy, fill, opts = {}) => {
+    const fs = opts.fontSize || 6.5
+    const padX = opts.padX || 2
+    const white = opts.white !== false
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(fs)
+    const w = Math.min(doc.getTextWidth(txt) + padX * 2, opts.maxW || 999)
+    doc.setFillColor(...fill)
+    doc.roundedRect(x, yy, w, chipH, 1.2, 1.2, 'F')
+    doc.setTextColor(...(white ? [255, 255, 255] : [51, 65, 85]))
+    doc.text(txt, x + padX, yy + chipH - 1.4)
+    doc.setTextColor(30, 41, 59)
+    return w
+  }
+
+  // Prépare une carte d'équipe : liste d'éléments (hauteur + dessin)
+  const buildTeamCard = (team) => {
     const teamTasks = (data?.tasks || []).filter((t) =>
       isAssignedTo(data.assignments, t.id, team.id)
     )
-
-    // Regroupement zone -> bloc (comme le récap à l'écran)
     const zoneMap = {}
     teamTasks.forEach((t) => {
       const z = t.workArea || 'Autre'
@@ -146,89 +158,142 @@ function buildRecapPdf(profile, data) {
       zoneMap[z][b].push(t)
     })
 
-    // Contenu de la carte : lignes à dessiner (avec leur hauteur)
-    const rows = []
-    rows.push({
-      h: 8.5,
-      draw: (yy) => {
+    const items = []
+    items.push({
+      h: 9,
+      draw: (x, yy) => {
         doc.setFillColor(...hexToRgb(team.color || '#64748b'))
-        doc.roundedRect(margin + 1.5, yy, contentWidth - 3, 7.5, 1.5, 1.5, 'F')
+        doc.roundedRect(x + 1.5, yy + 1, colW - 3, 7.5, 1.5, 1.5, 'F')
         doc.setFont('helvetica', 'bold')
-        doc.setFontSize(9)
+        doc.setFontSize(8.5)
         doc.setTextColor(255, 255, 255)
-        doc.text(
-          `${team.name} · ${teamTasks.length} tâche${teamTasks.length > 1 ? 's' : ''}${
-            teamTasks.length ? ` · ${fmtH(hoursOf(teamTasks))}` : ''
-          }`,
-          margin + 4,
-          yy + 5
-        )
+        const label = `${team.name}`
+        const count = `${teamTasks.length} tâche${teamTasks.length > 1 ? 's' : ''}`
+        doc.text(doc.splitTextToSize(label, colW - 30)[0], x + 4, yy + 6)
+        doc.setFontSize(7)
+        doc.text(count, x + colW - 4 - doc.getTextWidth(count), yy + 6)
         doc.setTextColor(30, 41, 59)
       },
     })
-    rows.push({
-      h: 4,
-      draw: (yy) => {
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(8)
-        doc.text(`Membres : ${team.members.join(', ') || '—'}`, margin + 4, yy + 3)
-      },
-    })
 
+    // Membres (pastilles grises, sur plusieurs lignes)
+    const memberChips = (team.members || []).map((m) => String(m))
+    if (memberChips.length) {
+      const rows = []
+      let cur = []
+      let curW = 0
+      const maxW = colW - 8
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(6.5)
+      memberChips.forEach((m) => {
+        const w = doc.getTextWidth(m) + 4
+        if (curW + w > maxW && cur.length) {
+          rows.push(cur)
+          cur = []
+          curW = 0
+        }
+        cur.push({ m, w })
+        curW += w + 1.5
+      })
+      if (cur.length) rows.push(cur)
+      items.push({
+        h: rows.length * (chipH + 1) + 1,
+        draw: (x, yy) => {
+          rows.forEach((row, ri) => {
+            let cx = x + 4
+            row.forEach(({ m }) => {
+              const w = drawChip(m, cx, yy + 1 + ri * (chipH + 1), [241, 245, 249], {
+                white: false,
+                fontSize: 6.5,
+                maxW: colW - 8,
+              })
+              cx += w + 1.5
+            })
+          })
+        },
+      })
+    }
+
+    // Zones -> blocs -> lignes
     Object.entries(zoneMap).forEach(([zone, blocksMap]) => {
       const zoneTasks = Object.values(blocksMap).flat()
-      rows.push({
-        h: 5.5,
-        draw: (yy) => {
-          const txt = `${zone} (${zoneTasks.length} · ${fmtH(hoursOf(zoneTasks))})`
-          doc.setFont('helvetica', 'bold')
-          doc.setFontSize(7.5)
-          const w = doc.getTextWidth(txt) + 4
-          doc.setFillColor(...hexToRgb(getZoneColor(zone)))
-          doc.roundedRect(margin + 4, yy + 0.4, w, 4.4, 1.2, 1.2, 'F')
-          doc.setTextColor(255, 255, 255)
-          doc.text(txt, margin + 6, yy + 3.7)
+      items.push({
+        h: chipH + 1.5,
+        draw: (x, yy) => {
+          const w = drawChip(zone, x + 4, yy + 0.5, hexToRgb(getZoneColor(zone)))
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(6.5)
+          doc.setTextColor(100, 116, 139)
+          doc.text(String(zoneTasks.length), x + 6 + w, yy + chipH - 1.4)
           doc.setTextColor(30, 41, 59)
         },
       })
       Object.entries(blocksMap).forEach(([blk, list]) => {
-        rows.push({
-          h: 5,
-          draw: (yy) => {
-            const txt = `${getCategoryLabel(blk)} (${list.length} · ${fmtH(hoursOf(list))})`
-            doc.setFont('helvetica', 'bold')
-            doc.setFontSize(7.5)
-            const w = doc.getTextWidth(txt) + 4
-            doc.setFillColor(...hexToRgb(getCategoryColor(blk)))
-            doc.roundedRect(margin + 8, yy + 0.5, w, 4.2, 1.2, 1.2, 'F')
-            doc.setTextColor(255, 255, 255)
-            doc.text(txt, margin + 10, yy + 3.7)
+        items.push({
+          h: chipH + 1.5,
+          draw: (x, yy) => {
+            const w = drawChip(
+              getCategoryLabel(blk),
+              x + 4,
+              yy + 0.5,
+              hexToRgb(getCategoryColor(blk))
+            )
+            doc.setFont('helvetica', 'normal')
+            doc.setFontSize(6.5)
+            doc.setTextColor(100, 116, 139)
+            doc.text(String(list.length), x + 6 + w, yy + chipH - 1.4)
             doc.setTextColor(30, 41, 59)
           },
         })
+        list.forEach((t) => {
+          items.push({
+            h: 4,
+            draw: (x, yy) => {
+              doc.setFont('helvetica', 'bold')
+              doc.setFontSize(6.5)
+              doc.setTextColor(71, 85, 105)
+              doc.text(String(t.seq || '—'), x + 4, yy + 3)
+              doc.setTextColor(30, 41, 59)
+              doc.setFont('helvetica', 'normal')
+              const immat = t.registration ? `  ${t.registration}` : ''
+              const avail = colW - 12 - doc.getTextWidth(immat)
+              const desc =
+                doc.splitTextToSize(String(t.description || ''), Math.max(20, avail))[0] || ''
+              doc.text(desc, x + 12, yy + 3)
+              if (t.registration) {
+                doc.setFont('helvetica', 'bold')
+                doc.setTextColor(3, 105, 161)
+                doc.text(`${t.registration}`, x + colW - 4 - doc.getTextWidth(`${t.registration}`), yy + 3)
+                doc.setTextColor(30, 41, 59)
+              }
+            },
+          })
+        })
       })
-      rows.push({ h: 1.5, draw: () => {} })
     })
 
-    const totalH = rows.reduce((a, r) => a + r.h, 0) + 6
-    const fitsOnPage = totalH <= pageHeight - 24
+    const h = items.reduce((a, it) => a + it.h, 0) + 6
+    return { h, items }
+  }
 
-    if (fitsOnPage) {
-      ensureRoom(totalH + 4)
-      // Cadre de la carte
+  for (let i = 0; i < (data?.teams || []).length; i += 2) {
+    const pair = [data.teams[i], data.teams[i + 1]].filter(Boolean)
+    const cards = pair.map((team) => buildTeamCard(team))
+    const rowH = Math.max(...cards.map((c) => c.h))
+    ensureRoom(rowH + 6)
+    cards.forEach((card, k) => {
+      const x = colX[k]
       doc.setDrawColor(203, 213, 225)
       doc.setLineWidth(0.3)
-      doc.roundedRect(margin, y, contentWidth, totalH, 2.5, 2.5, 'S')
-      y += 3
-    }
-
-    rows.forEach((r) => {
-      if (!fitsOnPage) ensureRoom(r.h + 2)
-      r.draw(y)
-      y += r.h
+      doc.roundedRect(x, y, colW, card.h, 2.5, 2.5, 'S')
+      let cy = y + 3
+      card.items.forEach((it) => {
+        it.draw(x, cy)
+        cy += it.h
+      })
     })
-    y += 6
-  })
+    y += rowH + 6
+  }
   return doc
 }
 
