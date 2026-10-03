@@ -56,7 +56,7 @@ function currentWeekNumNow() {
 }
 
 export default function Consignes() {
-  const { activeProfile, code, isAdmin } = useApp()
+  const { activeProfile, code, isAdmin, pockets, prepTasks, tasks } = useApp()
   const [folders, setFolders] = useState(null)
   const [error, setError] = useState('')
   const [selectedDossierId, setSelectedDossierId] = useState(null)
@@ -92,6 +92,54 @@ export default function Consignes() {
   const [replyPreviews, setReplyPreviews] = useState([])
   const [sending, setSending] = useState(false)
   const [replyError, setReplyError] = useState('')
+  // Insertion de pochettes virtuelles dans la consigne
+  const [pocketPickerOpen, setPocketPickerOpen] = useState(false)
+  const [pocketPick, setPocketPick] = useState([])
+
+  // Lignes d'une pochette (les tâches référencées, préparation puis tâches)
+  const pocketLines = (pocket) => {
+    const ids = Array.isArray(pocket?.taskIds) ? pocket.taskIds : []
+    return ids
+      .map((id) => prepTasks.find((t) => t.id === id) || tasks.find((t) => t.id === id))
+      .filter(Boolean)
+  }
+
+  const escapeHtml = (s) =>
+    String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+
+  const insertPockets = () => {
+    const chosen = (pockets || []).filter((p) => pocketPick.includes(p.id))
+    if (!chosen.length) return
+    const html = chosen
+      .map((p) => {
+        const lines = pocketLines(p)
+        return (
+          `<p><strong>📁 ${escapeHtml(p.name)}</strong> (${lines.length} ligne(s))</p>` +
+          '<ul>' +
+          lines
+            .map((t) => {
+              const parts = []
+              if (t.seq !== undefined && t.seq !== '') parts.push(`N° ${escapeHtml(t.seq)}`)
+              if (t.description) parts.push(escapeHtml(t.description))
+              if (t.workArea) parts.push(`(${escapeHtml(t.workArea)})`)
+              return `<li>${parts.join(' — ')}</li>`
+            })
+            .join('') +
+          '</ul>'
+        )
+      })
+      .join('')
+    setReplyHtml((prev) => `${prev || ''}${html}`)
+    // Met aussi à jour le texte brut (sert au bouton Envoyer)
+    setReplyText((prev) =>
+      `${prev || ''} ${html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}`.trim()
+    )
+    setPocketPickerOpen(false)
+    setPocketPick([])
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -663,7 +711,71 @@ export default function Consignes() {
 
               {/* Saisie d'une réponse */}
               <div className="border-t p-4 bg-slate-50">
+                {(pockets || []).length > 0 && (
+                  <div className="mb-2">
+                    <button
+                      onClick={() => {
+                        setPocketPickerOpen((v) => !v)
+                        setPocketPick([])
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1"
+                      title="Insérer le contenu d'une ou plusieurs pochettes virtuelles dans la consigne"
+                    >
+                      📁 Insérer des pochettes ({(pockets || []).length})
+                    </button>
+                    {pocketPickerOpen && (
+                      <div className="mt-2 bg-white border border-slate-200 rounded-lg p-3 max-w-xl">
+                        <p className="text-xs text-slate-500 mb-2">
+                          Cocher les pochettes à inclure dans la consigne :
+                        </p>
+                        <div className="space-y-1 max-h-52 overflow-y-auto mb-2">
+                          {(pockets || []).map((p) => {
+                            const checked = pocketPick.includes(p.id)
+                            const n = pocketLines(p).length
+                            return (
+                              <label
+                                key={p.id}
+                                className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-50 cursor-pointer text-sm"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() =>
+                                    setPocketPick((prev) =>
+                                      prev.includes(p.id)
+                                        ? prev.filter((x) => x !== p.id)
+                                        : [...prev, p.id]
+                                    )
+                                  }
+                                  className="h-4 w-4 accent-sky-600"
+                                />
+                                <span className="flex-1">{p.name}</span>
+                                <span className="text-xs text-slate-400">{n} ligne(s)</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={insertPockets}
+                            disabled={pocketPick.length === 0}
+                            className="bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 disabled:opacity-50 text-xs font-semibold"
+                          >
+                            Insérer ({pocketPick.length})
+                          </button>
+                          <button
+                            onClick={() => setPocketPickerOpen(false)}
+                            className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <RichEditor
+                  value={replyHtml}
                   onChange={(html, text) => {
                     setReplyHtml(html)
                     setReplyText(text)
