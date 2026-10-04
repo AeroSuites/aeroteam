@@ -505,7 +505,7 @@ export default function Dashboard() {
                         {Object.entries(groupByZone(blockTasks))
                           .sort((a, b) => a[0].localeCompare(b[0]))
                           .map(([zone, zoneTasks]) => {
-                            const zoneColor = getZoneColor(zone, zones)
+                            const zoneColor = getZoneColor(zone)
                             return (
                               <div key={zone} className="rounded-lg border overflow-hidden" style={{ borderColor: `${zoneColor}88`, borderWidth: 2 }}>
                                 <div
