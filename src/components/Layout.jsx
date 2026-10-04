@@ -10,11 +10,27 @@ const navItems = [
   { to: '/taches', label: 'Tâches', ordre: 2 },
   { to: '/equipes', label: 'Équipes', ordre: 3 },
   { to: '/affectation', label: 'Affectation', ordre: 4 },
-  { to: '/export', label: 'Export' },
+  { to: '/export', label: 'Export/Reset' },
   { to: '/preparation', label: 'Préparation vac suivante' },
-  { to: '/notes', label: 'Bloc-notes' },
-  { to: '/messagerie', label: 'Messagerie', messages: true },
-  { to: '/consignes', label: 'Consignes', submenu: true },
+  {
+    to: '/notes',
+    label: 'Bloc-notes & Messagerie',
+    submenu: true,
+    messages: true,
+    children: [
+      { to: '/notes', label: 'Bloc-notes' },
+      { to: '/messagerie', label: 'Messagerie', messages: true },
+    ],
+  },
+  {
+    to: '/consignes',
+    label: 'Consignes',
+    submenu: true,
+    children: [
+      { to: '/consignes', label: 'Consignes' },
+      { to: '/import-consignes', label: 'Import consignes', adminOnly: true },
+    ],
+  },
 ]
 
 export default function Layout({ children }) {
@@ -23,9 +39,8 @@ export default function Layout({ children }) {
   const location = useLocation()
   const [adminMenuOpen, setAdminMenuOpen] = useState(false)
   const adminMenuRef = useRef(null)
-  // Menu « Consignes » (survol) : Consignes / Import consignes
-  const [consignesMenuOpen, setConsignesMenuOpen] = useState(false)
-  const consignesMenuRef = useRef(null)
+  const [openSubmenu, setOpenSubmenu] = useState(null)
+  const itemsBarRef = useRef(null)
 
   const [primesPending, setPrimesPending] = useState(0)
   const [adminPending, setAdminPending] = useState(0)
@@ -118,20 +133,17 @@ export default function Layout({ children }) {
   const adminRouteActive =
     location.pathname === '/admin' || location.pathname === '/primes'
 
-  // Ferme le menu Consignes au clic extérieur
+  // Ferme les sous-menus au clic extérieur
   useEffect(() => {
-    if (!consignesMenuOpen) return
+    if (!openSubmenu) return
     const onDown = (e) => {
-      if (consignesMenuRef.current && !consignesMenuRef.current.contains(e.target)) {
-        setConsignesMenuOpen(false)
+      if (itemsBarRef.current && !itemsBarRef.current.contains(e.target)) {
+        setOpenSubmenu(null)
       }
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
-  }, [consignesMenuOpen])
-
-  const consignesRouteActive =
-    location.pathname === '/consignes' || location.pathname === '/import-consignes'
+  }, [openSubmenu])
 
   const switchProfile = () => {
     if (window.confirm(`Quitter le profil « ${activeProfile?.name} » ? (les données sont sauvegardées dans le cloud)`)) {
@@ -221,87 +233,93 @@ export default function Layout({ children }) {
             </div>
           </div>
         )}
-        <div className="mx-auto max-w-[1700px] px-2 pb-2 flex flex-wrap items-center gap-1">
-          {items.map((item) =>
-            item.submenu && isAdmin ? (
+        <div ref={itemsBarRef} className="mx-auto max-w-[1700px] px-2 pb-2 flex flex-wrap items-center gap-1">
+          {items.map((item) => {
+            const children = (item.children || []).filter((c) => !c.adminOnly || isAdmin)
+            if (!item.submenu || children.length < 2) {
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    `relative px-2.5 py-1.5 rounded-md text-[13px] whitespace-nowrap font-medium transition-colors shrink-0 ${
+                      isActive
+                        ? 'bg-sky-500 text-white'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`
+                  }
+                >
+                  {item.ordre && (
+                    <span className="inline-flex items-center justify-center h-4 w-4 mr-1.5 rounded-full bg-amber-400 text-[10px] font-bold text-slate-900 align-middle" title={`Étape ${item.ordre} — ordre d'utilisation`}>
+                      {item.ordre}
+                    </span>
+                  )}
+                  {item.label}
+                  {item.messages && msgUnread > 0 && (
+                    <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold align-middle">
+                      {msgUnread}
+                    </span>
+                  )}
+                </NavLink>
+              )
+            }
+            const open = openSubmenu === item.to
+            const routeActive = children.some((c) => location.pathname === c.to)
+            return (
               <div
                 key={item.to}
                 className="relative shrink-0"
-                ref={consignesMenuRef}
-                onMouseEnter={() => setConsignesMenuOpen(true)}
-                onMouseLeave={() => setConsignesMenuOpen(false)}
+                onMouseEnter={() => setOpenSubmenu(item.to)}
+                onMouseLeave={() => setOpenSubmenu((o) => (o === item.to ? null : o))}
               >
                 <button
-                  onClick={() => setConsignesMenuOpen((o) => !o)}
+                  onClick={() => setOpenSubmenu((o) => (o === item.to ? null : item.to))}
                   className={`relative flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[13px] whitespace-nowrap font-medium transition-colors ${
-                    consignesRouteActive || consignesMenuOpen
+                    routeActive || open
                       ? 'bg-sky-500 text-white'
                       : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                   }`}
-                  title="Consignes et Import consignes"
+                  title={children.map((c) => c.label).join(' / ')}
                 >
                   {item.label}
+                  {item.messages && msgUnread > 0 && (
+                    <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold align-middle">
+                      {msgUnread}
+                    </span>
+                  )}
                   <ChevronDown
                     className={`h-3.5 w-3.5 transition-transform ${
-                      consignesMenuOpen ? 'rotate-180' : ''
+                      open ? 'rotate-180' : ''
                     }`}
                   />
                 </button>
-                {consignesMenuOpen && (
+                {open && (
                   <div className="absolute left-0 top-full z-50 bg-slate-800 rounded-lg shadow-xl border border-slate-700 py-1 min-w-[190px]">
-                    <NavLink
-                      to="/consignes"
-                      onClick={() => setConsignesMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center px-3 py-2 text-sm ${
-                          isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
-                        }`
-                      }
-                    >
-                      Consignes
-                    </NavLink>
-                    {isAdmin && (
+                    {children.map((child) => (
                       <NavLink
-                        to="/import-consignes"
-                        onClick={() => setConsignesMenuOpen(false)}
+                        key={child.to}
+                        to={child.to}
+                        onClick={() => setOpenSubmenu(null)}
                         className={({ isActive }) =>
-                          `flex items-center px-3 py-2 text-sm ${
+                          `flex items-center justify-between gap-2 px-3 py-2 text-sm ${
                             isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
                           }`
                         }
                       >
-                        Import consignes
+                        <span>{child.label}</span>
+                        {child.messages && msgUnread > 0 && (
+                          <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+                            {msgUnread}
+                          </span>
+                        )}
                       </NavLink>
-                    )}                  </div>
+                    ))}
+                  </div>
                 )}
               </div>
-            ) : (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `relative px-2.5 py-1.5 rounded-md text-[13px] whitespace-nowrap font-medium transition-colors shrink-0 ${
-                    isActive
-                      ? 'bg-sky-500 text-white'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`
-                }
-              >
-                {item.ordre && (
-                  <span className="inline-flex items-center justify-center h-4 w-4 mr-1.5 rounded-full bg-amber-400 text-[10px] font-bold text-slate-900 align-middle" title={`Étape ${item.ordre} — ordre d'utilisation`}>
-                    {item.ordre}
-                  </span>
-                )}
-                {item.label}
-                {item.messages && msgUnread > 0 && (
-                  <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold align-middle">
-                    {msgUnread}
-                  </span>
-                )}
-              </NavLink>
             )
-          )}
+          })}
 
           {isAdmin && (
             <div className="relative shrink-0" ref={adminMenuRef}>
