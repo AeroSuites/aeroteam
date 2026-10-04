@@ -16,6 +16,7 @@ import {
   Eye,
   EyeOff,
   ArrowRightLeft,
+  Upload,
 } from 'lucide-react'
 
 export default function Admin() {
@@ -114,6 +115,8 @@ export default function Admin() {
   const [profiles, setProfiles] = useState(null)
   const [profilesError, setProfilesError] = useState('')
   const [deleting, setDeleting] = useState(null)
+  const [membersMsg, setMembersMsg] = useState('')
+  const [membersError, setMembersError] = useState('')
 
   const [viewProfile, setViewProfile] = useState(null)
 
@@ -179,6 +182,59 @@ setEditError(res.error || 'Échec de la mise à jour.')
       setEditingId(null)
     }
     setEditSaving(false)
+  }
+
+  // Charge les membres permanents d'un profil depuis un fichier (.txt, .csv)
+  const handleMembersFile = (e, profile) => {
+    const file = e.target.files && e.target.files[0]
+    if (!file) return
+    setMembersMsg('')
+    setMembersError('')
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const content = String(reader.result || '')
+      const names = content
+        .split(/\r\n|\r|\n|,|;|\t/)
+        .map((n) => n.trim())
+        .filter(Boolean)
+      e.target.value = ''
+      if (!names.length) {
+        setMembersError(`Fichier vide : aucun membre trouvé pour « ${profile.name} ».`)
+        return
+      }
+      try {
+        const fresh = await profileStore.adminGetProfileData(activeProfile?.code, profile.id)
+        if (fresh?.error || !fresh?.profile) {
+          setMembersError(`Lecture impossible du profil « ${profile.name} ».`)
+          return
+        }
+        const d = fresh.profile.data || {}
+        const current = Array.isArray(d.members) ? d.members : []
+        const merged = [...new Set([...current, ...names])]
+        const saved = await profileStore.saveProfileData(
+          profile.code,
+          { ...d, members: merged },
+          fresh.profile.rev ?? 0,
+          false
+        )
+        if (saved?.error === 'conflict') {
+          setMembersError(
+            `Le profil « ${profile.name} » a été modifié entre-temps. Réessayez.`
+          )
+          return
+        }
+        if (saved?.error) {
+          setMembersError(`Échec du chargement des membres pour « ${profile.name} ».`)
+          return
+        }
+        setMembersMsg(
+          `${merged.length - current.length} membre(s) permanent(s) ajouté(s) au profil « ${profile.name} » (total : ${merged.length}).`
+        )
+      } catch {
+        setMembersError('Échec du chargement (hors ligne ?).')
+      }
+    }
+    reader.readAsText(file)
   }
 
   useEffect(() => {
@@ -458,6 +514,8 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
           Les codes de connexion ne sont jamais affichés par sécurité.
         </p>
         {profilesError && <p className="text-sm text-red-600 mb-3">{profilesError}</p>}
+        {membersMsg && <p className="text-sm text-green-600 mb-3">{membersMsg}</p>}
+        {membersError && <p className="text-sm text-red-600 mb-3">{membersError}</p>}
         {profiles === null && !profilesError && (
           <p className="text-sm text-slate-400">Chargement…</p>
         )}
@@ -609,6 +667,18 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
+                        <label
+                          className="inline-flex text-slate-400 hover:text-sky-600 p-1 cursor-pointer"
+                          title={`Charger les membres permanents depuis un fichier (.txt, .csv) pour « ${profile.name} »`}
+                        >
+                          <Upload className="h-4 w-4" />
+                          <input
+                            type="file"
+                            accept=".txt,.csv"
+                            className="hidden"
+                            onChange={(e) => handleMembersFile(e, profile)}
+                          />
+                        </label>
                         {isSelf ? (
                           <span className="text-xs text-slate-300 italic ml-1">non supprimable</span>
                         ) : (
