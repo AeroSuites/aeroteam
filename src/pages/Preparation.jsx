@@ -14,6 +14,7 @@ import {
   hexToRgb,
   makeId,
   filterNewPrepTasks,
+  taskContentKey,
   cleanShortValue,
   priorityToken,
 } from '../utils/helpers'
@@ -58,6 +59,7 @@ export default function Preparation() {
     removeTasksFromPocket,
     removePocket,
     activeProfile,
+    tasks,
   } = useApp()
 
   const fileInputRef = useRef(null)
@@ -71,6 +73,7 @@ export default function Preparation() {
   const [printPocketId, setPrintPocketId] = useState(null)
   const [selectedTasks, setSelectedTasks] = useState([])
   const [previewSelected, setPreviewSelected] = useState({})
+  const [previewDone, setPreviewDone] = useState({})
   const [previewExpandedBlocks, setPreviewExpandedBlocks] = useState([])
   const [previewExpandedZones, setPreviewExpandedZones] = useState([])
   const [importMsg, setImportMsg] = useState('')
@@ -153,9 +156,16 @@ export default function Preparation() {
           return
         }
         const parsed = parseExcelRows(rows.slice(1), detected)
+        const doneKeys = new Set(
+          (tasks || []).filter((t) => t.mtxStatus === 'COMPLETE').map(taskContentKey)
+        )
+        const doneMap = Object.fromEntries(
+          parsed.map((t) => [t.id, doneKeys.has(taskContentKey(t))])
+        )
         setPreview(parsed)
         setImportMsg('')
-        setPreviewSelected(Object.fromEntries(parsed.map((t) => [t.id, true])))
+        setPreviewDone(doneMap)
+        setPreviewSelected(Object.fromEntries(parsed.map((t) => [t.id, !doneMap[t.id]])))
         setPreviewExpandedBlocks([])
         setPreviewExpandedZones([])
       } catch (err) {
@@ -163,7 +173,7 @@ export default function Preparation() {
       }
     }
     reader.readAsArrayBuffer(file)
-  }, [])
+  }, [tasks])
 
   // Réintégration dans Tâches (retour arrière d'un transfert)
   const reintegrerTasks = (list) => {
@@ -176,16 +186,18 @@ export default function Preparation() {
   const handleImport = () => {
     const list = preview.filter((t) => previewSelected[t.id])
     if (!list.length) return
+    const ignoredDone = preview.filter((t) => previewDone[t.id] && !previewSelected[t.id]).length
     const fresh = filterNewPrepTasks(prepTasks, list)
     const ignored = list.length - fresh.length
     if (fresh.length) addPrepTasks(fresh)
     setImportMsg(
       `${fresh.length} ligne(s) ajoutée(s)${
         ignored ? ` · ${ignored} déjà présente(s) ignorée(s)` : ''
-      }.`
+      }${ignoredDone ? ` · ${ignoredDone} faite(s) (COMPLETE) ignorée(s)` : ''}.`
     )
     setPreview([])
     setPreviewSelected({})
+    setPreviewDone({})
     setFileName('')
   }
 
@@ -194,9 +206,10 @@ export default function Preparation() {
 
   const togglePreviewTasks = (list) => {
     setPreviewSelected((prev) => {
-      const allOn = list.every((t) => prev[t.id])
+      const selectable = list.filter((t) => !previewDone[t.id])
+      const allOn = selectable.length > 0 && selectable.every((t) => prev[t.id])
       const next = { ...prev }
-      list.forEach((t) => {
+      selectable.forEach((t) => {
         next[t.id] = !allOn
       })
       return next
@@ -243,6 +256,7 @@ export default function Preparation() {
 
   const previewTree = useMemo(() => groupTasksTree(preview), [preview])
   const previewSelectedCount = preview.filter((t) => previewSelected[t.id]).length
+  const previewDoneCount = preview.filter((t) => previewDone[t.id]).length
 
   const allZones = useMemo(() => {
     return [...new Set(prepTasks.map((t) => t.workArea).filter(Boolean))].sort()
@@ -619,12 +633,16 @@ export default function Preparation() {
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 Décochez un bloc, une sous-tâche ou une ligne pour ne pas l'importer.
+                {previewDoneCount > 0 &&
+                  ` ${previewDoneCount} ligne(s) déjà faite(s) (COMPLETE dans Tâches) décochée(s) automatiquement.`}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() =>
-                  setPreviewSelected(Object.fromEntries(preview.map((t) => [t.id, true])))
+                  setPreviewSelected(
+                    Object.fromEntries(preview.map((t) => [t.id, !previewDone[t.id]]))
+                  )
                 }
                 className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-2.5 py-1"
               >
@@ -640,6 +658,7 @@ export default function Preparation() {
                 onClick={() => {
                   setPreview([])
                   setPreviewSelected({})
+                  setPreviewDone({})
                   setFileName('')
                 }}
                 className="px-4 py-2 rounded-md border border-slate-300 text-sm hover:bg-slate-50"
@@ -666,6 +685,7 @@ export default function Preparation() {
               expandedZones={previewExpandedZones}
               setExpandedZones={setPreviewExpandedZones}
               idPrefix="prep"
+              doneMap={previewDone}
             />
           </div>
         </div>

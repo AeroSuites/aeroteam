@@ -19,6 +19,7 @@ export default function Taches() {
   updateTasks,
   prepTasks,
   addPrepTasks,
+  updatePrepTasks,
   } = useApp()
   const [filter, setFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -138,16 +139,31 @@ export default function Taches() {
       .forEach((t) => updateTask(t.id, { workArea: name }))
   }
 
+  // Statut (COMPLETE / PAUSE / ACTV) appliqué à plusieurs lignes, avec
+  // synchronisation des copies déjà transférées dans Préparation (même clé)
+  const applyStatus = (list, status) => {
+    const items = (list || []).filter(Boolean)
+    if (!items.length) return
+    updateTasks(items.map((t) => t.id), { mtxStatus: status })
+    const keys = new Set(items.map(taskContentKey))
+    const prepIds = (prepTasks || [])
+      .filter((t) => keys.has(taskContentKey(t)))
+      .map((t) => t.id)
+    if (prepIds.length) updatePrepTasks(prepIds, { mtxStatus: status })
+  }
+
   const transferToPrep = () => {
-    const fresh = filterNewPrepTasks(prepTasks, followTasks)
-    const ignored = followTasks.length - fresh.length
+    const toSend = followTasks.filter((t) => t.mtxStatus !== 'COMPLETE')
+    const doneCount = followTasks.length - toSend.length
+    const fresh = filterNewPrepTasks(prepTasks, toSend)
+    const ignored = toSend.length - fresh.length
     if (fresh.length) addPrepTasks(fresh)
     // Transfert = déplacement : les lignes quittent Tâches
-    removeTasksByIds(followTasks.map((t) => t.id))
+    if (toSend.length) removeTasksByIds(toSend.map((t) => t.id))
     setTransferMsg(
-      `${followTasks.length} ligne(s) transférée(s) vers Préparation vac suivante${
+      `${toSend.length} ligne(s) transférée(s) vers Préparation vac suivante${
         ignored ? ` · ${ignored} déjà présente(s) (mise en commun)` : ''
-      }.`
+      }${doneCount ? ` · ${doneCount} COMPLETE ignorée(s)` : ''}.`
     )
     setFollowSelected({})
   }
@@ -460,7 +476,10 @@ export default function Taches() {
               const hidden = selectedBlocks.includes(block)
               const active = !hidden
               const color = getCategoryColor(block)
-              const count = tasks.filter((t) => t.taskType === block).length
+              const blockList = tasks.filter((t) => t.taskType === block)
+              const count = blockList.length
+              const blockAllComplete =
+                count > 0 && blockList.every((t) => t.mtxStatus === 'COMPLETE')
               return (
                 <div key={block} className="flex items-center gap-1">
                   <button
@@ -492,6 +511,26 @@ export default function Taches() {
                   >
                     <Plus className="h-3 w-3" /> à suivre
                   </button>
+                  <button
+                    onClick={() => applyStatus(blockList, blockAllComplete ? 'ACTV' : 'COMPLETE')}
+                    className={`inline-flex items-center gap-0.5 text-[10px] font-bold border rounded-full px-1.5 py-0.5 ${
+                      blockAllComplete
+                        ? 'text-amber-700 border-amber-300 hover:bg-amber-50'
+                        : 'text-green-700 border-green-300 hover:bg-green-50'
+                    }`}
+                    title={
+                      blockAllComplete
+                        ? `Rétablir tout le bloc ${getCategoryLabel(block)} en ACTV`
+                        : `Marquer tout le bloc ${getCategoryLabel(block)} COMPLETE`
+                    }
+                  >
+                    {blockAllComplete ? (
+                      <RotateCcw className="h-3 w-3" />
+                    ) : (
+                      <CheckCircle2 className="h-3 w-3" />
+                    )}
+                    {blockAllComplete ? 'ACTV' : 'COMPLETE'}
+                  </button>
                 </div>
               )
             })}
@@ -522,6 +561,8 @@ export default function Taches() {
           const memberNames = [...new Set(assignedTeams.flatMap((t) => t.members))]
           const expanded = expandedZones.includes(zone)
           const transferredCount = zoneTasks.filter((t) => isTransferred(t)).length
+          const allComplete =
+            zoneTasks.length > 0 && zoneTasks.every((t) => t.mtxStatus === 'COMPLETE')
           return (
             <div
               key={zone}
@@ -573,6 +614,26 @@ export default function Taches() {
                       </span>
                     )
                   })}
+                  {zoneTasks.length > 0 && (
+                    <button
+                      onClick={() => applyStatus(zoneTasks, allComplete ? 'ACTV' : 'COMPLETE')}
+                      className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5 self-center"
+                      title={
+                        allComplete
+                          ? `Rétablir toute la sous-tâche ${zone} en ACTV`
+                          : `Marquer toute la sous-tâche ${zone} COMPLETE`
+                      }
+                    >
+                      {allComplete ? (
+                        <RotateCcw className="h-3 w-3" />
+                      ) : (
+                        <CheckCircle2 className="h-3 w-3" />
+                      )}
+                      <span className="text-[10px] font-bold whitespace-nowrap">
+                        {allComplete ? 'ACTV' : 'COMPLETE'}
+                      </span>
+                    </button>
+                  )}
                   {group.isFF && (
                     <button
                       onClick={() => addBlockToFollow('CORR')}
@@ -801,7 +862,7 @@ export default function Taches() {
                             </span>
                             {task.mtxStatus !== 'COMPLETE' ? (
                               <button
-                                onClick={() => updateTask(task.id, { mtxStatus: 'COMPLETE' })}
+                                onClick={() => applyStatus([task], 'COMPLETE')}
                                 className="text-slate-300 hover:text-green-600 ml-1"
                                 title="Marquer la tâche COMPLETE"
                               >
@@ -809,7 +870,7 @@ export default function Taches() {
                               </button>
                             ) : (
                               <button
-                                onClick={() => updateTask(task.id, { mtxStatus: 'ACTV' })}
+                                onClick={() => applyStatus([task], 'ACTV')}
                                 className="text-slate-300 hover:text-sky-600 ml-1"
                                 title="Rétablir la tâche ACTV"
                               >
@@ -818,7 +879,7 @@ export default function Taches() {
                             )}
                             {task.mtxStatus !== 'PAUSE' ? (
                               <button
-                                onClick={() => updateTask(task.id, { mtxStatus: 'PAUSE' })}
+                                onClick={() => applyStatus([task], 'PAUSE')}
                                 className="text-slate-300 hover:text-amber-600 ml-1"
                                 title="Mettre la tâche en PAUSE"
                               >
@@ -826,7 +887,7 @@ export default function Taches() {
                               </button>
                             ) : (
                               <button
-                                onClick={() => updateTask(task.id, { mtxStatus: 'ACTV' })}
+                                onClick={() => applyStatus([task], 'ACTV')}
                                 className="text-slate-300 hover:text-green-600 ml-1"
                                 title="Reprendre la tâche (ACTV)"
                               >

@@ -36,6 +36,7 @@ export default function TaskTreeSelect({
   expandedZones,
   setExpandedZones,
   idPrefix,
+  doneMap,
 }) {
   return tree.map(({ block, zones }) => {
     const blockTasks = zones.flatMap((z) => z.tasks)
@@ -144,6 +145,11 @@ export default function TaskTreeSelect({
                       >
                         {task.description}
                       </span>
+                      {doneMap && doneMap[task.id] && (
+                        <span className="shrink-0 text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 rounded-full px-1.5 py-0.5 whitespace-nowrap">
+                          déjà faite (COMPLETE)
+                        </span>
+                      )}
                       <span className="shrink-0 text-xs text-slate-400">
                         {task.scheduledHours || ''}
                       </span>
