@@ -3,7 +3,7 @@ import DOMPurify from 'dompurify'
 import * as profileStore from '../lib/profileStore'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
-import { hashCodeKey, currentWeekLabel } from '../utils/helpers'
+import { hashCodeKey, currentWeekLabel, getCategoryLabel } from '../utils/helpers'
 import RichEditor from '../components/RichEditor'
 import ConsignesAvions from '../components/ConsignesAvions'
 import {
@@ -148,18 +148,57 @@ export default function Consignes() {
     const html = chosen
       .map((p) => {
         const lines = pocketLines(p)
+        const blockCounts = {}
+        const zoneCounts = {}
+        lines.forEach((t) => {
+          const b = t.taskType || 'AUTRE'
+          const z = t.workArea || 'Autre'
+          blockCounts[b] = (blockCounts[b] || 0) + 1
+          zoneCounts[z] = (zoneCounts[z] || 0) + 1
+        })
+        const compactBlocks = new Set(
+          Object.keys(blockCounts).filter((b) => blockCounts[b] > 10)
+        )
+        const compactZones = new Set(Object.keys(zoneCounts).filter((z) => zoneCounts[z] > 10))
+        const emitted = new Set()
+        const items = lines
+          .map((t) => {
+            const b = t.taskType || 'AUTRE'
+            const z = t.workArea || 'Autre'
+            if (compactBlocks.has(b)) {
+              const key = `bloc:${b}`
+              if (emitted.has(key)) return ''
+              emitted.add(key)
+              const nums = lines
+                .filter((x) => (x.taskType || 'AUTRE') === b)
+                .map((x) => escapeHtml(x.seq))
+                .filter(Boolean)
+                .join(', ')
+              return `<li><strong>${escapeHtml(getCategoryLabel(b))}</strong> (${blockCounts[b]} lignes) : N° ${nums}</li>`
+            }
+            if (compactZones.has(z)) {
+              const key = `zone:${z}`
+              if (emitted.has(key)) return ''
+              emitted.add(key)
+              const nums = lines
+                .filter((x) => (x.workArea || 'Autre') === z)
+                .map((x) => escapeHtml(x.seq))
+                .filter(Boolean)
+                .join(', ')
+              return `<li><strong>📍 ${escapeHtml(z)}</strong> (${zoneCounts[z]} lignes) : N° ${nums}</li>`
+            }
+            const parts = []
+            if (t.seq !== undefined && t.seq !== '') parts.push(`N° ${escapeHtml(t.seq)}`)
+            if (t.description) parts.push(escapeHtml(t.description))
+            if (t.workArea) parts.push(`(${escapeHtml(t.workArea)})`)
+            return `<li>${parts.join(' — ')}</li>`
+          })
+          .filter(Boolean)
+          .join('')
         return (
           `<p><strong>📁 ${escapeHtml(p.name)}</strong> (${lines.length} ligne(s))</p>` +
           '<ul>' +
-          lines
-            .map((t) => {
-              const parts = []
-              if (t.seq !== undefined && t.seq !== '') parts.push(`N° ${escapeHtml(t.seq)}`)
-              if (t.description) parts.push(escapeHtml(t.description))
-              if (t.workArea) parts.push(`(${escapeHtml(t.workArea)})`)
-              return `<li>${parts.join(' — ')}</li>`
-            })
-            .join('') +
+          items +
           '</ul>'
         )
       })
