@@ -253,6 +253,17 @@ export default function Affectation() {
       .forEach((t) => manualAssign(t.id, teamId))
   }
 
+  // Affecte toute une sous-tâche d'un bloc précis (ex. SEATS du Found Fault,
+  // sans toucher au SEATS du JIC)
+  const assignZoneInBlock = (zone, block, teamId) => {
+    tasks
+      .filter(
+        (t) =>
+          (t.workArea || 'Autre') === zone && (t.taskType || 'AUTRE') === block
+      )
+      .forEach((t) => manualAssign(t.id, teamId))
+  }
+
   // Vide la charge d'une équipe : toutes ses lignes sont désassignées
   const clearTeamCharge = (teamId) => {
     tasks
@@ -780,11 +791,12 @@ export default function Affectation() {
                                     <select
                                       defaultValue=""
                                       onChange={(e) => {
-                                        if (e.target.value) assignZoneAll(subZone, e.target.value)
+                                        if (e.target.value)
+                                          assignZoneInBlock(subZone, 'CORR', e.target.value)
                                         e.target.value = ''
                                       }}
                                       className="border-none rounded-md px-2 py-1 text-xs bg-white text-slate-800 cursor-pointer font-semibold"
-                                      title="Affecter toute la sous-tâche"
+                                      title="Affecter toute la sous-tâche Found Fault"
                                     >
                                       <option value="">— Toute la sous-tâche —</option>
                                       {teams.map((t) => (
