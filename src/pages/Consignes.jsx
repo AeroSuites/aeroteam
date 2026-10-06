@@ -204,9 +204,11 @@ export default function Consignes() {
           .join('')
         return (
           `<p><strong>📁 ${escapeHtml(p.name)}</strong> (${lines.length} ligne(s))</p>` +
+          '<p>&nbsp;</p>' +
           '<ul>' +
           items +
-          '</ul>'
+          '</ul>' +
+          '<p>&nbsp;</p>'
         )
       })
       .join('')
