@@ -591,7 +591,7 @@ export function AppProvider({ children }) {
     )
     setDayMembers([])
   }, [dayMembers])
-  const { addPrepTasks, removePrepTask, removePrepTasksByBlock, removePrepTasksByZone, updatePrepTask, updatePrepTasks, clearPrepTasks } = prepActions({
+  const { addPrepTasks, removePrepTask, removePrepTasksByBlock, removePrepTasksByZone, removePrepTasksByIds, updatePrepTask, updatePrepTasks, clearPrepTasks } = prepActions({
     setPrepTasks,
     setPockets,
   })
@@ -635,7 +635,7 @@ const value = {
     addTasks, addTeam, updateTeam, removeTeam, assignTask, unassignTask,
       removeTask, removeTasksByBlock, removeTasksByZone, removeTasksByIds, updateTask, updateTasks, addMember, addMembers, addDayMember, addDayMembers,
     clearDayMembers, removeMember, resetData,
-      addPrepTasks, removePrepTask, removePrepTasksByBlock, removePrepTasksByZone, updatePrepTask, updatePrepTasks, clearPrepTasks,
+      addPrepTasks, removePrepTask, removePrepTasksByBlock, removePrepTasksByZone, removePrepTasksByIds, updatePrepTask, updatePrepTasks, clearPrepTasks,
     addPocket, renamePocket, addTasksToPocket, removeTasksFromPocket, removePocket,
     addNote, updateNote, removeNote,
     addPrimeRequest, updatePrimeRequest, removePrimeRequest, clearPrimeRequests,

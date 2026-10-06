@@ -313,6 +313,23 @@ export default function Taches() {
                 Déplacer les lignes cochées ({followTasks.length})
               </button>
               <button
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `Supprimer définitivement les ${followTasks.length} ligne(s) cochée(s) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
+                    )
+                  ) {
+                    removeTasksByIds(followTasks.map((t) => t.id))
+                    setFollowSelected({})
+                    setTransferMsg(`${followTasks.length} ligne(s) supprimée(s).`)
+                  }
+                }}
+                className="bg-white text-red-600 border border-red-200 px-3 py-1.5 rounded-md hover:bg-red-50 text-xs font-semibold"
+                title="Supprimer toutes les lignes cochées"
+              >
+                Supprimer les lignes cochées ({followTasks.length})
+              </button>
+              <button
                 onClick={() => setFollowSelected({})}
                 className="text-xs text-slate-500 hover:text-red-600 border border-slate-200 rounded-md px-2 py-1.5"
                 title="Vider la sélection"
@@ -1104,23 +1121,29 @@ export default function Taches() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="p-5 overflow-y-auto space-y-4">
+            <div className="p-5 overflow-y-auto space-y-4 bg-slate-50">
               {descTask.taskDescription && (
-                <div>
-                  <p className="text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-wide">
-                    Description détaillée
-                  </p>
-                  <p className="whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
+                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="px-3 py-2 bg-slate-100 border-b border-slate-200 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-sky-600" />
+                    <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                      Description détaillée
+                    </p>
+                  </div>
+                  <p className="p-3 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
                     {cleanTaskText(descTask.taskDescription)}
                   </p>
                 </div>
               )}
               {descTask.taskSteps && (
-                <div>
-                  <p className="text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-wide">
-                    Étapes (Task Steps)
-                  </p>
-                  <p className="whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
+                <div className="bg-white border border-emerald-200 rounded-lg overflow-hidden">
+                  <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-200 flex items-center gap-2">
+                    <ListChecks className="h-4 w-4 text-emerald-600" />
+                    <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wide">
+                      Étapes (Task Steps)
+                    </p>
+                  </div>
+                  <p className="p-3 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
                     {cleanTaskText(descTask.taskSteps)}
                   </p>
                 </div>

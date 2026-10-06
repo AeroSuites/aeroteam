@@ -49,6 +49,7 @@ export default function Preparation() {
     removePrepTask,
     removePrepTasksByBlock,
     removePrepTasksByZone,
+    removePrepTasksByIds,
     updatePrepTask,
     updatePrepTasks,
     clearPrepTasks,
@@ -579,6 +580,22 @@ export default function Preparation() {
               title="Déplacer toutes les lignes cochées"
             >
               Déplacer ({selectedMoveIds.length})
+            </button>
+            <button
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `Supprimer définitivement les ${selectedMoveIds.length} ligne(s) sélectionnée(s) ?\n\nElles seront aussi retirées des pochettes.`
+                  )
+                ) {
+                  removePrepTasksByIds(selectedMoveIds)
+                  setMoveSelected({})
+                }
+              }}
+              className="bg-white text-red-600 border border-red-200 px-3 py-1.5 rounded-md hover:bg-red-50 text-xs font-semibold"
+              title="Supprimer toutes les lignes sélectionnées"
+            >
+              Supprimer ({selectedMoveIds.length})
             </button>
             <button
               onClick={() => setMoveSelected({})}

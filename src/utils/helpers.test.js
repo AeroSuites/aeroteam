@@ -139,7 +139,7 @@ describe('filterRow / parseExcelRows', () => {
     'Aircraft_Registration',
   ])
 
-  it('garde les lignes dont un des skills multi commence par CABB', () => {
+  it('garde les lignes dont un des skills multi commence par CABB ou ACC_PNLS', () => {
     const kept = parseExcelRows(
       [
         ['1', 'Tâche A', 'B1B2/CABB1B2', 'ACTV', 'JIC', 'WING L', '2', 'F-GKXT'],
@@ -147,10 +147,11 @@ describe('filterRow / parseExcelRows', () => {
         ['3', 'Tâche C', 'B1/CTRLB1B2', 'ACTV', 'JIC', 'ENG', '3', 'F-GKXT'],
         ['4', 'Tâche D', 'CABB3/ELEC', 'PAUSE', 'EO', 'LEG', '1.5', 'F-GKXT'],
         ['5', 'Tâche E', 'ELEC', 'ACTV', 'JIC', 'ENG', '2', 'F-GKXT'],
+        ['6', 'Tâche F', 'B1/ACC_PNLS', 'ACTV', 'JIC', 'WING R', '1', 'F-GKXT'],
       ],
       columns
     )
-    expect(kept.map((t) => t.seq)).toEqual(['1', '2', '4'])
+    expect(kept.map((t) => t.seq)).toEqual(['1', '2', '4', '6'])
   })
 
   it('garde les lignes CABB* avec statut ACTV, PAUSE ou IN WORK', () => {

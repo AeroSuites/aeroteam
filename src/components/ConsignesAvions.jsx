@@ -58,8 +58,12 @@ export default function ConsignesAvions({ scope = 'affectation' }) {
     setConLoading(true)
     setConError('')
     try {
-      const list = await profileStore.getAircraftConsignes(day, shift)
-      setConList(Array.isArray(list) ? list : [])
+      const list = await profileStore.getAircraftConsignes(day, shift, activeProfile?.id)
+      setConList(
+        (Array.isArray(list) ? list : []).filter(
+          (c) => !activeProfile?.id || c.profile_id === activeProfile.id
+        )
+      )
     } catch (err) {
       setConError(err?.message || 'Erreur de chargement des consignes')
       setConList([])
@@ -71,7 +75,7 @@ export default function ConsignesAvions({ scope = 'affectation' }) {
     loadConsignes()
     loadChecks()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [activeProfile?.id])
 
   const toggleConsigneCheck = (key) => {
     const nowChecked = !conChecks[key]

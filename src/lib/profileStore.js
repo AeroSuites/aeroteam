@@ -533,12 +533,23 @@ export async function getFolders() {
   return data
 }
 
-// Consignes [C] transmises aux profils avion pour un jour × shift (page Affectation)
-export async function getAircraftConsignes(day, shift) {
-  const { data, error } = await supabase.rpc('get_aircraft_consignes', {
+// Consignes [C] transmises au profil avion pour un jour × shift
+// (filtrées par profil ; repli sur l'ancienne RPC + filtre local si la
+// migration lot-consignes-par-profil.sql n'est pas encore exécutée)
+export async function getAircraftConsignes(day, shift, profileId) {
+  let { data, error } = await supabase.rpc('get_aircraft_consignes', {
     p_day: day,
     p_shift: shift,
+    p_profile_id: profileId || null,
   })
+  if (error) {
+    const retry = await supabase.rpc('get_aircraft_consignes', {
+      p_day: day,
+      p_shift: shift,
+    })
+    data = retry.data
+    error = retry.error
+  }
   if (error) throw error
   return data?.consignes || []
 }

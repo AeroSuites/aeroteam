@@ -178,7 +178,7 @@ export function assignedTaskCount(assignments) {
 // Filtres configurables pour l'import
 export const IMPORT_FILTERS = {
   // Colonne Skills (F) : garder toute ligne dont AU MOINS UN des skills
-// commence par CABB (ex. "B1B2/CABB1B2" doit être conservé)
+  // commence par CABB ou ACC_PNLS (ex. "B1B2/CABB1B2" doit être conservé)
   skills: {
     enabled: true,
     match: (value) => {
@@ -186,7 +186,7 @@ export const IMPORT_FILTERS = {
         .toUpperCase()
         .split('/')
         .map((p) => p.trim())
-      return parts.some((p) => p.startsWith('CABB'))
+      return parts.some((p) => p.startsWith('CABB') || p.startsWith('ACC_PNLS'))
     },
   },
   // Colonne MTX_Status (G) : garder ACTV, PAUSE et IN WORK

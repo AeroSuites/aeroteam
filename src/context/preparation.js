@@ -42,6 +42,19 @@ export function prepActions({ setPrepTasks, setPockets }) {
     })
   }
 
+  // Supprime une liste de lignes (par ids), et les retire des pochettes
+  const removePrepTasksByIds = (ids) => {
+    const set = new Set(ids || [])
+    if (set.size === 0) return
+    setPrepTasks((prev) => prev.filter((t) => !set.has(t.id)))
+    setPockets((prevPockets) =>
+      prevPockets.map((p) => ({
+        ...p,
+        taskIds: p.taskIds.filter((id) => !set.has(id)),
+      }))
+    )
+  }
+
   const updatePrepTask = (taskId, updates) => {
     setPrepTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)))
   }
@@ -62,6 +75,7 @@ export function prepActions({ setPrepTasks, setPockets }) {
     removePrepTask,
     removePrepTasksByBlock,
     removePrepTasksByZone,
+    removePrepTasksByIds,
     updatePrepTask,
     updatePrepTasks,
     clearPrepTasks,
