@@ -236,11 +236,9 @@ export default function Affectation() {
       if (!groups[key].zones[sub]) groups[key].zones[sub] = []
       groups[key].zones[sub].push(t)
     })
-    return Object.values(groups).sort((a, b) => {
-      const ca = Object.values(a.zones).reduce((n, l) => n + l.length, 0)
-      const cb = Object.values(b.zones).reduce((n, l) => n + l.length, 0)
-      return cb - ca
-    })
+    return Object.values(groups).sort(
+      (a, b) => (a.isFF ? 1 : 0) - (b.isFF ? 1 : 0) || a.label.localeCompare(b.label)
+    )
   }, [filteredTasks])
 
   // Affecter à une équipe toutes les tâches d'une sous-tâche (tous blocs confondus)
@@ -979,7 +977,7 @@ export default function Affectation() {
                       <span className="text-xs text-slate-500 italic">Aucun bloc affecté</span>
                     )}
                     {Object.entries(teamBlocks(team.id))
-                      .sort((a, b) => b[1].count - a[1].count)
+                      .sort((a, b) => a[0].localeCompare(b[0]))
                       .map(([key, info]) => {
                         const [blk, zone] = key.split(' / ')
                         const color = getCategoryColor(blk)

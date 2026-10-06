@@ -26,7 +26,7 @@ function groupTeamTasks(teamTasks) {
     zones[z].push(t)
   })
   return Object.entries(zones)
-    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
+    .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([zone, list]) => {
       const by = {}
       list.forEach((t) => {
@@ -36,7 +36,7 @@ function groupTeamTasks(teamTasks) {
       })
       return {
         zone,
-        blocks: Object.entries(by).sort((a, b) => b[1].length - a[1].length),
+        blocks: Object.entries(by).sort((a, b) => a[0].localeCompare(b[0])),
       }
     })
 }

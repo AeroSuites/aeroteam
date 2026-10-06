@@ -242,11 +242,9 @@ export default function Preparation() {
       if (!groups[key].zones[sub]) groups[key].zones[sub] = []
       groups[key].zones[sub].push(t)
     })
-    return Object.values(groups).sort((a, b) => {
-      const ca = Object.values(a.zones).reduce((n, l) => n + l.length, 0)
-      const cb = Object.values(b.zones).reduce((n, l) => n + l.length, 0)
-      return cb - ca
-    })
+    return Object.values(groups).sort(
+      (a, b) => (a.isFF ? 1 : 0) - (b.isFF ? 1 : 0) || a.label.localeCompare(b.label)
+    )
   }, [prepTasks])
 
   // Replie par défaut chaque nouvelle zone (tuiles fermées au chargement)
