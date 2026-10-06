@@ -3,7 +3,7 @@ import DOMPurify from 'dompurify'
 import * as profileStore from '../lib/profileStore'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
-import { hashCodeKey, currentWeekLabel, getCategoryLabel } from '../utils/helpers'
+import { hashCodeKey, currentWeekLabel, getCategoryLabel, isAssignedTo, logicalToday } from '../utils/helpers'
 import RichEditor from '../components/RichEditor'
 import ConsignesAvions from '../components/ConsignesAvions'
 import {
@@ -56,7 +56,7 @@ function currentWeekNumNow() {
 }
 
 export default function Consignes() {
-  const { activeProfile, code, isAdmin, pockets, prepTasks, tasks } = useApp()
+  const { activeProfile, code, isAdmin, pockets, prepTasks, tasks, teams, assignments } = useApp()
   const [folders, setFolders] = useState(null)
   const [error, setError] = useState('')
   const [selectedDossierId, setSelectedDossierId] = useState(null)
@@ -95,6 +95,9 @@ export default function Consignes() {
   // Insertion de pochettes virtuelles dans la consigne
   const [pocketPickerOpen, setPocketPickerOpen] = useState(false)
   const [pocketPick, setPocketPick] = useState([])
+  // Insertion de l'état des tâches par équipe (Fait / Fait partiellement)
+  const [teamPickerOpen, setTeamPickerOpen] = useState(false)
+  const [teamPick, setTeamPick] = useState({})
   // Modification d'un message envoyé
   const [editMsgId, setEditMsgId] = useState(null)
   const [editMsgHtml, setEditMsgHtml] = useState('')
@@ -210,6 +213,49 @@ export default function Consignes() {
     )
     setPocketPickerOpen(false)
     setPocketPick([])
+  }
+
+  const teamsWithTasks = useMemo(
+    () =>
+      (teams || [])
+        .map((team) => ({
+          team,
+          count: (tasks || []).filter((t) => isAssignedTo(assignments, t.id, team.id)).length,
+        }))
+        .filter((x) => x.count > 0),
+    [teams, tasks, assignments]
+  )
+
+  const insertTeamStatus = () => {
+    const picked = teamsWithTasks.filter((x) => teamPick[x.team.id])
+    if (!picked.length) return
+    const raw = logicalToday().toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+    const dateLabel = raw.charAt(0).toUpperCase() + raw.slice(1)
+    const done = picked
+      .map(
+        ({ team }) =>
+          `<p><strong>${escapeHtml(team.name)}</strong> : ${escapeHtml(teamPick[team.id])}</p>`
+      )
+      .join('')
+    const remaining = teamsWithTasks
+      .filter((x) => !teamPick[x.team.id])
+      .map(({ team }) => `<li>${escapeHtml(team.name)}</li>`)
+      .join('')
+    const html =
+      `<p><strong>${escapeHtml(dateLabel)}</strong></p>` +
+      done +
+      (remaining ? `<p><strong>Reste à suivre :</strong></p><ul>${remaining}</ul>` : '')
+    setReplyHtml((prev) => `${prev || ''}${html}`)
+    setReplyText((prev) =>
+      `${prev || ''} ${html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}`.trim()
+    )
+    setTeamPickerOpen(false)
+    setTeamPick({})
   }
 
   useEffect(() => {
@@ -886,6 +932,91 @@ export default function Consignes() {
                           </button>
                           <button
                             onClick={() => setPocketPickerOpen(false)}
+                            className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {teamsWithTasks.length > 0 && (
+                  <div className="mb-2">
+                    <button
+                      onClick={() => {
+                        setTeamPickerOpen((v) => !v)
+                        setTeamPick({})
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 hover:bg-emerald-50 rounded-full px-3 py-1"
+                      title="Insérer l'état des tâches des équipes (Fait / Fait partiellement + reste à suivre)"
+                    >
+                      ✅ Insérer l'état des tâches ({teamsWithTasks.length})
+                    </button>
+                    {teamPickerOpen && (
+                      <div className="mt-2 bg-white border border-slate-200 rounded-lg p-3 max-w-xl">
+                        <p className="text-xs text-slate-500 mb-2">
+                          Cocher les équipes et choisir leur statut — les autres seront listées en
+                          « Reste à suivre » :
+                        </p>
+                        <div className="space-y-1 max-h-52 overflow-y-auto mb-2">
+                          {teamsWithTasks.map(({ team, count }) => {
+                            const checked = !!teamPick[team.id]
+                            return (
+                              <div
+                                key={team.id}
+                                className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-50 text-sm"
+                              >
+                                <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() =>
+                                      setTeamPick((prev) => {
+                                        const next = { ...prev }
+                                        if (next[team.id]) delete next[team.id]
+                                        else next[team.id] = 'Fait'
+                                        return next
+                                      })
+                                    }
+                                    className="h-4 w-4 accent-emerald-600 shrink-0"
+                                  />
+                                  <span className="truncate" title={team.name}>
+                                    {team.name}
+                                  </span>
+                                  <span className="text-xs text-slate-400 shrink-0">
+                                    {count} tâche(s)
+                                  </span>
+                                </label>
+                                {checked && (
+                                  <select
+                                    value={teamPick[team.id]}
+                                    onChange={(e) =>
+                                      setTeamPick((prev) => ({
+                                        ...prev,
+                                        [team.id]: e.target.value,
+                                      }))
+                                    }
+                                    className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white shrink-0"
+                                  >
+                                    <option value="Fait">Fait</option>
+                                    <option value="Fait partiellement">Fait partiellement</option>
+                                  </select>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={insertTeamStatus}
+                            disabled={Object.keys(teamPick).length === 0}
+                            className="bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 disabled:opacity-50 text-xs font-semibold"
+                          >
+                            Insérer ({Object.keys(teamPick).length})
+                          </button>
+                          <button
+                            onClick={() => setTeamPickerOpen(false)}
                             className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5"
                           >
                             Annuler
