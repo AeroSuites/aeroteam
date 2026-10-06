@@ -148,7 +148,9 @@ export default function Consignes() {
   const insertPockets = () => {
     const chosen = (pockets || []).filter((p) => pocketPick.includes(p.id))
     if (!chosen.length) return
-    const html = chosen
+    const html =
+      '<p><strong>À suivre :</strong></p>' +
+      chosen
       .map((p) => {
         const lines = pocketLines(p)
         const blockCounts = {}
@@ -247,7 +249,7 @@ export default function Consignes() {
       .map(({ team }) => `<li>${escapeHtml(team.name)}</li>`)
       .join('')
     const html =
-      `<p><strong>${escapeHtml(dateLabel)}</strong></p>` +
+      `<p><strong>${escapeHtml(dateLabel)}</strong></p><p><br></p>` +
       done +
       (remaining ? `<p><strong>Reste à suivre :</strong></p><ul>${remaining}</ul>` : '')
     setReplyHtml((prev) => `${prev || ''}${html}`)
