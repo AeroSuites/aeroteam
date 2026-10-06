@@ -149,7 +149,7 @@ export default function Consignes() {
     const chosen = (pockets || []).filter((p) => pocketPick.includes(p.id))
     if (!chosen.length) return
     const html =
-      '<p><strong>À suivre :</strong></p>' +
+      '<p>&nbsp;</p><p><strong>À suivre :</strong></p><p>&nbsp;</p>' +
       chosen
       .map((p) => {
         const lines = pocketLines(p)
@@ -249,7 +249,7 @@ export default function Consignes() {
       .map(({ team }) => `<li>${escapeHtml(team.name)}</li>`)
       .join('')
     const html =
-      `<p><strong>${escapeHtml(dateLabel)}</strong></p><p><br></p>` +
+      `<p><strong>${escapeHtml(dateLabel)}</strong></p><p>&nbsp;</p>` +
       done +
       (remaining ? `<p><strong>Reste à suivre :</strong></p><ul>${remaining}</ul>` : '')
     setReplyHtml((prev) => `${prev || ''}${html}`)
@@ -880,69 +880,6 @@ export default function Consignes() {
 
               {/* Saisie d'une réponse */}
               <div className="border-t p-4 bg-slate-50">
-                {(pockets || []).length > 0 && (
-                  <div className="mb-2">
-                    <button
-                      onClick={() => {
-                        setPocketPickerOpen((v) => !v)
-                        setPocketPick([])
-                      }}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1"
-                      title="Insérer le contenu d'une ou plusieurs pochettes virtuelles dans la consigne"
-                    >
-                      📁 Insérer des pochettes ({(pockets || []).length})
-                    </button>
-                    {pocketPickerOpen && (
-                      <div className="mt-2 bg-white border border-slate-200 rounded-lg p-3 max-w-xl">
-                        <p className="text-xs text-slate-500 mb-2">
-                          Cocher les pochettes à inclure dans la consigne :
-                        </p>
-                        <div className="space-y-1 max-h-52 overflow-y-auto mb-2">
-                          {(pockets || []).map((p) => {
-                            const checked = pocketPick.includes(p.id)
-                            const n = pocketLines(p).length
-                            return (
-                              <label
-                                key={p.id}
-                                className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-50 cursor-pointer text-sm"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={() =>
-                                    setPocketPick((prev) =>
-                                      prev.includes(p.id)
-                                        ? prev.filter((x) => x !== p.id)
-                                        : [...prev, p.id]
-                                    )
-                                  }
-                                  className="h-4 w-4 accent-sky-600"
-                                />
-                                <span className="flex-1">{p.name}</span>
-                                <span className="text-xs text-slate-400">{n} ligne(s)</span>
-                              </label>
-                            )
-                          })}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={insertPockets}
-                            disabled={pocketPick.length === 0}
-                            className="bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 disabled:opacity-50 text-xs font-semibold"
-                          >
-                            Insérer ({pocketPick.length})
-                          </button>
-                          <button
-                            onClick={() => setPocketPickerOpen(false)}
-                            className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5"
-                          >
-                            Annuler
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
                 {teamsWithTasks.length > 0 && (
                   <div className="mb-2">
                     <button
@@ -1019,6 +956,69 @@ export default function Consignes() {
                           </button>
                           <button
                             onClick={() => setTeamPickerOpen(false)}
+                            className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {(pockets || []).length > 0 && (
+                  <div className="mb-2">
+                    <button
+                      onClick={() => {
+                        setPocketPickerOpen((v) => !v)
+                        setPocketPick([])
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1"
+                      title="Insérer le contenu d'une ou plusieurs pochettes virtuelles dans la consigne"
+                    >
+                      📁 Insérer des pochettes ({(pockets || []).length})
+                    </button>
+                    {pocketPickerOpen && (
+                      <div className="mt-2 bg-white border border-slate-200 rounded-lg p-3 max-w-xl">
+                        <p className="text-xs text-slate-500 mb-2">
+                          Cocher les pochettes à inclure dans la consigne :
+                        </p>
+                        <div className="space-y-1 max-h-52 overflow-y-auto mb-2">
+                          {(pockets || []).map((p) => {
+                            const checked = pocketPick.includes(p.id)
+                            const n = pocketLines(p).length
+                            return (
+                              <label
+                                key={p.id}
+                                className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-50 cursor-pointer text-sm"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() =>
+                                    setPocketPick((prev) =>
+                                      prev.includes(p.id)
+                                        ? prev.filter((x) => x !== p.id)
+                                        : [...prev, p.id]
+                                    )
+                                  }
+                                  className="h-4 w-4 accent-sky-600"
+                                />
+                                <span className="flex-1">{p.name}</span>
+                                <span className="text-xs text-slate-400">{n} ligne(s)</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={insertPockets}
+                            disabled={pocketPick.length === 0}
+                            className="bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 disabled:opacity-50 text-xs font-semibold"
+                          >
+                            Insérer ({pocketPick.length})
+                          </button>
+                          <button
+                            onClick={() => setPocketPickerOpen(false)}
                             className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5"
                           >
                             Annuler
