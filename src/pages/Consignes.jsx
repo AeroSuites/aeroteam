@@ -146,7 +146,9 @@ export default function Consignes() {
       .replace(/>/g, '&gt;')
 
   const insertPockets = () => {
-    const chosen = (pockets || []).filter((p) => pocketPick.includes(p.id))
+    const chosen = pocketPick
+      .map((id) => (pockets || []).find((p) => p.id === id))
+      .filter(Boolean)
     if (!chosen.length) return
     const html =
       '<p>&nbsp;</p><p><strong>À suivre :</strong></p><p>&nbsp;</p>' +
@@ -162,9 +164,9 @@ export default function Consignes() {
           zoneCounts[z] = (zoneCounts[z] || 0) + 1
         })
         const compactBlocks = new Set(
-          Object.keys(blockCounts).filter((b) => blockCounts[b] > 10)
+          Object.keys(blockCounts).filter((b) => blockCounts[b] > 5)
         )
-        const compactZones = new Set(Object.keys(zoneCounts).filter((z) => zoneCounts[z] > 10))
+        const compactZones = new Set(Object.keys(zoneCounts).filter((z) => zoneCounts[z] > 5))
         const emitted = new Set()
         const items = lines
           .map((t) => {
