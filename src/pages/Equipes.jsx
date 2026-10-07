@@ -101,11 +101,11 @@ export default function Equipes() {
     : availableMembers
 
   // ---- Création modulable d'équipes d'après les consignes ----
-  // Toutes les consignes proposées sont cochées par défaut
+  // Aucune consigne cochée par défaut (sélection volontaire)
   useEffect(() => {
-    setPickedConsignes(proposedTeams)
+    setPickedConsignes([])
     setMergedNameTouched(false)
-    setMergedName(proposedTeams[0] || '')
+    setMergedName('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposedTeams.join('|')])
 
