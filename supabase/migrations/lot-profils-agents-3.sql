@@ -70,3 +70,55 @@ end;
 $$;
 
 grant execute on function public.save_profile_data(text, jsonb, bigint, boolean) to anon, authenticated;
+
+-- Le suivi des agents renvoie aussi leur historique de charges
+-- (consultation des archives côté leader).
+create or replace function public.leader_get_agents_progress(p_leader_code text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_leader_id uuid;
+  list jsonb;
+begin
+  select id into v_leader_id
+  from public.profiles
+  where code = trim(p_leader_code) and statut = 'valide';
+
+  if v_leader_id is null then
+    return jsonb_build_object('error', 'not_found');
+  end if;
+
+  select coalesce(jsonb_agg(t order by t.name), '[]'::jsonb)
+  into list
+  from (
+    select
+      p.id::text as id,
+      p.name,
+      p.updated_at,
+      p.data->'charge'->>'date' as date,
+      p.data->'charge'->>'aircraft' as aircraft,
+      p.data->'charge'->>'teamName' as "teamName",
+      p.data->'charge'->>'sentAt' as "sentAt",
+      coalesce(p.data->'charge'->'tasks', '[]'::jsonb) as tasks,
+      coalesce(p.data->'chargeHistory', '[]'::jsonb) as "chargeHistory"
+    from public.profiles p
+    where p.type = 'agent'
+      and p.statut = 'valide'
+      and (
+        p.data->'charge'->>'leaderId' = v_leader_id::text
+        or exists (
+          select 1
+          from jsonb_array_elements(coalesce(p.data->'chargeHistory', '[]'::jsonb)) as h
+          where h->>'leaderId' = v_leader_id::text
+        )
+      )
+  ) t;
+
+  return jsonb_build_object('ok', true, 'agents', list);
+end;
+$$;
+
+grant execute on function public.leader_get_agents_progress(text) to anon, authenticated;

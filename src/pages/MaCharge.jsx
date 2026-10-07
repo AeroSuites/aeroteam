@@ -417,8 +417,7 @@ export default function MaCharge() {
       ))}
 
       {/* Charges précédentes (archives) */}
-      {chargeHistory.length > 0 && (
-        <div className="bg-white rounded-xl shadow overflow-hidden">
+      <div className="bg-white rounded-xl shadow overflow-hidden">
           <div className="px-4 sm:px-5 py-4 border-b bg-slate-50/50">
             <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
               <History className="h-4 w-4 text-slate-500" /> Charges précédentes (
@@ -428,6 +427,11 @@ export default function MaCharge() {
               Les 10 dernières charges retirées ou remplacées — clique pour voir les lignes.
             </p>
           </div>
+          {chargeHistory.length === 0 && (
+            <p className="px-4 sm:px-5 py-4 text-sm text-slate-400 italic">
+              Aucune charge précédente pour le moment.
+            </p>
+          )}
           <ul className="divide-y divide-slate-100">
             {chargeHistory.map((h, i) => {
               const list = Array.isArray(h.tasks) ? h.tasks : []
@@ -484,8 +488,7 @@ export default function MaCharge() {
               )
             })}
           </ul>
-        </div>
-      )}
+      </div>
 
       {/* Popup description / étapes */}
       {descTask && (

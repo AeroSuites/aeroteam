@@ -49,6 +49,8 @@ export default function Dashboard() {
   const { tasks, teams, assignments, notes, updateNote, removeNote, members, dayMembers, dayLeaders, pockets, activeProfile, agentsProgress, clearAgentCharge } = useApp()
   const [editingConsigneId, setEditingConsigneId] = useState(null)
   const [consigneText, setConsigneText] = useState('')
+  const [historyAgent, setHistoryAgent] = useState(null)
+  const [openHist, setOpenHist] = useState([])
 
   const { todayConsignes, weekConsignes } = useMemo(() => {
     const DAY_ORDER = {
@@ -642,6 +644,8 @@ export default function Dashboard() {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {agentsProgress.map((a) => {
               const list = Array.isArray(a.tasks) ? a.tasks : []
+              const hist = Array.isArray(a.chargeHistory) ? a.chargeHistory : []
+              const hasActive = !!a.date
               const done = list.filter((t) => t.mtxStatus === 'COMPLETE').length
               const paused = list.filter((t) => t.mtxStatus === 'PAUSE').length
               const pct = list.length ? Math.round((done / list.length) * 100) : 0
@@ -658,45 +662,171 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-semibold text-slate-800 truncate">{a.name}</p>
                     <span className="flex items-center gap-1.5 shrink-0">
-                      <span
-                        className={`text-xs font-bold ${
-                          pct === 100 ? 'text-emerald-600' : 'text-slate-500'
-                        }`}
-                      >
-                        {done}/{list.length} {pct === 100 ? '✓' : ''}
-                      </span>
-                      <button
-                        onClick={async () => {
-                          if (
-                            window.confirm(
-                              `Retirer la charge de « ${a.name} » ? (elle part dans l'historique)`
-                            )
-                          ) {
-                            const res = await clearAgentCharge(a.id)
-                            if (res?.error) window.alert("Échec du retrait de la charge.")
-                          }
-                        }}
-                        className="text-slate-300 hover:text-red-600"
-                        title="Retirer la charge de cet agent"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
+                      {hasActive && (
+                        <span
+                          className={`text-xs font-bold ${
+                            pct === 100 ? 'text-emerald-600' : 'text-slate-500'
+                          }`}
+                        >
+                          {done}/{list.length} {pct === 100 ? '✓' : ''}
+                        </span>
+                      )}
+                      {hasActive && (
+                        <button
+                          onClick={async () => {
+                            if (
+                              window.confirm(
+                                `Retirer la charge de « ${a.name} » ? (elle part dans l'historique)`
+                              )
+                            ) {
+                              const res = await clearAgentCharge(a.id)
+                              if (res?.error) window.alert("Échec du retrait de la charge.")
+                            }
+                          }}
+                          className="text-slate-300 hover:text-red-600"
+                          title="Retirer la charge de cet agent"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 truncate">
-                    {a.teamName ? `${a.teamName} · ` : ''}
-                    {a.aircraft || ''}
-                    {a.date ? ` · ${a.date}` : ''}
+                    {hasActive ? (
+                      <>
+                        {a.teamName ? `${a.teamName} · ` : ''}
+                        {a.aircraft || ''}
+                        {a.date ? ` · ${a.date}` : ''}
+                      </>
+                    ) : (
+                      'Aucune charge en cours'
+                    )}
                   </p>
-                  <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    {paused > 0 ? `${paused} en pause · ` : ''}maj {last || '—'}
-                  </p>
+                  {hasActive ? (
+                    <>
+                      <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        {paused > 0 ? `${paused} en pause · ` : ''}maj {last || '—'}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 mt-1">maj {last || '—'}</p>
+                  )}
+                  {hist.length > 0 && (
+                    <button
+                      onClick={() => {
+                        setHistoryAgent(a)
+                        setOpenHist([])
+                      }}
+                      className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 rounded-full px-2 py-0.5"
+                      title={`Consulter les ${hist.length} charge(s) précédente(s)`}
+                    >
+                      📜 {hist.length} charge{hist.length > 1 ? 's' : ''} précédente
+                      {hist.length > 1 ? 's' : ''}
+                    </button>
+                  )}
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Archives des charges d'un agent */}
+      {historyAgent && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setHistoryAgent(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
+              <div className="min-w-0">
+                <h2 className="font-bold truncate">
+                  Charges précédentes · {historyAgent.name}
+                </h2>
+                <p className="text-xs text-slate-300">
+                  {(historyAgent.chargeHistory || []).length} archive(s) — clique pour voir les
+                  lignes
+                </p>
+              </div>
+              <button
+                onClick={() => setHistoryAgent(null)}
+                className="text-slate-300 hover:text-white shrink-0"
+                title="Fermer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <ul className="overflow-y-auto divide-y divide-slate-100">
+              {(historyAgent.chargeHistory || []).map((h, i) => {
+                const list = Array.isArray(h.tasks) ? h.tasks : []
+                const done = list.filter((t) => t.mtxStatus === 'COMPLETE').length
+                const open = openHist.includes(i)
+                return (
+                  <li key={i}>
+                    <button
+                      onClick={() =>
+                        setOpenHist((prev) =>
+                          prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]
+                        )
+                      }
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left hover:bg-slate-50"
+                    >
+                      {open ? (
+                        <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
+                      )}
+                      <span className="font-semibold text-slate-700 shrink-0">
+                        {h.date || '—'}
+                      </span>
+                      <span className="text-slate-500 truncate">
+                        {h.aircraft ? `✈ ${h.aircraft}` : ''}
+                        {h.teamName ? ` · ${h.teamName}` : ''}
+                      </span>
+                      <span className="ml-auto shrink-0 text-xs font-bold text-slate-500">
+                        {done}/{list.length} {list.length > 0 && done === list.length ? '✓' : ''}
+                      </span>
+                    </button>
+                    {open && (
+                      <ul className="px-4 pb-3 space-y-0.5">
+                        {list.map((t) => (
+                          <li
+                            key={t.id}
+                            className="flex items-center gap-2 text-xs text-slate-600"
+                          >
+                            <span className="w-10 shrink-0 font-mono font-bold text-slate-400">
+                              {cleanShortValue(t.seq) || '—'}
+                            </span>
+                            <span className="flex-1 min-w-0 truncate" title={t.description}>
+                              {t.description}
+                            </span>
+                            <span
+                              className={`shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                                t.mtxStatus === 'ACTV'
+                                  ? 'bg-green-100 text-green-700'
+                                  : t.mtxStatus === 'PAUSE'
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : t.mtxStatus === 'COMPLETE'
+                                  ? 'bg-green-800 text-white'
+                                  : 'bg-slate-100 text-slate-700'
+                              }`}
+                            >
+                              {t.mtxStatus || '—'}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
           </div>
         </div>
       )}

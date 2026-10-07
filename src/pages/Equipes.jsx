@@ -124,6 +124,10 @@ export default function Equipes() {
         d.getDate()
       ).padStart(2, '0')}`
       const teamTasks = tasks.filter((t) => isAssignedTo(assignments, t.id, sendTeam.id))
+      const registrations = [
+        ...new Set(teamTasks.map((t) => t.registration).filter(Boolean)),
+      ]
+      const aircraft = registrations[0] || activeProfile?.aircraft || ''
       const chargeTasks = teamTasks.map((t) => ({
         id: makeId('charge'),
         seq: t.seq,
@@ -147,7 +151,7 @@ export default function Equipes() {
         .map((n) => ({ title: n.title, content: n.content }))
       const res = await profileStore.leaderSendCharge(activeProfile?.code, agent.id, {
         date: dateIso,
-        aircraft: activeProfile?.aircraft || '',
+        aircraft,
         teamName: sendTeam.name,
         consignes,
         tasks: chargeTasks,
@@ -465,6 +469,19 @@ export default function Equipes() {
     setTab(next)
     setSelected([])
   }
+
+  // Immatriculation de la charge : colonne Appareil des tâches de l'équipe,
+  // sinon l'avion du profil
+  const sendAircraft = sendTeam
+    ? [...new Set(
+        tasks
+          .filter((t) => isAssignedTo(assignments, t.id, sendTeam.id))
+          .map((t) => t.registration)
+          .filter(Boolean)
+      )][0] ||
+      activeProfile?.aircraft ||
+      ''
+    : ''
 
   return (
     <div className="space-y-6">
@@ -1124,7 +1141,7 @@ export default function Equipes() {
                     day: 'numeric',
                     month: 'long',
                   })}{' '}
-                  · ✈ {activeProfile?.aircraft || 'aucun avion'}
+                  · ✈ {sendAircraft || 'aucun avion'}
                 </p>
               </div>
               <button
@@ -1136,11 +1153,10 @@ export default function Equipes() {
               </button>
             </div>
             <div className="p-4 overflow-y-auto space-y-2">
-              {!activeProfile?.aircraft && (
+              {!sendAircraft && (
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                  Aucun avion n'est défini sur votre profil : la charge partira sans
-                  immatriculation (l'agent verra « — »). Définis ton avion dans Administration ou
-                  via Import consignes.
+                  Aucune immatriculation trouvée (ni dans la colonne Appareil des tâches, ni sur
+                  votre profil) : la charge partira sans avion.
                 </p>
               )}
               {agents === null && (
