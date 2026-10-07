@@ -204,6 +204,15 @@ export async function leaderGetAgentsProgress(leaderCode) {
   return data
 }
 
+export async function leaderClearCharge(leaderCode, agentId) {
+  const { data, error } = await supabase.rpc('leader_clear_charge', {
+    p_leader_code: leaderCode,
+    p_agent_id: agentId,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function adminRefuseProfile(adminCode, profileCode) {
   const { data, error } = await supabase.rpc('admin_refuse_profile', {
     p_admin_code: adminCode,

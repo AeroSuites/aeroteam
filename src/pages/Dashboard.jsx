@@ -32,6 +32,7 @@ import {
   Trash2,
   Check,
   Users,
+  X,
 } from 'lucide-react'
 
 function groupByZone(blockTasks) {
@@ -45,7 +46,7 @@ function groupByZone(blockTasks) {
 }
 
 export default function Dashboard() {
-  const { tasks, teams, assignments, notes, updateNote, removeNote, members, dayMembers, dayLeaders, pockets, activeProfile, agentsProgress } = useApp()
+  const { tasks, teams, assignments, notes, updateNote, removeNote, members, dayMembers, dayLeaders, pockets, activeProfile, agentsProgress, clearAgentCharge } = useApp()
   const [editingConsigneId, setEditingConsigneId] = useState(null)
   const [consigneText, setConsigneText] = useState('')
 
@@ -656,12 +657,30 @@ export default function Dashboard() {
                 <div key={a.id} className="border border-slate-200 rounded-lg p-3">
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-semibold text-slate-800 truncate">{a.name}</p>
-                    <span
-                      className={`text-xs font-bold shrink-0 ${
-                        pct === 100 ? 'text-emerald-600' : 'text-slate-500'
-                      }`}
-                    >
-                      {done}/{list.length} {pct === 100 ? '✓' : ''}
+                    <span className="flex items-center gap-1.5 shrink-0">
+                      <span
+                        className={`text-xs font-bold ${
+                          pct === 100 ? 'text-emerald-600' : 'text-slate-500'
+                        }`}
+                      >
+                        {done}/{list.length} {pct === 100 ? '✓' : ''}
+                      </span>
+                      <button
+                        onClick={async () => {
+                          if (
+                            window.confirm(
+                              `Retirer la charge de « ${a.name} » ? (elle part dans l'historique)`
+                            )
+                          ) {
+                            const res = await clearAgentCharge(a.id)
+                            if (res?.error) window.alert("Échec du retrait de la charge.")
+                          }
+                        }}
+                        className="text-slate-300 hover:text-red-600"
+                        title="Retirer la charge de cet agent"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 truncate">

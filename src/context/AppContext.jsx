@@ -657,6 +657,17 @@ export function AppProvider({ children }) {
     }
   }, [isConnected, loaded, activeProfile?.type, activeProfile?.code])
 
+  // Retirer la charge d'un agent (l'agent ne la voit plus)
+  const clearAgentCharge = useCallback(async (agentId) => {
+    try {
+      const res = await profileStore.leaderClearCharge(codeRef.current, agentId)
+      if (res?.ok) setAgentsProgress((prev) => prev.filter((a) => a.id !== agentId))
+      return res
+    } catch {
+      return { error: 'reseau' }
+    }
+  }, [])
+
   // Report automatique : les statuts posés par les agents s'appliquent aux Tâches du leader
   useEffect(() => {
     if (!agentsProgress.length) return
@@ -711,7 +722,7 @@ export function AppProvider({ children }) {
 const value = {
     tasks, teams, assignments, members, dayMembers, dayLeaders, prepTasks, notes, pockets,
     primeRequests,
-    charge, updateChargeTask, updateChargeTasks, agentsProgress,
+    charge, updateChargeTask, updateChargeTasks, agentsProgress, clearAgentCharge,
     activeProfile, code, isAdmin,
     loading, error, saveState, resolveConflict,
     connectProfile, createProfile, requestProfile, disconnect, deleteProfile,
