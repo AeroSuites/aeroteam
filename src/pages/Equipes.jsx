@@ -127,7 +127,10 @@ export default function Equipes() {
       const registrations = [
         ...new Set(teamTasks.map((t) => t.registration).filter(Boolean)),
       ]
-      const aircraft = registrations[0] || activeProfile?.aircraft || ''
+      const anyRegistration = [
+        ...new Set((tasks || []).map((t) => t.registration).filter(Boolean)),
+      ][0]
+      const aircraft = registrations[0] || anyRegistration || activeProfile?.aircraft || ''
       const chargeTasks = teamTasks.map((t) => ({
         id: makeId('charge'),
         seq: t.seq,
@@ -479,6 +482,7 @@ export default function Equipes() {
           .map((t) => t.registration)
           .filter(Boolean)
       )][0] ||
+      [...new Set((tasks || []).map((t) => t.registration).filter(Boolean))][0] ||
       activeProfile?.aircraft ||
       ''
     : ''

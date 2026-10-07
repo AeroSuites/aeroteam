@@ -473,6 +473,11 @@ export default function MaCharge() {
                           <span className="flex-1 min-w-0 truncate" title={t.description}>
                             {t.description}
                           </span>
+                          {t.taskBarcode && (
+                            <span className="shrink-0 font-mono text-[10px] font-bold text-sky-700 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
+                              {t.taskBarcode}
+                            </span>
+                          )}
                           <span
                             className={`shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${statusPill(
                               t.mtxStatus
