@@ -8,7 +8,7 @@ import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAs
 import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X } from 'lucide-react'
 
 export default function Affectation() {
-  const { tasks, teams, assignments, assignTask, unassignTask, updateTeam, addTasks, removeTasksByBlock, updateTask } = useApp()
+  const { tasks, teams, assignments, assignTask, unassignTask, updateTeam, addTasks, removeTasksByBlock, updateTask, clearAgentChargesByTeam } = useApp()
   const [dragTask, setDragTask] = useState(null)
   const [selectedBlocks, setSelectedBlocks] = useState([])
   const [prioFilter, setPrioFilter] = useState([])
@@ -266,9 +266,11 @@ export default function Affectation() {
 
   // Vide la charge d'une équipe : toutes ses lignes sont désassignées
   const clearTeamCharge = (teamId) => {
+    const team = (teams || []).find((t) => t.id === teamId)
     tasks
       .filter((t) => assignmentTeams(assignments, t.id).includes(teamId))
       .forEach((t) => unassignTask(t.id, teamId))
+    if (team) clearAgentChargesByTeam(team.name)
   }
 
   const manualAssign = (taskId, teamId) => {
@@ -533,7 +535,7 @@ export default function Affectation() {
                       onClick={() => {
                         if (
                           window.confirm(
-                            `Vider la charge de l'équipe « ${t.name} » (${n} tâche(s)) ?\n\nLes lignes seront désassignées (elles restent dans les tâches).`
+                            `Vider la charge de l'équipe « ${t.name} » (${n} tâche(s)) ?\n\nLes lignes seront désassignées (elles restent dans les tâches) et la charge envoyée à l'agent sera retirée.`
                           )
                         ) {
                           clearTeamCharge(t.id)

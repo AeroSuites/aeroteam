@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, FileDown, FileText, ListChecks, Printer, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, FileDown, FileText, ListChecks, Printer, StickyNote, X } from 'lucide-react'
 import {
   getCategoryColor,
   getCategoryLabel,
@@ -46,6 +46,7 @@ function groupTeamTasks(teamTasks) {
 function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgress }) {
   const [open, setOpen] = useState(false)
   const [descTask, setDescTask] = useState(null)
+  const [notePopup, setNotePopup] = useState(null)
   const teamTasks = (tasks || []).filter((t) => isAssignedTo(assignments, t.id, team.id))
   const zoneGroups = groupTeamTasks(teamTasks)
 
@@ -209,12 +210,21 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                       }`}
                                     />
                                     {agentByKey[taskContentKey(t)].note && (
-                                      <span
-                                        className="shrink-0 max-w-[140px] truncate text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded px-1 py-0.5"
-                                        title={`Note agent : ${agentByKey[taskContentKey(t)].note}`}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setNotePopup({
+                                            task: t,
+                                            note: agentByKey[taskContentKey(t)].note,
+                                            status: agentByKey[taskContentKey(t)].mtxStatus,
+                                            agentName: agentInfo.name,
+                                          })
+                                        }}
+                                        className="shrink-0 inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded-full px-1.5 py-0.5"
+                                        title="Lire la note de l'agent"
                                       >
-                                        📝 {agentByKey[taskContentKey(t)].note}
-                                      </span>
+                                        <StickyNote className="h-3 w-3" /> note
+                                      </button>
                                     )}
                                   </>
                                 )}
@@ -290,6 +300,44 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {notePopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setNotePopup(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-lg flex flex-col max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 flex items-start justify-between gap-3 bg-amber-500 text-white rounded-t-xl">
+              <div className="min-w-0">
+                <h2 className="font-bold truncate">
+                  Note de {notePopup.agentName} · N°{' '}
+                  {cleanShortValue(notePopup.task.seq) || '—'}
+                </h2>
+                <p className="text-xs text-amber-100 truncate">
+                  {notePopup.task.description}
+                </p>
+              </div>
+              <button
+                onClick={() => setNotePopup(null)}
+                className="text-amber-100 hover:text-white shrink-0"
+                title="Fermer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto">
+              <p className="text-[11px] font-semibold text-slate-400 mb-2 uppercase tracking-wide">
+                Note ({notePopup.status || 'ACTV'})
+              </p>
+              <p className="whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
+                {notePopup.note}
+              </p>
             </div>
           </div>
         </div>

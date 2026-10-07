@@ -18,6 +18,8 @@ import {
   X,
   ClipboardList,
   StickyNote,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
 
 const formatChargeDate = (iso) => {
@@ -45,8 +47,8 @@ const statusPill = (status) =>
 export default function MaCharge() {
   const { charge, updateChargeTask, updateChargeTasks, activeProfile } = useApp()
   const [descTask, setDescTask] = useState(null)
-  const [noteTask, setNoteTask] = useState(null)
-  const [noteText, setNoteText] = useState('')
+  const [openNoteId, setOpenNoteId] = useState(null)
+  const [noteDraft, setNoteDraft] = useState('')
 
   const tasks = useMemo(
     () => (charge && Array.isArray(charge.tasks) ? charge.tasks : []),
@@ -82,15 +84,26 @@ export default function MaCharge() {
   const applyStatus = (list, status) =>
     updateChargeTasks(list.map((t) => t.id), { mtxStatus: status })
 
-  const openNote = (t) => {
-    setNoteTask(t)
-    setNoteText(t.note || '')
+  const toggleNote = (t) => {
+    if (openNoteId === t.id) {
+      setOpenNoteId(null)
+      setNoteDraft('')
+      return
+    }
+    setOpenNoteId(t.id)
+    setNoteDraft(t.note || '')
   }
 
-  const saveNote = () => {
-    if (noteTask) updateChargeTask(noteTask.id, { note: noteText.trim() || undefined })
-    setNoteTask(null)
-    setNoteText('')
+  const saveNote = (taskId) => {
+    updateChargeTask(taskId, { note: noteDraft.trim() || undefined })
+    setOpenNoteId(null)
+    setNoteDraft('')
+  }
+
+  const removeNote = (taskId) => {
+    updateChargeTask(taskId, { note: undefined })
+    setOpenNoteId(null)
+    setNoteDraft('')
   }
 
   if (!charge) {
@@ -249,7 +262,8 @@ export default function MaCharge() {
                   {zoneTasks.map((t) => {
                     const tok = priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
                     return (
-                      <li key={t.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                      <li key={t.id}>
+                        <div className="flex items-center gap-2 px-3 py-2 text-sm">
                         <span className="w-10 shrink-0 font-mono font-bold text-slate-500">
                           {cleanShortValue(t.seq) || '—'}
                         </span>
@@ -281,20 +295,38 @@ export default function MaCharge() {
                         )}
                         {t.note ? (
                           <button
-                            onClick={() => openNote(t)}
-                            className="shrink-0 inline-flex items-center gap-1 max-w-[180px] text-amber-800 bg-amber-50 border border-amber-200 hover:bg-amber-100 rounded px-1.5 py-0.5 text-[10px] font-semibold"
-                            title={`${t.note} — cliquer pour modifier`}
+                            onClick={() => toggleNote(t)}
+                            className={`shrink-0 inline-flex items-center gap-1 max-w-[180px] border rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                              openNoteId === t.id
+                                ? 'bg-amber-200 border-amber-400 text-amber-900'
+                                : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'
+                            }`}
+                            title="Afficher / masquer l'éditeur de note"
                           >
                             <StickyNote className="h-3 w-3 shrink-0" />
                             <span className="truncate">{t.note}</span>
+                            {openNoteId === t.id ? (
+                              <ChevronDown className="h-3 w-3 shrink-0" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3 shrink-0" />
+                            )}
                           </button>
                         ) : (
                           <button
-                            onClick={() => openNote(t)}
-                            className="shrink-0 text-slate-400 hover:text-amber-700"
+                            onClick={() => toggleNote(t)}
+                            className={`shrink-0 inline-flex items-center gap-1 border rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                              openNoteId === t.id
+                                ? 'bg-amber-100 border-amber-300 text-amber-800'
+                                : 'text-slate-400 border-transparent hover:text-amber-700'
+                            }`}
                             title="Ajouter une note"
                           >
                             <StickyNote className="h-3.5 w-3.5" />
+                            {openNoteId === t.id ? (
+                              <ChevronDown className="h-3 w-3" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3" />
+                            )}
                           </button>
                         )}
                         <span className="shrink-0 flex items-center gap-1">
@@ -340,6 +372,44 @@ export default function MaCharge() {
                             </button>
                           )}
                         </span>
+                        </div>
+                        {openNoteId === t.id && (
+                          <div className="px-3 pb-3">
+                            <textarea
+                              autoFocus
+                              value={noteDraft}
+                              onChange={(e) => setNoteDraft(e.target.value)}
+                              rows={3}
+                              placeholder="Note pour le leader (avancement, pièce manquante, remarque…)"
+                              className="w-full border border-amber-300 rounded-md px-3 py-2 text-sm resize-y"
+                            />
+                            <div className="flex items-center gap-2 mt-2">
+                              <button
+                                onClick={() => saveNote(t.id)}
+                                className="bg-amber-500 text-white px-3 py-1.5 rounded-md hover:bg-amber-600 text-xs font-semibold"
+                              >
+                                Enregistrer
+                              </button>
+                              {t.note && (
+                                <button
+                                  onClick={() => removeNote(t.id)}
+                                  className="text-red-600 border border-red-200 hover:bg-red-50 rounded-md px-3 py-1.5 text-xs"
+                                >
+                                  Supprimer
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setOpenNoteId(null)
+                                  setNoteDraft('')
+                                }}
+                                className="text-slate-500 hover:text-slate-800 px-2 py-1.5 text-xs"
+                              >
+                                Fermer
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </li>
                     )
                   })}
@@ -415,68 +485,6 @@ export default function MaCharge() {
         </div>
       )}
 
-      {/* Éditeur de note */}
-      {noteTask && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setNoteTask(null)}
-        >
-          <div
-            className="bg-white rounded-xl shadow-xl w-full max-w-lg flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-5 py-4 flex items-start justify-between gap-3 bg-amber-500 text-white rounded-t-xl">
-              <div className="min-w-0">
-                <h2 className="font-bold truncate">Note · N° {noteTask.seq || '—'}</h2>
-                <p className="text-xs text-amber-100 truncate">{noteTask.description}</p>
-              </div>
-              <button
-                onClick={() => setNoteTask(null)}
-                className="text-amber-100 hover:text-white shrink-0"
-                title="Fermer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="p-4 space-y-3">
-              <textarea
-                autoFocus
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                rows={5}
-                placeholder="Note pour le leader (avancement, pièce manquante, remarque…)"
-                className="w-full border border-amber-300 rounded-md px-3 py-2 text-sm resize-y"
-              />
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={saveNote}
-                  className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600 text-sm font-semibold"
-                >
-                  Enregistrer
-                </button>
-                {noteTask.note && (
-                  <button
-                    onClick={() => {
-                      updateChargeTask(noteTask.id, { note: undefined })
-                      setNoteTask(null)
-                      setNoteText('')
-                    }}
-                    className="text-red-600 border border-red-200 hover:bg-red-50 rounded-md px-3 py-2 text-sm"
-                  >
-                    Supprimer la note
-                  </button>
-                )}
-                <button
-                  onClick={() => setNoteTask(null)}
-                  className="text-slate-500 hover:text-slate-800 px-3 py-2 text-sm"
-                >
-                  Annuler
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

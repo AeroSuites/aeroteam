@@ -12,7 +12,7 @@ export default function Equipes() {
     teams, members, dayMembers, dayLeaders, assignments, notes, tasks,
     addTeam, updateTeam, removeTeam, unassignTask,
     addMembers, addDayMembers, clearDayMembers, removeMember,
-    activeProfile,
+    activeProfile, clearAgentChargesByTeam,
   } = useApp()
   const [tab, setTab] = useState('permanent')
   const [showAdd, setShowAdd] = useState(false)
@@ -84,10 +84,13 @@ export default function Equipes() {
   )
 
   // Vide la charge d'une équipe : toutes ses lignes sont désassignées
+  // (+ la charge envoyée à un agent pour cette équipe est retirée)
   const clearTeamCharge = (teamId) => {
+    const team = (teams || []).find((t) => t.id === teamId)
     tasks
       .filter((t) => assignmentTeams(assignments, t.id).includes(teamId))
       .forEach((t) => unassignTask(t.id, teamId))
+    if (team) clearAgentChargesByTeam(team.name)
   }
 
   const taskCountByTeam = (teamId) =>
@@ -987,9 +990,18 @@ export default function Equipes() {
                   {team.locked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
                 </button>
                 <button
-                  onClick={() => removeTeam(team.id)}
+                  onClick={async () => {
+                    if (
+                      window.confirm(
+                        `Supprimer l'équipe « ${team.name} » ?\n\nLa charge envoyée à un agent pour cette équipe sera retirée (elle reste dans l'historique de l'agent).`
+                      )
+                    ) {
+                      await clearAgentChargesByTeam(team.name)
+                      removeTeam(team.id)
+                    }
+                  }}
                   className="text-white/80 hover:text-white"
-                  title="Supprimer l'équipe"
+                  title="Supprimer l'équipe (retire aussi la charge envoyée à l'agent)"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -1012,7 +1024,7 @@ export default function Equipes() {
                           window.confirm(
                             `Vider la charge de l'équipe « ${team.name} » (${taskCountByTeam(
                               team.id
-                            )} tâche(s)) ?\n\nLes lignes seront désassignées (elles restent dans les tâches).`
+                            )} tâche(s)) ?\n\nLes lignes seront désassignées (elles restent dans les tâches) et la charge envoyée à l'agent sera retirée.`
                           )
                         ) {
                           clearTeamCharge(team.id)
