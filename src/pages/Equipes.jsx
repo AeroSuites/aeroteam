@@ -1118,8 +1118,13 @@ export default function Equipes() {
               <div className="min-w-0">
                 <h2 className="font-bold truncate">Envoyer la charge · {sendTeam.name}</h2>
                 <p className="text-xs text-slate-300">
-                  {taskCountByTeam(sendTeam.id)} tâche(s) · date et avion du jour inclus ·
-                  choisissez l'agent (concordance par nom avec les membres)
+                  {taskCountByTeam(sendTeam.id)} tâche(s) ·{' '}
+                  {logicalToday().toLocaleDateString('fr-FR', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  })}{' '}
+                  · ✈ {activeProfile?.aircraft || 'aucun avion'}
                 </p>
               </div>
               <button
@@ -1131,6 +1136,13 @@ export default function Equipes() {
               </button>
             </div>
             <div className="p-4 overflow-y-auto space-y-2">
+              {!activeProfile?.aircraft && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                  Aucun avion n'est défini sur votre profil : la charge partira sans
+                  immatriculation (l'agent verra « — »). Définis ton avion dans Administration ou
+                  via Import consignes.
+                </p>
+              )}
               {agents === null && (
                 <p className="text-sm text-slate-400">Chargement des agents…</p>
               )}
