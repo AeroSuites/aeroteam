@@ -665,6 +665,12 @@ export default function Equipes() {
                   })
                   const checked = !consumed && pickedConsignes.includes(c)
                   const picked = explicitFor(c)
+                  const otherPicked = pickedConsignes
+                    .filter((x) => x !== c)
+                    .flatMap((x) => explicitFor(x))
+                  const pickerMembers = availableMembers.filter(
+                    (m) => !otherPicked.includes(m)
+                  )
                   return (
                     <div
                       key={c}
@@ -735,7 +741,7 @@ export default function Equipes() {
                             Personnes affectées à cette consigne (effectif du jour) :
                           </p>
                           <div className="flex flex-wrap gap-1">
-                            {availableMembers.map((m) => {
+                            {pickerMembers.map((m) => {
                               const on = picked.includes(m)
                               return (
                                 <button
@@ -754,6 +760,13 @@ export default function Equipes() {
                               )
                             })}
                           </div>
+                          {availableMembers.length - pickerMembers.length > 0 && (
+                            <p className="text-[10px] text-slate-400 mt-1">
+                              {availableMembers.length - pickerMembers.length} personne(s) déjà
+                              prise(s) par une autre consigne (retire-la de l'autre consigne pour
+                              la récupérer).
+                            </p>
+                          )}
                           {picked.length > 0 && (
                             <p className="text-[10px] text-slate-400 mt-1">
                               Les personnes choisies seront mises dans l'équipe de cette consigne ;
