@@ -181,7 +181,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                 <span className="font-mono font-bold shrink-0">
                                   {cleanShortValue(t.seq) || '—'}
                                 </span>
-                                <span className="truncate" title={t.description}>
+                                <span className="flex-1 min-w-0 truncate" title={t.description}>
                                   {t.description}
                                 </span>
                                 {(t.taskDescription || t.taskSteps) && (
@@ -206,6 +206,14 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                       <StickyNote className="h-3.5 w-3.5" />
                                     </button>
                                   )}
+                                {(t.taskBarcode || t.registration) && (
+                                  <span
+                                    className="shrink-0 font-mono text-[10px] font-bold text-sky-700"
+                                    title={t.taskBarcode ? `TRFX ${t.taskBarcode}` : 'Avion'}
+                                  >
+                                    {t.taskBarcode || t.registration}
+                                  </span>
+                                )}
                                 {agentInfo && agentByKey[taskContentKey(t)] && (
                                   <span
                                     className={`shrink-0 h-2.5 w-2.5 rounded-full ${
@@ -219,14 +227,6 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                       agentByKey[taskContentKey(t)].mtxStatus || 'ACTV'
                                     }`}
                                   />
-                                )}
-                                {(t.taskBarcode || t.registration) && (
-                                  <span
-                                    className="shrink-0 ml-auto font-mono text-[10px] font-bold text-sky-700"
-                                    title={t.taskBarcode ? `TRFX ${t.taskBarcode}` : 'Avion'}
-                                  >
-                                    {t.taskBarcode || t.registration}
-                                  </span>
                                 )}
                               </li>
                             ))}
