@@ -187,6 +187,20 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                 {(t.taskDescription || t.taskSteps) && (
                                   <FileText className="h-3 w-3 shrink-0 text-sky-600 mt-0.5" />
                                 )}
+                                {agentInfo && agentByKey[taskContentKey(t)] && (
+                                  <span
+                                    className={`shrink-0 h-2.5 w-2.5 rounded-full ${
+                                      agentByKey[taskContentKey(t)].mtxStatus === 'COMPLETE'
+                                        ? 'bg-emerald-500'
+                                        : agentByKey[taskContentKey(t)].mtxStatus === 'PAUSE'
+                                        ? 'bg-amber-500'
+                                        : 'bg-slate-300'
+                                    }`}
+                                    title={`Agent ${agentInfo.name} : ${
+                                      agentByKey[taskContentKey(t)].mtxStatus || 'ACTV'
+                                    }`}
+                                  />
+                                )}
                                 {(t.taskBarcode || t.registration) && (
                                   <span
                                     className="shrink-0 ml-auto font-mono text-[10px] font-bold text-sky-700"
@@ -195,39 +209,25 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                     {t.taskBarcode || t.registration}
                                   </span>
                                 )}
-                                {agentInfo && agentByKey[taskContentKey(t)] && (
-                                  <>
-                                    <span
-                                      className={`shrink-0 h-2.5 w-2.5 rounded-full ${
-                                        agentByKey[taskContentKey(t)].mtxStatus === 'COMPLETE'
-                                          ? 'bg-emerald-500'
-                                          : agentByKey[taskContentKey(t)].mtxStatus === 'PAUSE'
-                                          ? 'bg-amber-500'
-                                          : 'bg-slate-300'
-                                      }`}
-                                      title={`Agent ${agentInfo.name} : ${
-                                        agentByKey[taskContentKey(t)].mtxStatus || 'ACTV'
-                                      }`}
-                                    />
-                                    {agentByKey[taskContentKey(t)].note && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          setNotePopup({
-                                            task: t,
-                                            note: agentByKey[taskContentKey(t)].note,
-                                            status: agentByKey[taskContentKey(t)].mtxStatus,
-                                            agentName: agentInfo.name,
-                                          })
-                                        }}
-                                        className="shrink-0 inline-flex items-center justify-center text-amber-800 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded-full p-1"
-                                        title="Lire la note de l'agent"
-                                      >
-                                        <StickyNote className="h-3.5 w-3.5" />
-                                      </button>
-                                    )}
-                                  </>
-                                )}
+                                {agentInfo &&
+                                  agentByKey[taskContentKey(t)] &&
+                                  agentByKey[taskContentKey(t)].note && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setNotePopup({
+                                          task: t,
+                                          note: agentByKey[taskContentKey(t)].note,
+                                          status: agentByKey[taskContentKey(t)].mtxStatus,
+                                          agentName: agentInfo.name,
+                                        })
+                                      }}
+                                      className="shrink-0 inline-flex items-center justify-center text-amber-800 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded-full p-1"
+                                      title="Lire la note de l'agent"
+                                    >
+                                      <StickyNote className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
                               </li>
                             ))}
                           </ul>
