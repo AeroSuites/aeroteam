@@ -181,7 +181,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                 <span className="font-mono font-bold shrink-0">
                                   {cleanShortValue(t.seq) || '—'}
                                 </span>
-                                <span className="flex-1 min-w-0 truncate" title={t.description}>
+                                <span className="truncate" title={t.description}>
                                   {t.description}
                                 </span>
                                 {(t.taskDescription || t.taskSteps) && (
@@ -208,7 +208,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                   )}
                                 {(t.taskBarcode || t.registration) && (
                                   <span
-                                    className="shrink-0 font-mono text-[10px] font-bold text-sky-700"
+                                    className="shrink-0 ml-auto font-mono text-[10px] font-bold text-sky-700"
                                     title={t.taskBarcode ? `TRFX ${t.taskBarcode}` : 'Avion'}
                                   >
                                     {t.taskBarcode || t.registration}
