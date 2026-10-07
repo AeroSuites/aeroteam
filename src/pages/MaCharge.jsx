@@ -20,6 +20,7 @@ import {
   StickyNote,
   ChevronDown,
   ChevronRight,
+  History,
 } from 'lucide-react'
 
 const formatChargeDate = (iso) => {
@@ -45,10 +46,11 @@ const statusPill = (status) =>
     : 'bg-slate-100 text-slate-700'
 
 export default function MaCharge() {
-  const { charge, updateChargeTask, updateChargeTasks, activeProfile } = useApp()
+  const { charge, chargeHistory, updateChargeTask, updateChargeTasks, activeProfile } = useApp()
   const [descTask, setDescTask] = useState(null)
   const [openNoteId, setOpenNoteId] = useState(null)
   const [noteDraft, setNoteDraft] = useState('')
+  const [openHistory, setOpenHistory] = useState([])
 
   const tasks = useMemo(
     () => (charge && Array.isArray(charge.tasks) ? charge.tasks : []),
@@ -413,6 +415,77 @@ export default function MaCharge() {
           })}
         </div>
       ))}
+
+      {/* Charges précédentes (archives) */}
+      {chargeHistory.length > 0 && (
+        <div className="bg-white rounded-xl shadow overflow-hidden">
+          <div className="px-4 sm:px-5 py-4 border-b bg-slate-50/50">
+            <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+              <History className="h-4 w-4 text-slate-500" /> Charges précédentes (
+              {chargeHistory.length})
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Les 10 dernières charges retirées ou remplacées — clique pour voir les lignes.
+            </p>
+          </div>
+          <ul className="divide-y divide-slate-100">
+            {chargeHistory.map((h, i) => {
+              const list = Array.isArray(h.tasks) ? h.tasks : []
+              const done = list.filter((t) => t.mtxStatus === 'COMPLETE').length
+              const open = openHistory.includes(i)
+              return (
+                <li key={i}>
+                  <button
+                    onClick={() =>
+                      setOpenHistory((prev) =>
+                        prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]
+                      )
+                    }
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left hover:bg-slate-50"
+                  >
+                    {open ? (
+                      <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
+                    )}
+                    <span className="font-semibold text-slate-700 shrink-0">
+                      {formatChargeDate(h.date)}
+                    </span>
+                    <span className="text-slate-500 truncate">
+                      {h.aircraft ? `✈ ${h.aircraft}` : ''}
+                      {h.teamName ? ` · ${h.teamName}` : ''}
+                    </span>
+                    <span className="ml-auto shrink-0 text-xs font-bold text-slate-500">
+                      {done}/{list.length} {list.length > 0 && done === list.length ? '✓' : ''}
+                    </span>
+                  </button>
+                  {open && (
+                    <ul className="px-4 pb-3 space-y-0.5">
+                      {list.map((t) => (
+                        <li key={t.id} className="flex items-center gap-2 text-xs text-slate-600">
+                          <span className="w-10 shrink-0 font-mono font-bold text-slate-400">
+                            {cleanShortValue(t.seq) || '—'}
+                          </span>
+                          <span className="flex-1 min-w-0 truncate" title={t.description}>
+                            {t.description}
+                          </span>
+                          <span
+                            className={`shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${statusPill(
+                              t.mtxStatus
+                            )}`}
+                          >
+                            {t.mtxStatus || '—'}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* Popup description / étapes */}
       {descTask && (

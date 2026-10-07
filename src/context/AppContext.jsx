@@ -89,6 +89,7 @@ export function AppProvider({ children }) {
   const [pockets, setPockets] = useState([])
   const [notes, setNotes] = useState([])
   const [charge, setCharge] = useState(null)
+  const [chargeHistory, setChargeHistory] = useState([])
   const [agentsProgress, setAgentsProgress] = useState([])
   const [loaded, setLoaded] = useState(false)
 
@@ -138,6 +139,7 @@ export function AppProvider({ children }) {
       pockets: toArray(data.pockets),
       primeRequests: toArray(data.primeRequests),
       charge: data.charge && typeof data.charge === 'object' ? data.charge : null,
+      chargeHistory: toArray(data.chargeHistory),
     }
     cleaned.tasks = dedupeTasks(cleaned.tasks)
     setTasks(cleaned.tasks)
@@ -151,6 +153,7 @@ export function AppProvider({ children }) {
     setNotes(cleaned.notes)
     setPrimeRequests(cleaned.primeRequests)
     setCharge(cleaned.charge)
+    setChargeHistory(cleaned.chargeHistory)
     revRef.current = profile.rev ?? 0
     lastSavedJsonRef.current = JSON.stringify(cleaned)
     setActiveProfile({
@@ -194,8 +197,9 @@ export function AppProvider({ children }) {
       pockets,
       primeRequests,
       charge,
+      chargeHistory,
     }),
-    [tasks, teams, assignments, members, dayMembers, dayLeaders, prepTasks, notes, pockets, primeRequests, charge]
+    [tasks, teams, assignments, members, dayMembers, dayLeaders, prepTasks, notes, pockets, primeRequests, charge, chargeHistory]
   )
 
   const performSave = useCallback(
@@ -740,7 +744,7 @@ export function AppProvider({ children }) {
 const value = {
     tasks, teams, assignments, members, dayMembers, dayLeaders, prepTasks, notes, pockets,
     primeRequests,
-    charge, updateChargeTask, updateChargeTasks, agentsProgress, clearAgentCharge, clearAgentChargesByTeam,
+    charge, chargeHistory, updateChargeTask, updateChargeTasks, agentsProgress, clearAgentCharge, clearAgentChargesByTeam,
     activeProfile, code, isAdmin,
     loading, error, saveState, resolveConflict,
     connectProfile, createProfile, requestProfile, disconnect, deleteProfile,
