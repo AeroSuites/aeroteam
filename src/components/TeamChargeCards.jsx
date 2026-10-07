@@ -220,10 +220,10 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                             agentName: agentInfo.name,
                                           })
                                         }}
-                                        className="shrink-0 inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded-full px-1.5 py-0.5"
+                                        className="shrink-0 inline-flex items-center justify-center text-amber-800 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded-full p-1"
                                         title="Lire la note de l'agent"
                                       >
-                                        <StickyNote className="h-3 w-3" /> note
+                                        <StickyNote className="h-3.5 w-3.5" />
                                       </button>
                                     )}
                                   </>

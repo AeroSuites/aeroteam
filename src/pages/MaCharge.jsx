@@ -296,15 +296,14 @@ export default function MaCharge() {
                         {t.note ? (
                           <button
                             onClick={() => toggleNote(t)}
-                            className={`shrink-0 inline-flex items-center gap-1 max-w-[180px] border rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                            className={`shrink-0 inline-flex items-center gap-0.5 border rounded-full px-1.5 py-0.5 ${
                               openNoteId === t.id
                                 ? 'bg-amber-200 border-amber-400 text-amber-900'
-                                : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'
+                                : 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100'
                             }`}
-                            title="Afficher / masquer l'éditeur de note"
+                            title="Note enregistrée — afficher / masquer l'éditeur"
                           >
-                            <StickyNote className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{t.note}</span>
+                            <StickyNote className="h-3.5 w-3.5 shrink-0" />
                             {openNoteId === t.id ? (
                               <ChevronDown className="h-3 w-3 shrink-0" />
                             ) : (
@@ -314,19 +313,14 @@ export default function MaCharge() {
                         ) : (
                           <button
                             onClick={() => toggleNote(t)}
-                            className={`shrink-0 inline-flex items-center gap-1 border rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                            className={`shrink-0 inline-flex items-center justify-center border rounded-full p-1 ${
                               openNoteId === t.id
                                 ? 'bg-amber-100 border-amber-300 text-amber-800'
-                                : 'text-slate-400 border-transparent hover:text-amber-700'
+                                : 'text-slate-300 border-transparent hover:text-amber-700'
                             }`}
                             title="Ajouter une note"
                           >
                             <StickyNote className="h-3.5 w-3.5" />
-                            {openNoteId === t.id ? (
-                              <ChevronDown className="h-3 w-3" />
-                            ) : (
-                              <ChevronRight className="h-3 w-3" />
-                            )}
                           </button>
                         )}
                         <span className="shrink-0 flex items-center gap-1">
