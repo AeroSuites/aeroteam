@@ -149,7 +149,10 @@ export default function Equipes() {
         consignes,
         tasks: chargeTasks,
       })
-      if (res?.error === 'pas_un_agent') setSendError("Ce profil n'est pas un agent.")
+      if (res?.error === 'pas_un_agent')
+        setSendError(
+          "Ce profil n'a pas le rôle Agent — changez son rôle dans Administration → Profils existants."
+        )
       else if (res?.error === 'agent_introuvable')
         setSendError('Profil agent introuvable (migration SQL exécutée ?).')
       else if (res?.error) setSendError("Échec de l'envoi.")

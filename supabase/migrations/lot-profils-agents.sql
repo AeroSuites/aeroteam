@@ -140,7 +140,9 @@ begin
   end if;
 
   update public.profiles
-  set type = case when lower(coalesce(p_type, '')) = 'agent' then 'agent' else 'leader' end
+  set type = case when lower(coalesce(p_type, '')) = 'agent' then 'agent' else 'leader' end,
+      rev = rev + 1,
+      updated_at = now()
   where id = p_id;
 
   if not found then
