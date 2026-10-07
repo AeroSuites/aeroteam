@@ -273,6 +273,27 @@ export function dedupeAndMerge(prev, newTasks) {
   return [...prev, ...fresh]
 }
 
+// Concordance de noms (prénom / nom) : accents, casse et parenthèses ignorés
+export function normalizeNameTokens(s) {
+  return String(s || '')
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+}
+
+export function namesMatch(a, b) {
+  const ta = normalizeNameTokens(a)
+  const tb = normalizeNameTokens(b)
+  if (!ta.length || !tb.length) return false
+  const setA = new Set(ta)
+  const setB = new Set(tb)
+  return ta.every((t) => setB.has(t)) || tb.every((t) => setA.has(t))
+}
+
 // Clé de contenu d'une ligne (n° + description + bloc + zone) pour repérer les doublons
 export function taskContentKey(t) {
   return [

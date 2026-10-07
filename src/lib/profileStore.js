@@ -3,13 +3,25 @@ import { supabase } from './supabase'
 // Gère l'accès aux profils via Supabase (fonctions RPC).
 // Chaque profil est identifié par un CODE secret qui sert de clé d'accès.
 
-export async function createProfile(identifiant, code, name, aircraft) {
-  const { data, error } = await supabase.rpc('create_profile', {
+export async function createProfile(identifiant, code, name, aircraft, type = 'leader') {
+  let { data, error } = await supabase.rpc('create_profile', {
     p_identifiant: identifiant,
     p_code: code,
     p_name: name,
     p_aircraft: aircraft,
+    p_type: type,
   })
+  if (error) {
+    // Repli si la migration « profils agents » n'est pas encore exécutée
+    const retry = await supabase.rpc('create_profile', {
+      p_identifiant: identifiant,
+      p_code: code,
+      p_name: name,
+      p_aircraft: aircraft,
+    })
+    data = retry.data
+    error = retry.error
+  }
   if (error) throw error
   if (data?.error === 'code_exists') {
     throw new Error('code_exists')
@@ -87,12 +99,33 @@ export async function adminUpdateProfile(adminCode, id, name, aircraft) {
   return data
 }
 
-export async function adminCreateProfile(adminCode, code, name, aircraft) {
-  const { data, error } = await supabase.rpc('admin_create_profile', {
+export async function adminCreateProfile(adminCode, code, name, aircraft, type = 'leader') {
+  let { data, error } = await supabase.rpc('admin_create_profile', {
     p_admin_code: adminCode,
     p_code: code,
     p_name: name,
     p_aircraft: aircraft,
+    p_type: type,
+  })
+  if (error) {
+    const retry = await supabase.rpc('admin_create_profile', {
+      p_admin_code: adminCode,
+      p_code: code,
+      p_name: name,
+      p_aircraft: aircraft,
+    })
+    data = retry.data
+    error = retry.error
+  }
+  if (error) throw error
+  return data
+}
+
+export async function adminSetProfileType(adminCode, id, type) {
+  const { data, error } = await supabase.rpc('admin_set_profile_type', {
+    p_admin_code: adminCode,
+    p_id: id,
+    p_type: type,
   })
   if (error) throw error
   return data
@@ -127,10 +160,45 @@ export async function adminListPendingProfiles(adminCode) {
   return data
 }
 
-export async function adminValidateProfile(adminCode, profileCode) {
-  const { data, error } = await supabase.rpc('admin_validate_profile', {
+export async function adminValidateProfile(adminCode, profileCode, type = 'leader') {
+  let { data, error } = await supabase.rpc('admin_validate_profile', {
     p_admin_code: adminCode,
     p_profile_code: profileCode,
+    p_type: type,
+  })
+  if (error) {
+    const retry = await supabase.rpc('admin_validate_profile', {
+      p_admin_code: adminCode,
+      p_profile_code: profileCode,
+    })
+    data = retry.data
+    error = retry.error
+  }
+  if (error) throw error
+  return data
+}
+
+export async function leaderListAgents(leaderCode) {
+  const { data, error } = await supabase.rpc('leader_list_agents', {
+    p_leader_code: leaderCode,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function leaderSendCharge(leaderCode, agentId, charge) {
+  const { data, error } = await supabase.rpc('leader_send_charge', {
+    p_leader_code: leaderCode,
+    p_agent_id: agentId,
+    p_charge: charge,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function leaderGetAgentsProgress(leaderCode) {
+  const { data, error } = await supabase.rpc('leader_get_agents_progress', {
+    p_leader_code: leaderCode,
   })
   if (error) throw error
   return data

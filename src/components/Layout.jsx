@@ -33,6 +33,14 @@ const navItems = [
   },
 ]
 
+// Navigation réduite des profils agents (charge reçue d'un leader)
+const agentNavItems = [
+  { to: '/ma-charge', label: 'Ma charge', end: true },
+  { to: '/notes', label: 'Bloc-notes' },
+  { to: '/consignes', label: 'Consignes' },
+  { to: '/messagerie', label: 'Messagerie', messages: true },
+]
+
 export default function Layout({ children }) {
   const { activeProfile, disconnect, isAdmin, saveState, resolveConflict, notes } = useApp()
   const navigate = useNavigate()
@@ -116,7 +124,7 @@ export default function Layout({ children }) {
     String(n.title || '').startsWith('[C] ')
   ).length
 
-  const items = navItems
+  const items = activeProfile?.type === 'agent' ? agentNavItems : navItems
 
   // Ferme le menu Administration au clic extérieur
   useEffect(() => {

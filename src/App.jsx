@@ -15,6 +15,7 @@ import Messagerie from './pages/Messagerie'
 import ImportConsignes from './pages/ImportConsignes'
 import Admin from './pages/Admin'
 import Primes from './pages/Primes'
+import MaCharge from './pages/MaCharge'
 
 function AppContent() {
   const { activeProfile, loading, error, isAdmin } = useApp()
@@ -34,23 +35,37 @@ function AppContent() {
       </div>
     )
   }
+  const isAgent = activeProfile?.type === 'agent'
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/import" element={<ImportExcel />} />
-        <Route path="/taches" element={<Taches />} />
-        <Route path="/equipes" element={<Equipes />} />
-        <Route path="/affectation" element={<Affectation />} />
-        <Route path="/preparation" element={<Preparation />} />
-        <Route path="/notes" element={<BlocNotes />} />
-        <Route path="/consignes" element={<Consignes />} />
-        <Route path="/messagerie" element={<Messagerie />} />
-        <Route path="/export" element={<Export />} />
-        {isAdmin && <Route path="/admin" element={<Admin />} />}
-        {isAdmin && <Route path="/primes" element={<Primes />} />}
-        {isAdmin && <Route path="/import-consignes" element={<ImportConsignes />} />}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {isAgent ? (
+          <>
+            <Route path="/ma-charge" element={<MaCharge />} />
+            <Route path="/notes" element={<BlocNotes />} />
+            <Route path="/consignes" element={<Consignes />} />
+            <Route path="/messagerie" element={<Messagerie />} />
+            <Route path="*" element={<Navigate to="/ma-charge" replace />} />
+          </>
+        ) : (
+          <>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/import" element={<ImportExcel />} />
+            <Route path="/taches" element={<Taches />} />
+            <Route path="/equipes" element={<Equipes />} />
+            <Route path="/affectation" element={<Affectation />} />
+            <Route path="/preparation" element={<Preparation />} />
+            <Route path="/notes" element={<BlocNotes />} />
+            <Route path="/consignes" element={<Consignes />} />
+            <Route path="/messagerie" element={<Messagerie />} />
+            <Route path="/export" element={<Export />} />
+            <Route path="/ma-charge" element={<Navigate to="/" replace />} />
+            {isAdmin && <Route path="/admin" element={<Admin />} />}
+            {isAdmin && <Route path="/primes" element={<Primes />} />}
+            {isAdmin && <Route path="/import-consignes" element={<ImportConsignes />} />}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        )}
       </Routes>
     </Layout>
   )

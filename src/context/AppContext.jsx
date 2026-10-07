@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import * as profileStore from '../lib/profileStore'
+import { taskContentKey } from '../utils/helpers'
 import { taskActions } from './tasks'
 import { teamActions } from './teams'
 import { prepActions } from './preparation'
@@ -67,6 +68,7 @@ const DEFAULT_EMPTY = {
   notes: [],
   pockets: [],
   primeRequests: [],
+  charge: null,
 }
 
 export function AppProvider({ children }) {
@@ -86,6 +88,8 @@ export function AppProvider({ children }) {
   const [prepTasks, setPrepTasks] = useState([])
   const [pockets, setPockets] = useState([])
   const [notes, setNotes] = useState([])
+  const [charge, setCharge] = useState(null)
+  const [agentsProgress, setAgentsProgress] = useState([])
   const [loaded, setLoaded] = useState(false)
 
   const saveTimer = useRef(null)
@@ -133,6 +137,7 @@ export function AppProvider({ children }) {
       notes: toArray(data.notes),
       pockets: toArray(data.pockets),
       primeRequests: toArray(data.primeRequests),
+      charge: data.charge && typeof data.charge === 'object' ? data.charge : null,
     }
     cleaned.tasks = dedupeTasks(cleaned.tasks)
     setTasks(cleaned.tasks)
@@ -145,6 +150,7 @@ export function AppProvider({ children }) {
     setPockets(cleaned.pockets)
     setNotes(cleaned.notes)
     setPrimeRequests(cleaned.primeRequests)
+    setCharge(cleaned.charge)
     revRef.current = profile.rev ?? 0
     lastSavedJsonRef.current = JSON.stringify(cleaned)
     setActiveProfile({
@@ -153,6 +159,7 @@ export function AppProvider({ children }) {
       identifiant: profile.identifiant ?? identRef.current,
       name: profile.name,
       aircraft: profile.aircraft,
+      type: profile.type || 'leader',
     })
     try {
       localStorage.setItem(
@@ -163,6 +170,7 @@ export function AppProvider({ children }) {
             identifiant: profile.identifiant ?? identRef.current,
             name: profile.name,
             aircraft: profile.aircraft,
+            type: profile.type || 'leader',
           },
           data,
           rev: profile.rev ?? 0,
@@ -185,8 +193,9 @@ export function AppProvider({ children }) {
       notes,
       pockets,
       primeRequests,
+      charge,
     }),
-    [tasks, teams, assignments, members, dayMembers, dayLeaders, prepTasks, notes, pockets, primeRequests]
+    [tasks, teams, assignments, members, dayMembers, dayLeaders, prepTasks, notes, pockets, primeRequests, charge]
   )
 
   const performSave = useCallback(
@@ -215,6 +224,7 @@ export function AppProvider({ children }) {
                 id: activeProfile?.id,
                 name: activeProfile?.name,
                 aircraft: activeProfile?.aircraft,
+                type: activeProfile?.type || 'leader',
               },
               data: payload,
               rev: revRef.current,
@@ -352,6 +362,7 @@ export function AppProvider({ children }) {
             id: cached.profile?.id,
             name: cached.profile?.name,
             aircraft: cached.profile?.aircraft,
+            type: cached.profile?.type || 'leader',
             rev: cached.rev ?? 0,
             data: cached.data,
           })
@@ -433,7 +444,7 @@ export function AppProvider({ children }) {
   }, [])
 
   const createProfile = useCallback(
-    async ({ identifiant: profileIdentifiant, code: profileCode, name, aircraft }) => {
+    async ({ identifiant: profileIdentifiant, code: profileCode, name, aircraft, type }) => {
       const ident = String(profileIdentifiant || '').trim().toLowerCase()
       const c = String(profileCode || '').trim()
       if (!c) return { ok: false, error: 'Le code est obligatoire.' }
@@ -443,7 +454,8 @@ export function AppProvider({ children }) {
           ident,
           c,
           String(name).trim(),
-          String(aircraft || '').trim()
+          String(aircraft || '').trim(),
+          type || 'leader'
         )
         const finalIdent = res?.identifiant || ident
         localStorage.setItem(ACTIVE_CODE_KEY, c)
@@ -599,6 +611,77 @@ export function AppProvider({ children }) {
     pocketActions({ setPockets })
   const { addNote, updateNote, removeNote } = noteActions({ setNotes })
 
+  // Mise à jour d'une ligne de la charge agent (statut / note) — sauvegardée avec le profil
+  const updateChargeTask = useCallback((taskId, updates) => {
+    setCharge((prev) =>
+      prev && Array.isArray(prev.tasks)
+        ? {
+            ...prev,
+            tasks: prev.tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t)),
+          }
+        : prev
+    )
+  }, [])
+
+  const updateChargeTasks = useCallback((ids, updates) => {
+    const set = new Set(ids || [])
+    if (!set.size) return
+    setCharge((prev) =>
+      prev && Array.isArray(prev.tasks)
+        ? {
+            ...prev,
+            tasks: prev.tasks.map((t) => (set.has(t.id) ? { ...t, ...updates } : t)),
+          }
+        : prev
+    )
+  }, [])
+
+  // Suivi (leader) : avancement des agents qui ont reçu une charge
+  useEffect(() => {
+    if (!isConnected || !loaded) return
+    if (activeProfile?.type === 'agent') return
+    let alive = true
+    const load = () => {
+      profileStore
+        .leaderGetAgentsProgress(codeRef.current)
+        .then((res) => {
+          if (alive && res?.ok) setAgentsProgress(res.agents || [])
+        })
+        .catch(() => {})
+    }
+    load()
+    const timer = setInterval(load, 60000)
+    return () => {
+      alive = false
+      clearInterval(timer)
+    }
+  }, [isConnected, loaded, activeProfile?.type, activeProfile?.code])
+
+  // Report automatique : les statuts posés par les agents s'appliquent aux Tâches du leader
+  useEffect(() => {
+    if (!agentsProgress.length) return
+    const statusByKey = {}
+    agentsProgress.forEach((a) => {
+      ;(a.tasks || []).forEach((t) => {
+        if (t.mtxStatus) statusByKey[taskContentKey(t)] = t.mtxStatus
+      })
+    })
+    if (!Object.keys(statusByKey).length) return
+    // eslint-disable-next-line react/set-state-in-effect -- report automatique des statuts des agents
+    setTasks((prev) => {
+      let changed = false
+      const next = prev.map((t) => {
+        const s = statusByKey[taskContentKey(t)]
+        if (s && s !== t.mtxStatus) {
+          changed = true
+          return { ...t, mtxStatus: s }
+        }
+        return t
+      })
+      return changed ? next : prev
+    })
+  }, [agentsProgress])
+
   const addPrimeRequest = useCallback((req) => {
     setPrimeRequests((prev) => [...prev, req])
   }, [])
@@ -628,6 +711,7 @@ export function AppProvider({ children }) {
 const value = {
     tasks, teams, assignments, members, dayMembers, dayLeaders, prepTasks, notes, pockets,
     primeRequests,
+    charge, updateChargeTask, updateChargeTasks, agentsProgress,
     activeProfile, code, isAdmin,
     loading, error, saveState, resolveConflict,
     connectProfile, createProfile, requestProfile, disconnect, deleteProfile,

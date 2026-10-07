@@ -25,6 +25,7 @@ export default function Admin() {
   const [newName, setNewName] = useState('')
   const [newIdentifiant, setNewIdentifiant] = useState('')
   const [newCode, setNewCode] = useState('')
+  const [newRole, setNewRole] = useState('leader')
   const [makeAdmin, setMakeAdmin] = useState(false)
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
@@ -123,6 +124,7 @@ export default function Admin() {
   const [pendingProfiles, setPendingProfiles] = useState(null)
   const [pendingBusy, setPendingBusy] = useState(null)
   const [pendingMsg, setPendingMsg] = useState('')
+  const [pendingRole, setPendingRole] = useState({})
   const [profilesTick, setProfilesTick] = useState(0)
   const [managersList, setManagersList] = useState([])
   const [transferProfileId, setTransferProfileId] = useState(null)
@@ -304,7 +306,11 @@ setEditError(res.error || 'Échec de la mise à jour.')
     setPendingBusy(profileCode)
     setPendingMsg('')
     try {
-      const res = await profileStore.adminValidateProfile(activeProfile?.code, profileCode)
+      const res = await profileStore.adminValidateProfile(
+        activeProfile?.code,
+        profileCode,
+        pendingRole[profileCode] || 'leader'
+      )
       if (res?.error) setPendingMsg('Échec de la validation.')
       else {
         setPendingProfiles((prev) => (prev || []).filter((p) => p.code !== profileCode))
@@ -359,6 +365,24 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
     setDeleting(null)
   }
 
+  const handleSetType = async (profile, type) => {
+    setProfilesError('')
+    try {
+      const res = await profileStore.adminSetProfileType(
+        activeProfile?.code,
+        profile.id,
+        type
+      )
+      if (res?.error) setProfilesError('Échec du changement de rôle.')
+      else
+        setProfiles((prev) =>
+          (prev || []).map((p) => (p.id === profile.id ? { ...p, type } : p))
+        )
+    } catch {
+      setProfilesError('Échec du changement de rôle (hors ligne ?).')
+    }
+  }
+
   const handleCreate = async () => {
     setCreating(true)
     setCreateError('')
@@ -367,6 +391,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
       identifiant: newIdentifiant,
       code: newCode,
       name: newName,
+      type: newRole,
     })
     if (!res.ok) setCreateError(res.error)
     else {
@@ -390,6 +415,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
       setNewName('')
       setNewIdentifiant('')
       setNewCode('')
+      setNewRole('leader')
       setMakeAdmin(false)
     }
     setCreating(false)
@@ -436,6 +462,18 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                   </span>
                 </div>
                 <div className="flex gap-1.5">
+                  <select
+                    value={pendingRole[p.code] || 'leader'}
+                    onChange={(e) =>
+                      setPendingRole((prev) => ({ ...prev, [p.code]: e.target.value }))
+                    }
+                    disabled={pendingBusy === p.code}
+                    className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white"
+                    title="Rôle attribué à ce profil à la validation"
+                  >
+                    <option value="leader">Leader</option>
+                    <option value="agent">Agent</option>
+                  </select>
                   <button
                     onClick={() => handleValidatePending(p.code)}
                     disabled={pendingBusy === p.code}
@@ -484,6 +522,18 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
             Ce code est la clé d'accès du profil (avec l'identifiant à la connexion).
             Remettez-les aux leaders concernés.
           </p>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            Rôle du profil
+            <select
+              value={newRole}
+              onChange={(e) => setNewRole(e.target.value)}
+              className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white"
+              title="Leader : organise la charge. Agent : reçoit sa charge d'un leader."
+            >
+              <option value="leader">Leader</option>
+              <option value="agent">Agent</option>
+            </select>
+          </label>
           <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
             <input
               type="checkbox"
@@ -653,6 +703,19 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                           : '»”'}
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <select
+                          value={profile.type || 'leader'}
+                          onChange={(e) => handleSetType(profile, e.target.value)}
+                          className={`align-middle border rounded-full px-2 py-0.5 text-[11px] font-semibold mr-1 ${
+                            (profile.type || 'leader') === 'agent'
+                              ? 'border-emerald-300 text-emerald-700 bg-emerald-50'
+                              : 'border-slate-300 text-slate-600 bg-white'
+                          }`}
+                          title="Rôle du profil (Leader / Agent)"
+                        >
+                          <option value="leader">Leader</option>
+                          <option value="agent">Agent</option>
+                        </select>
                         <button
                           onClick={() => setViewProfile(profile)}
                           className="text-slate-400 hover:text-sky-600 p-1"

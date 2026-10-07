@@ -7,6 +7,7 @@ import {
   isAssignedTo,
   cleanShortValue,
   cleanTaskText,
+  taskContentKey,
 } from '../utils/helpers'
 
 // Fin de TRFX : après « TRFX900 » (ex. TRFX900ABCD → ABCD) ; sinon le code
@@ -42,11 +43,24 @@ function groupTeamTasks(teamTasks) {
 }
 
 // Une carte d'équipe : pliée par défaut, dépliable individuellement
-function TeamCard({ team, tasks, assignments, onExportPdf, onPrint }) {
+function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgress }) {
   const [open, setOpen] = useState(false)
   const [descTask, setDescTask] = useState(null)
   const teamTasks = (tasks || []).filter((t) => isAssignedTo(assignments, t.id, team.id))
   const zoneGroups = groupTeamTasks(teamTasks)
+
+  // Avancement de l'agent qui a reçu la charge de cette équipe (suivi leader)
+  const agentInfo = (agentsProgress || []).find(
+    (a) => a.teamName && a.teamName === team.name
+  )
+  const agentByKey = {}
+  ;(agentInfo?.tasks || []).forEach((t) => {
+    agentByKey[taskContentKey(t)] = t
+  })
+  const agentTotal = (agentInfo?.tasks || []).length
+  const agentDone = (agentInfo?.tasks || []).filter(
+    (t) => t.mtxStatus === 'COMPLETE'
+  ).length
 
   return (
     <>
@@ -89,6 +103,18 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint }) {
                     <Printer className="h-3.5 w-3.5" /> Imprimer
                   </button>
                 )}
+              </span>
+            )}
+            {agentInfo && (
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                  agentTotal > 0 && agentDone === agentTotal
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-white/25 text-white'
+                }`}
+                title={`Agent ${agentInfo.name} : ${agentDone}/${agentTotal} faite(s)`}
+              >
+                👤 {agentDone}/{agentTotal}
               </span>
             )}
             <span className="text-xs opacity-90">
@@ -167,6 +193,30 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint }) {
                                   >
                                     {t.taskBarcode || t.registration}
                                   </span>
+                                )}
+                                {agentInfo && agentByKey[taskContentKey(t)] && (
+                                  <>
+                                    <span
+                                      className={`shrink-0 h-2.5 w-2.5 rounded-full ${
+                                        agentByKey[taskContentKey(t)].mtxStatus === 'COMPLETE'
+                                          ? 'bg-emerald-500'
+                                          : agentByKey[taskContentKey(t)].mtxStatus === 'PAUSE'
+                                          ? 'bg-amber-500'
+                                          : 'bg-slate-300'
+                                      }`}
+                                      title={`Agent ${agentInfo.name} : ${
+                                        agentByKey[taskContentKey(t)].mtxStatus || 'ACTV'
+                                      }`}
+                                    />
+                                    {agentByKey[taskContentKey(t)].note && (
+                                      <span
+                                        className="shrink-0 max-w-[140px] truncate text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded px-1 py-0.5"
+                                        title={`Note agent : ${agentByKey[taskContentKey(t)].note}`}
+                                      >
+                                        📝 {agentByKey[taskContentKey(t)].note}
+                                      </span>
+                                    )}
+                                  </>
                                 )}
                               </li>
                             ))}
@@ -249,7 +299,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint }) {
 }
 
 // Liste des cartes d'équipes avec leur charge
-export default function TeamChargeCards({ teams, tasks, assignments, onExportPdf, onPrint }) {
+export default function TeamChargeCards({ teams, tasks, assignments, onExportPdf, onPrint, agentsProgress }) {
   if (!(teams || []).length) return null
   const columns = [[], []]
   ;(teams || []).forEach((team, i) => {
@@ -267,6 +317,7 @@ export default function TeamChargeCards({ teams, tasks, assignments, onExportPdf
               assignments={assignments}
               onExportPdf={onExportPdf}
               onPrint={onPrint}
+              agentsProgress={agentsProgress}
             />
           ))}
         </div>

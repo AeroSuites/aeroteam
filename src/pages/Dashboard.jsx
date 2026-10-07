@@ -45,7 +45,7 @@ function groupByZone(blockTasks) {
 }
 
 export default function Dashboard() {
-  const { tasks, teams, assignments, notes, updateNote, removeNote, members, dayMembers, dayLeaders, pockets, activeProfile } = useApp()
+  const { tasks, teams, assignments, notes, updateNote, removeNote, members, dayMembers, dayLeaders, pockets, activeProfile, agentsProgress } = useApp()
   const [editingConsigneId, setEditingConsigneId] = useState(null)
   const [consigneText, setConsigneText] = useState('')
 
@@ -620,6 +620,7 @@ export default function Dashboard() {
             teams={teams}
             tasks={tasks}
             assignments={assignments}
+            agentsProgress={agentsProgress}
             onExportPdf={(team) => {
               const doc = buildTeamPdf(team)
               doc.save(
@@ -628,6 +629,56 @@ export default function Dashboard() {
             }}
             onPrint={(team) => openPdfPrint(buildTeamPdf(team))}
           />
+        </div>
+      )}
+
+      {/* Avancement des agents (charges envoyées par ce leader) */}
+      {agentsProgress.length > 0 && (
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6">
+          <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
+            <Users className="h-5 w-5 text-emerald-500" /> Avancement des agents
+          </h2>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {agentsProgress.map((a) => {
+              const list = Array.isArray(a.tasks) ? a.tasks : []
+              const done = list.filter((t) => t.mtxStatus === 'COMPLETE').length
+              const paused = list.filter((t) => t.mtxStatus === 'PAUSE').length
+              const pct = list.length ? Math.round((done / list.length) * 100) : 0
+              const last = a.updated_at
+                ? new Date(a.updated_at).toLocaleString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : ''
+              return (
+                <div key={a.id} className="border border-slate-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold text-slate-800 truncate">{a.name}</p>
+                    <span
+                      className={`text-xs font-bold shrink-0 ${
+                        pct === 100 ? 'text-emerald-600' : 'text-slate-500'
+                      }`}
+                    >
+                      {done}/{list.length} {pct === 100 ? '✓' : ''}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 truncate">
+                    {a.teamName ? `${a.teamName} · ` : ''}
+                    {a.aircraft || ''}
+                    {a.date ? ` · ${a.date}` : ''}
+                  </p>
+                  <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    {paused > 0 ? `${paused} en pause · ` : ''}maj {last || '—'}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
