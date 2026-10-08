@@ -221,19 +221,21 @@ export default function Consignes() {
     setPocketPick([])
   }
 
-  const teamsWithTasks = useMemo(
+  // Toutes les équipes (même sans tâche : l'état inséré est le titre de la
+  // consigne, « Fait » ou « Fait partiellement »)
+  const teamsForStatus = useMemo(
     () =>
       (teams || [])
         .map((team) => ({
           team,
           count: (tasks || []).filter((t) => isAssignedTo(assignments, t.id, team.id)).length,
         }))
-        .filter((x) => x.count > 0),
+        .sort((a, b) => String(a.team.name).localeCompare(String(b.team.name))),
     [teams, tasks, assignments]
   )
 
   const insertTeamStatus = () => {
-    const picked = teamsWithTasks.filter((x) => teamPick[x.team.id])
+    const picked = teamsForStatus.filter((x) => teamPick[x.team.id])
     if (!picked.length) return
     const raw = logicalToday().toLocaleDateString('fr-FR', {
       weekday: 'long',
@@ -248,7 +250,7 @@ export default function Consignes() {
           `<p><strong>${escapeHtml(team.name)}</strong> : ${escapeHtml(teamPick[team.id])}</p>`
       )
       .join('')
-    const remaining = teamsWithTasks
+    const remaining = teamsForStatus
       .filter((x) => !teamPick[x.team.id])
       .map(({ team }) => `<li>${escapeHtml(team.name)}</li>`)
       .join('')
@@ -884,7 +886,7 @@ export default function Consignes() {
 
               {/* Saisie d'une réponse */}
               <div className="border-t p-4 bg-slate-50">
-                {teamsWithTasks.length > 0 && (
+                {teamsForStatus.length > 0 && (
                   <div className="mb-2">
                     <button
                       onClick={() => {
@@ -894,7 +896,7 @@ export default function Consignes() {
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 hover:bg-emerald-50 rounded-full px-3 py-1"
                       title="Insérer l'état des tâches des équipes (Fait / Fait partiellement + reste à suivre)"
                     >
-                      ✅ Insérer l'état des tâches ({teamsWithTasks.length})
+                      ✅ Insérer l'état des tâches ({teamsForStatus.length})
                     </button>
                     {teamPickerOpen && (
                       <div className="mt-2 bg-white border border-slate-200 rounded-lg p-3 max-w-xl">
@@ -903,7 +905,7 @@ export default function Consignes() {
                           « Reste à suivre » :
                         </p>
                         <div className="space-y-1 max-h-52 overflow-y-auto mb-2">
-                          {teamsWithTasks.map(({ team, count }) => {
+                          {teamsForStatus.map(({ team, count }) => {
                             const checked = !!teamPick[team.id]
                             return (
                               <div
