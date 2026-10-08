@@ -1,6 +1,6 @@
 # Transfert du projet AeroTeam — Questions préalables à la reprise
 
-**À l'attention de :** l'équipe informatique / le collègue Power Platform
+**À l'attention de :** l'équipe informatique et Power Platform
 **Objet :** transfert complet du projet AeroTeam + hébergement en interne (fin de GitHub Pages + Supabase)
 
 ## Contexte du transfert
@@ -49,7 +49,7 @@
 5.1 Confirmé : **aucune notification par mail** (inscription, récap) — validation des inscriptions manuelle dans l'app ?
 5.2 Si besoin plus tard : un **relais SMTP interne** est-il disponible (adresse / port) ?
 
-## 6. Intégration Power Platform (projet du collègue)
+## 6. Intégration Power Platform
 6.1 Besoin exact : afficher AeroTeam dans **Power Apps (iframe)** ? lire les données AeroTeam dans ses propres écrans (**via API**) ? les deux ?
 6.2 Power Apps : application **Canvas** ou **modèle** ? Le composant « **Web Viewer** » est-il disponible ?
 6.3 Power Automate : licence **Premium** (action HTTP) disponible pour appeler l'API interne ?
