@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import * as profileStore from '../lib/profileStore'
 import ConsignesAvions from '../components/ConsignesAvions'
-import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen, Pencil, Star, ChevronDown, ChevronRight, Send } from 'lucide-react'
-import { consigneDay, logicalToday, assignmentTeams, isAssignedTo, makeId, namesMatch } from '../utils/helpers'
+import SendChargeToAgent from '../components/SendChargeToAgent'
+import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen, Pencil, Star, ChevronDown, ChevronRight, Send, Search } from 'lucide-react'
+import { consigneDay, logicalToday, assignmentTeams } from '../utils/helpers'
 
 const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
 
@@ -12,7 +12,7 @@ export default function Equipes() {
     teams, members, dayMembers, dayLeaders, assignments, notes, tasks,
     addTeam, updateTeam, removeTeam, unassignTask,
     addMembers, addDayMembers, clearDayMembers, removeMember,
-    activeProfile, clearAgentChargesByTeam,
+    clearAgentChargesByTeam,
   } = useApp()
   const [tab, setTab] = useState('permanent')
   const [showAdd, setShowAdd] = useState(false)
@@ -32,13 +32,10 @@ export default function Equipes() {
   const [memberPickerFor, setMemberPickerFor] = useState(null)
   // Cartes d'équipe : section « Ajouter des membres » repliée par défaut
   const [openAddMember, setOpenAddMember] = useState([])
-  // Envoi de la charge d'une équipe à un profil agent
+  // Envoi de la charge d'une équipe à un profil agent (fenêtre partagée)
   const [sendTeam, setSendTeam] = useState(null)
-  const [agents, setAgents] = useState(null)
-  const [sendPick, setSendPick] = useState('')
-  const [sendBusy, setSendBusy] = useState(false)
-  const [sendMsg, setSendMsg] = useState('')
-  const [sendError, setSendError] = useState('')
+  // Recherche dans la liste « Ajouter des membres » (par équipe)
+  const [addMemberSearch, setAddMemberSearch] = useState({})
 
   const activeMembers = tab === 'permanent' ? members : dayMembers
 
@@ -95,92 +92,6 @@ export default function Equipes() {
 
   const taskCountByTeam = (teamId) =>
     tasks.filter((t) => assignmentTeams(assignments, t.id).includes(teamId)).length
-
-  const openSend = async (team) => {
-    setSendTeam(team)
-    setSendPick('')
-    setSendMsg('')
-    setSendError('')
-    if (agents === null) {
-      try {
-        const res = await profileStore.leaderListAgents(activeProfile?.code)
-        setAgents(res?.ok ? res.agents || [] : [])
-      } catch {
-        setAgents([])
-      }
-    }
-  }
-
-  const sendCharge = async () => {
-    const agent = (agents || []).find((a) => a.id === sendPick)
-    if (!sendTeam || !agent) return
-    setSendBusy(true)
-    setSendError('')
-    setSendMsg('')
-    try {
-      const d = logicalToday()
-      const dayName = DAY_NAMES[d.getDay()]
-      const dateIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-        d.getDate()
-      ).padStart(2, '0')}`
-      const teamTasks = tasks.filter((t) => isAssignedTo(assignments, t.id, sendTeam.id))
-      const registrations = [
-        ...new Set(
-          teamTasks.map((t) => t.registration || t.aircraftType).filter(Boolean)
-        ),
-      ]
-      const anyRegistration = [
-        ...new Set(
-          (tasks || []).map((t) => t.registration || t.aircraftType).filter(Boolean)
-        ),
-      ][0]
-      const aircraft = registrations[0] || anyRegistration || activeProfile?.aircraft || ''
-      const chargeTasks = teamTasks.map((t) => ({
-        id: makeId('charge'),
-        seq: t.seq,
-        description: t.description,
-        taskDescription: t.taskDescription,
-        taskSteps: t.taskSteps,
-        taskType: t.taskType,
-        workArea: t.workArea,
-        skills: t.skills,
-        taskBarcode: t.taskBarcode,
-        registration: t.registration,
-        scheduledHours: t.scheduledHours,
-        mtxStatus: 'ACTV',
-      }))
-      const consignes = (notes || [])
-        .filter(
-          (n) =>
-            String(n.title || '').startsWith('[C] ') &&
-            String(n.title || '').toUpperCase().includes(dayName)
-        )
-        .map((n) => ({ title: n.title, content: n.content }))
-      const res = await profileStore.leaderSendCharge(activeProfile?.code, agent.id, {
-        date: dateIso,
-        aircraft,
-        teamName: sendTeam.name,
-        consignes,
-        tasks: chargeTasks,
-      })
-      if (res?.error === 'pas_un_agent')
-        setSendError(
-          "Ce profil n'a pas le rôle Agent — changez son rôle dans Administration → Profils existants."
-        )
-      else if (res?.error === 'agent_introuvable')
-        setSendError('Profil agent introuvable (migration SQL exécutée ?).')
-      else if (res?.error) setSendError("Échec de l'envoi.")
-      else {
-        setSendMsg(
-          `Charge envoyée à ${agent.name} : ${chargeTasks.length} ligne(s) + ${consignes.length} consigne(s).`
-        )
-        setSendPick('')
-      }
-    } catch {
-      setSendError("Échec de l'envoi (migration SQL exécutée ? hors ligne ?).")
-    }
-    setSendBusy(false)
-  }
 
   // Membres de l'onglet actif non encore affectés à une équipe
   const availableMembers = activeMembers.filter(
@@ -476,20 +387,6 @@ export default function Equipes() {
     setTab(next)
     setSelected([])
   }
-
-  // Immatriculation de la charge : colonne Appareil des tâches de l'équipe,
-  // sinon l'avion du profil
-  const sendAircraft = sendTeam
-    ? [...new Set(
-        tasks
-          .filter((t) => isAssignedTo(assignments, t.id, sendTeam.id))
-          .map((t) => t.registration || t.aircraftType)
-          .filter(Boolean)
-      )][0] ||
-      [...new Set((tasks || []).map((t) => t.registration || t.aircraftType).filter(Boolean))][0] ||
-      activeProfile?.aircraft ||
-      ''
-    : ''
 
   return (
     <div className="space-y-6">
@@ -1065,7 +962,7 @@ export default function Equipes() {
                   )}
                   {taskCountByTeam(team.id) > 0 && (
                     <button
-                      onClick={() => openSend(team)}
+                      onClick={() => setSendTeam(team)}
                       className="inline-flex items-center gap-1 text-xs font-semibold text-sky-700 border border-sky-200 hover:bg-sky-50 rounded-full px-2.5 py-1"
                       title="Envoyer la charge de cette équipe à un profil agent (date + avion + consignes du jour)"
                     >
@@ -1110,16 +1007,45 @@ export default function Equipes() {
                     Ajouter des membres ({availableForTeam().length})
                   </button>
                   {openAddMember.includes(team.id) && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {availableForTeam().map((m) => (
-                        <button
-                          key={m}
-                          onClick={() => addToTeam(team.id, m)}
-                          className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-xs hover:bg-sky-100 hover:text-sky-700"
-                        >
-                          + {m}
-                        </button>
-                      ))}
+                    <div className="mt-2">
+                      <div className="relative mb-2">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                        <input
+                          value={addMemberSearch[team.id] || ''}
+                          onChange={(e) =>
+                            setAddMemberSearch((prev) => ({
+                              ...prev,
+                              [team.id]: e.target.value,
+                            }))
+                          }
+                          placeholder="Rechercher un nom�"
+                          className="w-full border border-slate-300 rounded-md pl-8 pr-2 py-1.5 text-xs"
+                        />
+                      </div>
+                      <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-md p-1.5 space-y-1">
+                        {(() => {
+                          const q = normSearch((addMemberSearch[team.id] || '').trim())
+                          const list = availableForTeam().filter(
+                            (m) => !q || normSearch(m).includes(q)
+                          )
+                          if (list.length === 0) {
+                            return (
+                              <p className="text-xs text-slate-400 italic px-1">
+                                Aucun nom ne correspond.
+                              </p>
+                            )
+                          }
+                          return list.map((m) => (
+                            <button
+                              key={m}
+                              onClick={() => addToTeam(team.id, m)}
+                              className="w-full text-left bg-slate-50 hover:bg-sky-50 text-slate-700 hover:text-sky-700 rounded px-2 py-1 text-xs"
+                            >
+                              + {m}
+                            </button>
+                          ))
+                        })()}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1129,103 +1055,8 @@ export default function Equipes() {
         ))}
       </div>
 
-      {/* Envoi de la charge d'une équipe à un agent */}
       {sendTeam && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setSendTeam(null)}
-        >
-          <div
-            className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
-              <div className="min-w-0">
-                <h2 className="font-bold truncate">Envoyer la charge · {sendTeam.name}</h2>
-                <p className="text-xs text-slate-300">
-                  {taskCountByTeam(sendTeam.id)} tâche(s) ·{' '}
-                  {logicalToday().toLocaleDateString('fr-FR', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                  })}{' '}
-                  · ✈ {sendAircraft || 'aucun avion'}
-                </p>
-              </div>
-              <button
-                onClick={() => setSendTeam(null)}
-                className="text-slate-300 hover:text-white shrink-0"
-                title="Fermer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="p-4 overflow-y-auto space-y-2">
-              {!sendAircraft && (
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                  Aucune immatriculation trouvée (ni dans la colonne Appareil des tâches, ni sur
-                  votre profil) : la charge partira sans avion.
-                </p>
-              )}
-              {agents === null && (
-                <p className="text-sm text-slate-400">Chargement des agents…</p>
-              )}
-              {agents && agents.length === 0 && (
-                <p className="text-sm text-slate-500">
-                  Aucun profil agent. L'administrateur doit créer ou valider des profils avec le
-                  rôle « Agent ».
-                </p>
-              )}
-              {agents && agents.length > 0 && sendTeam.members.length === 0 && (
-                <p className="text-sm text-slate-500">
-                  Cette équipe n'a pas de membres : ajoutez des membres puis réessayez.
-                </p>
-              )}
-              {agents &&
-                agents.length > 0 &&
-                sendTeam.members.map((member) => {
-                  const agent = agents.find((a) => namesMatch(a.name, member))
-                  const selected = agent && sendPick === agent.id
-                  return (
-                    <button
-                      key={member}
-                      onClick={() => agent && setSendPick(agent.id)}
-                      disabled={!agent}
-                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-sm text-left ${
-                        selected
-                          ? 'border-sky-500 bg-sky-50'
-                          : agent
-                          ? 'border-slate-200 hover:bg-slate-50'
-                          : 'border-slate-100 opacity-60 cursor-not-allowed'
-                      }`}
-                    >
-                      <span className="font-medium">{member}</span>
-                      <span className="text-xs text-slate-500">
-                        {agent ? `agent : ${agent.name}` : 'aucun profil agent correspondant'}
-                      </span>
-                    </button>
-                  )
-                })}
-            </div>
-            <div className="px-4 pb-4 flex items-center gap-2 flex-wrap">
-              <button
-                onClick={sendCharge}
-                disabled={!sendPick || sendBusy}
-                className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
-              >
-                {sendBusy ? 'Envoi…' : "Envoyer la charge"}
-              </button>
-              <button
-                onClick={() => setSendTeam(null)}
-                className="text-slate-500 hover:text-slate-800 px-3 py-2 text-sm"
-              >
-                Fermer
-              </button>
-              {sendMsg && <span className="text-xs text-emerald-700">{sendMsg}</span>}
-              {sendError && <span className="text-xs text-red-600">{sendError}</span>}
-            </div>
-          </div>
-        </div>
+        <SendChargeToAgent team={sendTeam} onClose={() => setSendTeam(null)} />
       )}
     </div>
   )

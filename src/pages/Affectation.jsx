@@ -5,11 +5,13 @@ import LeaderPrimesForm from '../components/LeaderPrimesForm'
 import NoteCell from '../components/NoteCell'
 import ConsignesAvions from '../components/ConsignesAvions'
 import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, priorityToken } from '../utils/helpers'
-import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X } from 'lucide-react'
+import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X, Send } from 'lucide-react'
+import SendChargeToAgent from '../components/SendChargeToAgent'
 
 export default function Affectation() {
   const { tasks, teams, assignments, assignTask, unassignTask, updateTeam, addTasks, removeTasksByBlock, updateTask, clearAgentChargesByTeam } = useApp()
   const [dragTask, setDragTask] = useState(null)
+  const [sendTeam, setSendTeam] = useState(null)
   const [selectedBlocks, setSelectedBlocks] = useState([])
   const [prioFilter, setPrioFilter] = useState([])
   const [lastAutoAssignments, setLastAutoAssignments] = useState(null)
@@ -531,21 +533,30 @@ export default function Affectation() {
                 >
                   {t.name} · {n}
                   {n > 0 && (
-                    <button
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `Vider la charge de l'équipe « ${t.name} » (${n} tâche(s)) ?\n\nLes lignes seront désassignées (elles restent dans les tâches) et la charge envoyée à l'agent sera retirée.`
-                          )
-                        ) {
-                          clearTeamCharge(t.id)
-                        }
-                      }}
-                      className="text-slate-400 hover:text-red-600"
-                      title={`Vider la charge de ${t.name}`}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setSendTeam(t)}
+                        className="text-slate-400 hover:text-sky-600"
+                        title={`Envoyer la charge de ${t.name} à un profil agent`}
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Vider la charge de l'équipe « ${t.name} » (${n} tâche(s)) ?\n\nLes lignes seront désassignées (elles restent dans les tâches) et la charge envoyée à l'agent sera retirée.`
+                            )
+                          ) {
+                            clearTeamCharge(t.id)
+                          }
+                        }}
+                        className="text-slate-400 hover:text-red-600"
+                        title={`Vider la charge de ${t.name}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
                   )}
                 </span>
               )
@@ -965,6 +976,15 @@ export default function Affectation() {
                     <span className="text-xs text-slate-400 flex items-center gap-2">
                       {team.locked && <span className="text-[10px] text-amber-400 font-semibold">verrouillée</span>}
                       {assignedCount(team.id)} tâche(s)
+                      {assignedCount(team.id) > 0 && (
+                        <button
+                          onClick={() => setSendTeam(team)}
+                          className="text-slate-400 hover:text-sky-300"
+                          title={`Envoyer la charge de ${team.name} à un profil agent`}
+                        >
+                          <Send className="h-4 w-4" />
+                        </button>
+                      )}
                       <button
                         onClick={() => updateTeam(team.id, { locked: !team.locked })}
                         className={team.locked ? 'text-amber-300 hover:text-amber-100' : 'text-slate-500 hover:text-amber-300'}
@@ -1052,6 +1072,10 @@ export default function Affectation() {
       </>
       ) : (
         <LeaderPrimesForm />
+      )}
+
+      {sendTeam && (
+        <SendChargeToAgent team={sendTeam} onClose={() => setSendTeam(null)} />
       )}
     </div>
   )
