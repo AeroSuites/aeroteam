@@ -1018,7 +1018,7 @@ export default function Equipes() {
                               [team.id]: e.target.value,
                             }))
                           }
-                          placeholder="Rechercher un nom�"
+                          placeholder="Rechercher un nom…"
                           className="w-full border border-slate-300 rounded-md pl-8 pr-2 py-1.5 text-xs"
                         />
                       </div>
