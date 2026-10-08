@@ -4,7 +4,7 @@ import ManualTaskForm from '../components/ManualTaskForm'
 import LeaderPrimesForm from '../components/LeaderPrimesForm'
 import NoteCell from '../components/NoteCell'
 import ConsignesAvions from '../components/ConsignesAvions'
-import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, priorityToken } from '../utils/helpers'
+import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, priorityToken, priorityTokens } from '../utils/helpers'
 import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X, Send } from 'lucide-react'
 import SendChargeToAgent from '../components/SendChargeToAgent'
 
@@ -192,32 +192,32 @@ export default function Affectation() {
     )
 
   // Blocs masqués (selectedBlocks) => tâches filtrées avant regroupement
-  const prioOf = (t) => priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
+  const prioTokensOf = (t) =>
+    priorityTokens(`${t.description || ''} ${t.taskBarcode || ''}`)
 
   const preFilteredTasks = useMemo(
     () => tasks.filter((t) => !selectedBlocks.includes(t.taskType || 'AUTRE')),
     [tasks, selectedBlocks]
   )
 
-  // Compteurs MEL / EXMP / NSRE (sur les tâches affichées par les filtres de bloc)
+  // Compteurs des jetons de priorité (sur les tâches affichées par les filtres de bloc)
   const prioCounts = useMemo(() => {
-    let mel = 0
-    let exmp = 0
-    let nsre = 0
+    const counts = { MEL: 0, EXMP: 0, NSRE: 0, TLI: 0, IDT: 0 }
     preFilteredTasks.forEach((t) => {
-      const tok = prioOf(t)
-      if (tok === 'MEL') mel += 1
-      else if (tok === 'EXMP') exmp += 1
-      else if (tok === 'NSRE') nsre += 1
+      prioTokensOf(t).forEach((tok) => {
+        counts[tok] += 1
+      })
     })
-    return { mel, exmp, nsre }
+    return counts
   }, [preFilteredTasks])
 
   const filteredTasks = useMemo(
     () =>
       prioFilter.length === 0
         ? preFilteredTasks
-        : preFilteredTasks.filter((t) => prioFilter.includes(prioOf(t))),
+        : preFilteredTasks.filter((t) =>
+            prioTokensOf(t).some((tok) => prioFilter.includes(tok))
+          ),
     [preFilteredTasks, prioFilter]
   )
 
@@ -247,7 +247,7 @@ export default function Affectation() {
   // Affecte toute une sous-tâche : hors Found Fault (les CORR restent dans
   // leur bloc, affectables via « tout le bloc »)
   const assignZoneAll = (zone, teamId) => {
-    tasks
+    filteredTasks
       .filter(
         (t) =>
           (t.workArea || 'Autre') === zone && (t.taskType || 'AUTRE') !== 'CORR'
@@ -258,7 +258,7 @@ export default function Affectation() {
   // Affecte toute une sous-tâche d'un bloc précis (ex. SEATS du Found Fault,
   // sans toucher au SEATS du JIC)
   const assignZoneInBlock = (zone, block, teamId) => {
-    tasks
+    filteredTasks
       .filter(
         (t) =>
           (t.workArea || 'Autre') === zone && (t.taskType || 'AUTRE') === block
@@ -315,9 +315,10 @@ export default function Affectation() {
     return groups
   }
 
-  // Affecter tout un bloc à une équipe
+  // Affecter tout un bloc à une équipe — uniquement les lignes AFFICHÉES
+  // (respecte les filtres de blocs et de priorités)
   const assignWholeBlock = (block, teamId) => {
-    const unassigned = tasks.filter(
+    const unassigned = filteredTasks.filter(
       (t) => t.taskType === block && assignmentTeams(assignments, t.id).length === 0
     )
     unassigned.forEach((t) => manualAssign(t.id, teamId))
@@ -605,51 +606,24 @@ export default function Affectation() {
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-100">
             <span className="text-xs font-semibold text-slate-500">Priorités :</span>
-            <button
-              onClick={() =>
-                setPrioFilter((prev) =>
-                  prev.includes('MEL') ? prev.filter((x) => x !== 'MEL') : [...prev, 'MEL']
-                )
-              }
-              className={`px-3 py-1 rounded-full text-xs font-bold border-2 transition-all ${
-                prioFilter.includes('MEL')
-                  ? 'bg-red-600 border-red-600 text-white'
-                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
-              }`}
-              title="Afficher les lignes MEL (combine avec EXMP si les deux sont actifs)"
-            >
-              MEL ({prioCounts.mel})
-            </button>
-            <button
-              onClick={() =>
-                setPrioFilter((prev) =>
-                  prev.includes('EXMP') ? prev.filter((x) => x !== 'EXMP') : [...prev, 'EXMP']
-                )
-              }
-              className={`px-3 py-1 rounded-full text-xs font-bold border-2 transition-all ${
-                prioFilter.includes('EXMP')
-                  ? 'bg-red-600 border-red-600 text-white'
-                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
-              }`}
-              title="Afficher les lignes EXMP (combine avec MEL et NSRE si actifs)"
-            >
-              EXMP ({prioCounts.exmp})
-            </button>
-            <button
-              onClick={() =>
-                setPrioFilter((prev) =>
-                  prev.includes('NSRE') ? prev.filter((x) => x !== 'NSRE') : [...prev, 'NSRE']
-                )
-              }
-              className={`px-3 py-1 rounded-full text-xs font-bold border-2 transition-all ${
-                prioFilter.includes('NSRE')
-                  ? 'bg-red-600 border-red-600 text-white'
-                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
-              }`}
-              title="Afficher les lignes NSRE (combine avec MEL et EXMP si actifs)"
-            >
-              NSRE ({prioCounts.nsre})
-            </button>
+            {['MEL', 'EXMP', 'NSRE', 'TLI', 'IDT'].map((tok) => (
+              <button
+                key={tok}
+                onClick={() =>
+                  setPrioFilter((prev) =>
+                    prev.includes(tok) ? prev.filter((x) => x !== tok) : [...prev, tok]
+                  )
+                }
+                className={`px-3 py-1 rounded-full text-xs font-bold border-2 transition-all ${
+                  prioFilter.includes(tok)
+                    ? 'bg-red-600 border-red-600 text-white'
+                    : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
+                }`}
+                title={`Afficher les lignes ${tok} (cumulable avec les autres filtres)`}
+              >
+                {tok} ({prioCounts[tok]})
+              </button>
+            ))}
             {prioFilter.length > 0 && (
               <button
                 onClick={() => setPrioFilter([])}
