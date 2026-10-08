@@ -1182,6 +1182,20 @@ export default function Preparation() {
                             >
                               <Undo2 className="h-3 w-3" />
                             </button>
+                            <PocketSelect
+                              variant="dark"
+                              compact
+                              pockets={pockets}
+                              placeholder={`${getCategoryLabel(blk)} → pochette`}
+                              onSelect={(pid) =>
+                                assignToPocket(
+                                  pid,
+                                  zoneTasks
+                                    .filter((t) => (t.taskType || 'AUTRE') === blk)
+                                    .map((t) => t.id)
+                                )
+                              }
+                            />
                           </span>
                         )
                       })}
@@ -1236,38 +1250,55 @@ export default function Preparation() {
                                           <span className="opacity-90 font-normal">
                                             ({subTasks.length})
                                           </span>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              reintegrerTasks(
-                                                prepTasks.filter(
-                                                  (t) =>
-                                                    (t.workArea || 'Autre') === subZone &&
-                                                    (t.taskType || 'AUTRE') === 'CORR'
-                                                )
-                                              )
-                                            }}
-                                            className="ml-auto text-white/80 hover:text-white"
-                                            title={`Réintégrer la sous-tâche ${subZone} dans Tâches`}
+                                          <span
+                                            className="ml-auto flex items-center gap-1.5"
+                                            onClick={(e) => e.stopPropagation()}
                                           >
-                                            <Undo2 className="h-4 w-4" />
-                                          </button>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              if (
-                                                window.confirm(
-                                                  `Supprimer toute la sous-tâche ${subZone} du bloc Found Fault (${subTasks.length} ligne(s)) ?`
+                                            <PocketSelect
+                                              variant="dark"
+                                              compact
+                                              pockets={pockets}
+                                              placeholder={`${subZone} → pochette`}
+                                              onSelect={(pid) =>
+                                                assignToPocket(
+                                                  pid,
+                                                  subTasks.map((t) => t.id)
                                                 )
-                                              ) {
-                                                removePrepTasksByZone(subZone, 'CORR')
                                               }
-                                            }}
-                                            className="text-white/80 hover:text-white"
-                                            title={`Supprimer toute la sous-tâche ${subZone} (Found Fault)`}
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                          </button>
+                                            />
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation()
+                                                reintegrerTasks(
+                                                  prepTasks.filter(
+                                                    (t) =>
+                                                      (t.workArea || 'Autre') === subZone &&
+                                                      (t.taskType || 'AUTRE') === 'CORR'
+                                                  )
+                                                )
+                                              }}
+                                              className="text-white/80 hover:text-white"
+                                              title={`Réintégrer la sous-tâche ${subZone} dans Tâches`}
+                                            >
+                                              <Undo2 className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation()
+                                                if (
+                                                  window.confirm(
+                                                    `Supprimer toute la sous-tâche ${subZone} du bloc Found Fault (${subTasks.length} ligne(s)) ?`
+                                                  )
+                                                ) {
+                                                  removePrepTasksByZone(subZone, 'CORR')
+                                                }
+                                              }}
+                                              className="text-white/80 hover:text-white"
+                                              title={`Supprimer toute la sous-tâche ${subZone} (Found Fault)`}
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </button>
+                                          </span>
                                         </span>
                                       </td>
                                     </tr>
