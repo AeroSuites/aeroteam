@@ -17,6 +17,7 @@ import {
   taskContentKey,
   cleanShortValue,
   priorityToken,
+  priorityTokens,
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
@@ -80,9 +81,10 @@ export default function Preparation() {
   const [previewExpandedZones, setPreviewExpandedZones] = useState([])
   const [importMsg, setImportMsg] = useState('')
   const [expandedSubZones, setExpandedSubZones] = useState([])
-  // Filtres de la liste (comme la page Tâches) : recherche + blocs masqués
+  // Filtres de la liste (comme la page Tâches) : recherche + blocs + priorités
   const [prepSearch, setPrepSearch] = useState('')
   const [hiddenBlocks, setHiddenBlocks] = useState([])
+  const [prioFilter, setPrioFilter] = useState([])
 
   const toggleSubZone = (key) =>
     setExpandedSubZones((prev) =>
@@ -233,8 +235,8 @@ export default function Preparation() {
     [prepTasks]
   )
 
-  // Liste filtrée : recherche (n°, tâche, TRFX, zone, skills) + blocs masqués
-  const filteredPrepTasks = useMemo(() => {
+  // Liste après recherche (n°, tâche, TRFX, zone, skills) + blocs masqués
+  const basePrepTasks = useMemo(() => {
     const q = prepSearch.trim().toLowerCase()
     return prepTasks.filter((t) => {
       const blk = t.taskType || 'AUTRE'
@@ -254,6 +256,30 @@ export default function Preparation() {
       return hay.includes(q)
     })
   }, [prepTasks, prepSearch, hiddenBlocks])
+
+  // Compteurs des jetons de priorité (MEL / EXMP / NSRE / TLI / IDT)
+  const prepPrioCounts = useMemo(() => {
+    const counts = { MEL: 0, EXMP: 0, NSRE: 0, TLI: 0, IDT: 0 }
+    basePrepTasks.forEach((t) => {
+      priorityTokens(`${t.description || ''} ${t.taskBarcode || ''}`).forEach((tok) => {
+        counts[tok] += 1
+      })
+    })
+    return counts
+  }, [basePrepTasks])
+
+  // Liste finale : filtre priorité cumulable
+  const filteredPrepTasks = useMemo(
+    () =>
+      prioFilter.length === 0
+        ? basePrepTasks
+        : basePrepTasks.filter((t) =>
+            priorityTokens(`${t.description || ''} ${t.taskBarcode || ''}`).some((tok) =>
+              prioFilter.includes(tok)
+            )
+          ),
+    [basePrepTasks, prioFilter]
+  )
 
   // Regroupement : par zone/sous-tâche, SAUF les Found Fault (CORR) qui restent
   // regroupés dans un seul bloc avec leurs sous-tâches.
@@ -991,7 +1017,36 @@ export default function Preparation() {
               )}
             </div>
           </div>
-          {(prepSearch || hiddenBlocks.length > 0) && (
+          {/* Filtres de priorité (cumulables, comme la page Tâches) */}
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            {['MEL', 'EXMP', 'NSRE', 'TLI', 'IDT'].map((tok) => (
+              <button
+                key={tok}
+                onClick={() =>
+                  setPrioFilter((prev) =>
+                    prev.includes(tok) ? prev.filter((x) => x !== tok) : [...prev, tok]
+                  )
+                }
+                className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
+                  prioFilter.includes(tok)
+                    ? 'bg-red-600 border-red-600 text-white'
+                    : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
+                }`}
+                title={`Afficher les lignes ${tok} (cumulable avec les autres filtres)`}
+              >
+                {tok} ({prepPrioCounts[tok]})
+              </button>
+            ))}
+            {prioFilter.length > 0 && (
+              <button
+                onClick={() => setPrioFilter([])}
+                className="text-xs text-sky-600 hover:underline"
+              >
+                Tout réafficher
+              </button>
+            )}
+          </div>
+          {(prepSearch || hiddenBlocks.length > 0 || prioFilter.length > 0) && (
             <p className="text-xs text-slate-400 mt-2">
               {filteredPrepTasks.length} ligne(s) affichée(s) sur {prepTasks.length}
             </p>
