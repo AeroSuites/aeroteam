@@ -14,6 +14,8 @@ import {
   taskContentKey,
   filterNewPrepTasks,
   priorityToken,
+  priorityTokens,
+  fixMojibake,
   cleanTaskText,
   cleanShortValue,
   consigneDay,
@@ -139,7 +141,7 @@ describe('filterRow / parseExcelRows', () => {
     'Aircraft_Registration',
   ])
 
-  it('garde les lignes dont un des skills multi commence par CABB ou ACC_PNLS', () => {
+  it('garde les lignes dont un des skills multi commence par CABB (ACC_PNLS exclu)', () => {
     const kept = parseExcelRows(
       [
         ['1', 'Tâche A', 'B1B2/CABB1B2', 'ACTV', 'JIC', 'WING L', '2', 'F-GKXT'],
@@ -151,7 +153,7 @@ describe('filterRow / parseExcelRows', () => {
       ],
       columns
     )
-    expect(kept.map((t) => t.seq)).toEqual(['1', '2', '4', '6'])
+    expect(kept.map((t) => t.seq)).toEqual(['1', '2', '4'])
   })
 
   it('garde les lignes CABB* avec statut ACTV, PAUSE ou IN WORK', () => {
@@ -307,5 +309,29 @@ describe('groupTasksByCategory', () => {
     expect(groups.JIC).toHaveLength(2)
     expect(groups.EO).toHaveLength(1)
     expect(groups.AUTRE).toHaveLength(1)
+  })
+})
+
+describe('fixMojibake', () => {
+  it('répare le double encodage Windows-1252 / UTF-8', () => {
+    expect(fixMojibake('QP SEAT â€“ W â€“ PL3530')).toBe('QP SEAT – W – PL3530')
+    expect(fixMojibake('Bob lâ€™Ã©ponge')).toBe('Bob l’éponge')
+    expect(fixMojibake('Ã‰QUIPE')).toBe('ÉQUIPE')
+  })
+
+  it('ne touche pas un texte correct', () => {
+    expect(fixMojibake('QP SEAT – W – PL3530')).toBe('QP SEAT – W – PL3530')
+    expect(fixMojibake('Bob l’éponge')).toBe('Bob l’éponge')
+    expect(fixMojibake('')).toBe('')
+    expect(fixMojibake(undefined)).toBe('')
+  })
+})
+
+describe('priorityTokens', () => {
+  it('détecte MEL / EXMP / NSRE / TLI / IDT, y compris multiples', () => {
+    expect(priorityTokens('EXMP25x54 remplacement')).toEqual(['EXMP'])
+    expect(priorityTokens('*** IDT ***')).toEqual(['IDT'])
+    expect(priorityTokens('TLI / NSRE 123')).toEqual(['TLI', 'NSRE'])
+    expect(priorityTokens('remplacement standard')).toEqual([])
   })
 })

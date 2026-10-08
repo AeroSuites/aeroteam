@@ -1383,7 +1383,7 @@ export default function ImportConsignes() {
           <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
             <h3 className="font-semibold text-sky-800 mb-2">Filtres d'import actifs (comme Import Victory)</h3>
             <div className="text-sm text-sky-700 space-y-1">
-              <p>• <strong>Skills</strong> : toutes les lignes dont un des skills commence par CABB ou ACC_PNLS (ex. B1B2/CABB1B2, B1/ACC_PNLS)</p>
+              <p>• <strong>Skills</strong> : toutes les lignes dont un des skills commence par CABB (ex. B1B2/CABB1B2)</p>
               <p>• <strong>MTX Status</strong> : uniquement ACTV, PAUSE et IN WORK</p>
               <p>• <strong>Task Type</strong> : tous les blocs (JIC, Found Fault, MPC, ADHOC, EO)</p>
             </div>

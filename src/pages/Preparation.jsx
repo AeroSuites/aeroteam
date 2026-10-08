@@ -39,6 +39,7 @@ import {
   CheckCircle2,
   RotateCcw,
   Undo2,
+  Search,
 } from 'lucide-react'
 
 export default function Preparation() {
@@ -79,6 +80,9 @@ export default function Preparation() {
   const [previewExpandedZones, setPreviewExpandedZones] = useState([])
   const [importMsg, setImportMsg] = useState('')
   const [expandedSubZones, setExpandedSubZones] = useState([])
+  // Filtres de la liste (comme la page Tâches) : recherche + blocs masqués
+  const [prepSearch, setPrepSearch] = useState('')
+  const [hiddenBlocks, setHiddenBlocks] = useState([])
 
   const toggleSubZone = (key) =>
     setExpandedSubZones((prev) =>
@@ -223,11 +227,39 @@ export default function Preparation() {
     )
   }
 
+  // Blocs présents dans la préparation (pour les filtres)
+  const prepBlocks = useMemo(
+    () => [...new Set(prepTasks.map((t) => t.taskType).filter(Boolean))].sort(),
+    [prepTasks]
+  )
+
+  // Liste filtrée : recherche (n°, tâche, TRFX, zone, skills) + blocs masqués
+  const filteredPrepTasks = useMemo(() => {
+    const q = prepSearch.trim().toLowerCase()
+    return prepTasks.filter((t) => {
+      const blk = t.taskType || 'AUTRE'
+      if (hiddenBlocks.includes(blk)) return false
+      if (!q) return true
+      const hay = [
+        cleanShortValue(t.seq),
+        t.description,
+        t.taskBarcode,
+        t.workArea,
+        t.skills,
+        getCategoryLabel(blk),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return hay.includes(q)
+    })
+  }, [prepTasks, prepSearch, hiddenBlocks])
+
   // Regroupement : par zone/sous-tâche, SAUF les Found Fault (CORR) qui restent
   // regroupés dans un seul bloc avec leurs sous-tâches.
   const zoneGroups = useMemo(() => {
     const groups = {}
-    prepTasks.forEach((t) => {
+    filteredPrepTasks.forEach((t) => {
       const isFF = (t.taskType || '') === 'CORR'
       const key = isFF ? '__FOUND_FAULT__' : t.workArea || 'Sans zone'
       if (!groups[key]) {
@@ -245,7 +277,7 @@ export default function Preparation() {
     return Object.values(groups).sort(
       (a, b) => (a.isFF ? 1 : 0) - (b.isFF ? 1 : 0) || a.label.localeCompare(b.label)
     )
-  }, [prepTasks])
+  }, [filteredPrepTasks])
 
   // Replie par défaut chaque nouvelle zone (tuiles fermées au chargement)
   useEffect(() => {
@@ -903,6 +935,73 @@ export default function Preparation() {
         <div className="bg-white rounded-xl shadow p-3 flex flex-wrap items-center justify-between gap-2 border-l-4 border-l-sky-600">
           <p className="text-sm font-semibold text-slate-800">Ajouter une ligne manuellement</p>
           <ManualTaskForm onAdd={addPrepTasks} zoneOptions={allZones} />
+        </div>
+      )}
+
+      {/* Filtres de la liste : recherche + blocs (comme la page Tâches) */}
+      {prepTasks.length > 0 && (
+        <div className="bg-white rounded-xl shadow p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                value={prepSearch}
+                onChange={(e) => setPrepSearch(e.target.value)}
+                placeholder="Rechercher (n°, tâche, TRFX, zone…)"
+                className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {prepBlocks.map((blk) => {
+                const hidden = hiddenBlocks.includes(blk)
+                const count = prepTasks.filter(
+                  (t) => (t.taskType || 'AUTRE') === blk
+                ).length
+                const color = getCategoryColor(blk)
+                return (
+                  <button
+                    key={blk}
+                    onClick={() =>
+                      setHiddenBlocks((prev) =>
+                        prev.includes(blk) ? prev.filter((x) => x !== blk) : [...prev, blk]
+                      )
+                    }
+                    className="px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all"
+                    style={
+                      hidden
+                        ? { backgroundColor: 'transparent', borderColor: color, color }
+                        : { backgroundColor: color, borderColor: color, color: '#fff' }
+                    }
+                    title={hidden ? 'Réafficher ce bloc' : 'Masquer ce bloc'}
+                  >
+                    {getCategoryLabel(blk)} ({count})
+                  </button>
+                )
+              })}
+              {(hiddenBlocks.length > 0 || prepSearch) && (
+                <button
+                  onClick={() => {
+                    setHiddenBlocks([])
+                    setPrepSearch('')
+                  }}
+                  className="text-xs text-sky-600 hover:underline"
+                >
+                  Tout réafficher
+                </button>
+              )}
+            </div>
+          </div>
+          {(prepSearch || hiddenBlocks.length > 0) && (
+            <p className="text-xs text-slate-400 mt-2">
+              {filteredPrepTasks.length} ligne(s) affichée(s) sur {prepTasks.length}
+            </p>
+          )}
+        </div>
+      )}
+
+      {prepTasks.length > 0 && filteredPrepTasks.length === 0 && (
+        <div className="bg-white rounded-xl shadow p-8 text-center text-slate-500">
+          Aucune ligne ne correspond aux filtres.
         </div>
       )}
 
