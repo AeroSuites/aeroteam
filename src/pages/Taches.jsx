@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, priorityToken, cleanTaskText, cleanShortValue } from '../utils/helpers'
+import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, priorityToken, priorityTokens, cleanTaskText, cleanShortValue } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
 import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check, FileText, Pencil } from 'lucide-react'
@@ -218,27 +218,27 @@ export default function Taches() {
     })
   }, [tasks, filter, statusFilter, shownBlocks, blocks])
 
-  // Compteurs MEL / EXMP + affichage séparé (pastilles rouges)
-  const prioOf = (t) => priorityToken(`${t.description || ''} ${t.taskBarcode || ''}`)
+  // Compteurs des jetons de priorité (MEL / EXMP / NSRE / TLI / IDT)
+  const prioTokensOf = (t) =>
+    priorityTokens(`${t.description || ''} ${t.taskBarcode || ''}`)
 
   const prioCounts = useMemo(() => {
-    let mel = 0
-    let exmp = 0
-    let nsre = 0
+    const counts = { MEL: 0, EXMP: 0, NSRE: 0, TLI: 0, IDT: 0 }
     preFiltered.forEach((t) => {
-      const tok = prioOf(t)
-      if (tok === 'MEL') mel += 1
-      else if (tok === 'EXMP') exmp += 1
-      else if (tok === 'NSRE') nsre += 1
+      prioTokensOf(t).forEach((tok) => {
+        counts[tok] += 1
+      })
     })
-    return { mel, exmp, nsre }
+    return counts
   }, [preFiltered])
 
   const filtered = useMemo(
     () =>
       prioFilter.length === 0
         ? preFiltered
-        : preFiltered.filter((t) => prioFilter.includes(prioOf(t))),
+        : preFiltered.filter((t) =>
+            prioTokensOf(t).some((tok) => prioFilter.includes(tok))
+          ),
     [preFiltered, prioFilter]
   )
 
@@ -417,52 +417,25 @@ export default function Taches() {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() =>
-                setPrioFilter((prev) =>
-                  prev.includes('MEL') ? prev.filter((x) => x !== 'MEL') : [...prev, 'MEL']
-                )
-              }
-              className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
-                prioFilter.includes('MEL')
-                  ? 'bg-red-600 border-red-600 text-white'
-                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
-              }`}
-              title="Afficher les lignes MEL (combine avec EXMP si les deux sont actifs)"
-            >
-              MEL ({prioCounts.mel})
-            </button>
-            <button
-              onClick={() =>
-                setPrioFilter((prev) =>
-                  prev.includes('EXMP') ? prev.filter((x) => x !== 'EXMP') : [...prev, 'EXMP']
-                )
-              }
-              className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
-                prioFilter.includes('EXMP')
-                  ? 'bg-red-600 border-red-600 text-white'
-                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
-              }`}
-              title="Afficher les lignes EXMP (combine avec MEL et NSRE si actifs)"
-            >
-              EXMP ({prioCounts.exmp})
-            </button>
-            <button
-              onClick={() =>
-                setPrioFilter((prev) =>
-                  prev.includes('NSRE') ? prev.filter((x) => x !== 'NSRE') : [...prev, 'NSRE']
-                )
-              }
-              className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
-                prioFilter.includes('NSRE')
-                  ? 'bg-red-600 border-red-600 text-white'
-                  : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
-              }`}
-              title="Afficher les lignes NSRE (combine avec MEL et EXMP si actifs)"
-            >
-              NSRE ({prioCounts.nsre})
-            </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {['MEL', 'EXMP', 'NSRE', 'TLI', 'IDT'].map((tok) => (
+              <button
+                key={tok}
+                onClick={() =>
+                  setPrioFilter((prev) =>
+                    prev.includes(tok) ? prev.filter((x) => x !== tok) : [...prev, tok]
+                  )
+                }
+                className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
+                  prioFilter.includes(tok)
+                    ? 'bg-red-600 border-red-600 text-white'
+                    : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
+                }`}
+                title={`Afficher les lignes ${tok} (cumulable avec les autres filtres)`}
+              >
+                {tok} ({prioCounts[tok]})
+              </button>
+            ))}
             {prioFilter.length > 0 && (
               <button
                 onClick={() => setPrioFilter([])}

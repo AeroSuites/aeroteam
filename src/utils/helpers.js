@@ -57,10 +57,24 @@ export function getZoneColor(zone, _allZones) {
   return ZONE_COLORS[hash % ZONE_COLORS.length]
 }
 
+// Répare un texte doublement encodé (UTF-8 lu comme Latin-1) :
+// « Ã© » → « é », « â€™ » → « ’ », etc. Ne touche à rien sinon.
+export function fixMojibake(value) {
+  const s = String(value ?? '')
+  if (!/[ÃÂâ][\u0080-\u00BF\u2013\u2014\u2018\u2019\u201C\u201D\u20AC]/.test(s)) return s
+  try {
+    const bytes = Uint8Array.from([...s].map((c) => c.charCodeAt(0)))
+    if (bytes.some((b) => b > 255)) return s
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    return s
+  }
+}
+
 // Nettoie un texte du Workpackage : balises <br> → saut de ligne, entités HTML,
-// retours chariot en double (\r\r\n) → lignes propres.
+// retours chariot en double (\r\r\n) → lignes propres, caractères de contrôle.
 export function cleanTaskText(text) {
-  return String(text ?? '')
+  return fixMojibake(String(text ?? ''))
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
@@ -69,6 +83,8 @@ export function cleanTaskText(text) {
     .replace(/<[^>]*>/g, '')
     .replace(/\r\r\n/g, '\n')
     .replace(/\r\n?/g, '\n')
+    // eslint-disable-next-line no-control-regex -- nettoyage volontaire des caractères de contrôle
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
@@ -76,18 +92,31 @@ export function cleanTaskText(text) {
 // Ligne prioritaire : mention « MEL », « EXMP » ou « NSRE » suivie d'une
 // référence. Les simples libellés de fiche (« MEL / EXMP : », « NSRE RDY/IPR : »)
 // sont ignorés. Renvoie « MEL », « EXMP », « NSRE » ou '' si non prioritaire.
-export function priorityToken(text) {
+// Tous les jetons de priorité d'un texte : MEL / EXMP / NSRE / TLI / IDT.
+// Le mot peut être suivi directement d'une référence (ex. « EXMP25x54 »)
+// mais pas d'une lettre (pour ne pas confondre avec un autre mot).
+// IDT et TLI comptent même sans référence (souvent notés « *** IDT *** »).
+export function priorityTokens(text) {
   const s = String(text || '')
-  // Le mot peut être suivi directement d'une référence (ex. « EXMP25x54 »)
-  // mais pas d'une lettre (pour ne pas confondre avec un autre mot).
-  const m = s.match(/(^|[^A-Z0-9_])(EXMP|MEL|NSRE)(?![A-Z])/i)
-  if (!m) return ''
-  const after = s
-    .slice(m.index + m[0].length)
-    .replace(/^\s*\/\s*(?:EXMP|MEL|NSRE)(?![A-Z])/i, '')
-    .replace(/^\s*RDY\s*\/\s*IPR/i, '')
-    .replace(/^[\s:·\-–]*/, '')
-  return /[a-z0-9]/i.test(after) ? m[2].toUpperCase() : ''
+  const re = /(^|[^A-Z0-9_])(EXMP|MEL|NSRE|TLI|IDT)(?![A-Z])/gi
+  const out = []
+  let m
+  while ((m = re.exec(s))) {
+    const tok = m[2].toUpperCase()
+    const after = s
+      .slice(m.index + m[0].length)
+      .replace(/^\s*\/\s*(?:EXMP|MEL|NSRE|TLI|IDT)(?![A-Z])/i, '')
+      .replace(/^\s*RDY\s*\/\s*IPR/i, '')
+      .replace(/^[\s:·\-–*]*/, '')
+    if (/[a-z0-9]/i.test(after) || tok === 'IDT' || tok === 'TLI') {
+      if (!out.includes(tok)) out.push(tok)
+    }
+  }
+  return out
+}
+
+export function priorityToken(text) {
+  return priorityTokens(text)[0] || ''
 }
 
 // Préfixe de priorité pour les exports (PDF/Excel) : « [MEL] », « [EXMP] » ou ''
@@ -336,7 +365,14 @@ export const HEADER_ALIASES = {
   actualHours: ['actual_hours'],
   taskCode: ['task_code', 'code'],
   aircraftType: ['aircraft_type', 'aircraft', 'appareil'],
-  registration: ['aircraft_registration', 'registration', 'immatriculation', 'immat'],
+  registration: [
+    'aircraft_registration',
+    'registration',
+    'immatriculation',
+    'immat',
+    'appareil',
+    'avion',
+  ],
   partStatus: ['part_status'],
   impact: ['impact'],
   crew: ['crew', 'equipage'],

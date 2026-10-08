@@ -11,6 +11,7 @@ import {
 import DOMPurify from 'dompurify'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
+import { fixMojibake } from '../utils/helpers'
 import RichEditor, { ALLOWED_TAGS, ALLOWED_ATTR } from '../components/RichEditor'
 
 const MAX_ATTACHMENT = 5 * 1024 * 1024 // 5 Mo (comme côté serveur)
@@ -203,10 +204,10 @@ export default function Messagerie() {
       byId[t.contact_id] = true
       items.push({
         id: t.contact_id,
-        name: t.contact_name,
-                        preview: t.last_attachment
-          ? `ðŸ“Ž ${t.last_attachment}`
-          : previewText(t.last_body),
+        name: fixMojibake(t.contact_name),
+        preview: t.last_attachment
+          ? `📎 ${t.last_attachment}`
+          : fixMojibake(previewText(t.last_body)),
         at: t.last_at,
         unread: Number(t.unread || 0),
       })
@@ -215,8 +216,8 @@ export default function Messagerie() {
       if (byId[c.id]) return
       items.push({
         id: c.id,
-        name: c.name,
-        preview: c.aircraft || '',
+        name: fixMojibake(c.name),
+        preview: fixMojibake(c.aircraft || ''),
         at: null,
         unread: 0,
       })
@@ -406,9 +407,13 @@ export default function Messagerie() {
                     {initials(contact.name)}
                   </span>
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-800 truncate">{contact.name}</p>
+                    <p className="font-semibold text-slate-800 truncate">
+                      {fixMojibake(contact.name)}
+                    </p>
                     {contact.aircraft && (
-                      <p className="text-xs text-slate-400 truncate">✈ {contact.aircraft}</p>
+                      <p className="text-xs text-slate-400 truncate">
+                        ✈ {fixMojibake(contact.aircraft)}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -454,7 +459,7 @@ export default function Messagerie() {
                                       }`}
                                       title="Voir l'image"
                                     >
-                                      ðŸ–¼ {m.attachment_name}
+                                      🖼 {m.attachment_name}
                                     </button>
                                   )}
                                   <button

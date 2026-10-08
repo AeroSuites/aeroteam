@@ -36,10 +36,11 @@ export async function createProfile(identifiant, code, name, aircraft, type = 'l
 }
 
 export async function getProfile(identifiant, code) {
-  const { data, error } = await supabase.rpc('get_profile', {
-    p_identifiant: identifiant,
-    p_code: code,
-  })
+  // Profils sans identifiant (anciens) : appel par code seul
+  const params = identifiant
+    ? { p_identifiant: identifiant, p_code: code }
+    : { p_code: code }
+  const { data, error } = await supabase.rpc('get_profile', params)
   if (error) throw error
   if (data?.error === 'locked') return { locked: true }
   if (data?.error === 'pending') return { pending: true }

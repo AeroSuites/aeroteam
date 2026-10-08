@@ -51,6 +51,7 @@ export default function Dashboard() {
   const [consigneText, setConsigneText] = useState('')
   const [historyAgent, setHistoryAgent] = useState(null)
   const [openHist, setOpenHist] = useState([])
+  const [agentsOpen, setAgentsOpen] = useState(false)
 
   const { todayConsignes, weekConsignes } = useMemo(() => {
     const DAY_ORDER = {
@@ -635,13 +636,28 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Avancement des agents (charges envoyées par ce leader) */}
+      {/* Avancement des agents (charges envoyées par ce leader) — repliable */}
       {agentsProgress.length > 0 && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6">
-          <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
-            <Users className="h-5 w-5 text-emerald-500" /> Avancement des agents
-          </h2>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <button
+            onClick={() => setAgentsOpen((v) => !v)}
+            className="w-full flex items-center justify-between gap-2 text-left"
+            title={agentsOpen ? 'Replier cette section' : 'Déplier cette section'}
+          >
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5 text-emerald-500" /> Avancement des agents
+              <span className="text-sm font-normal text-slate-400">
+                ({agentsProgress.length})
+              </span>
+            </h2>
+            {agentsOpen ? (
+              <ChevronDown className="h-5 w-5 text-slate-400 shrink-0" />
+            ) : (
+              <ChevronRight className="h-5 w-5 text-slate-400 shrink-0" />
+            )}
+          </button>
+          {agentsOpen && (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 mt-4">
             {agentsProgress.map((a) => {
               const list = Array.isArray(a.tasks) ? a.tasks : []
               const hist = Array.isArray(a.chargeHistory) ? a.chargeHistory : []
@@ -731,6 +747,7 @@ export default function Dashboard() {
               )
             })}
           </div>
+          )}
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import * as profileStore from '../lib/profileStore'
-import { taskContentKey } from '../utils/helpers'
+import { taskContentKey, fixMojibake } from '../utils/helpers'
 import { taskActions } from './tasks'
 import { teamActions } from './teams'
 import { prepActions } from './preparation'
@@ -141,7 +141,26 @@ export function AppProvider({ children }) {
       charge: data.charge && typeof data.charge === 'object' ? data.charge : null,
       chargeHistory: toArray(data.chargeHistory),
     }
-    cleaned.tasks = dedupeTasks(cleaned.tasks)
+    // Réparation des textes doublement encodés (« Ã© » → « é ») — y compris
+    // les données déjà importées ; la correction est enregistrée à la
+    // prochaine sauvegarde du profil.
+    const fixTaskTexts = (t) => ({
+      ...t,
+      description: fixMojibake(t.description),
+      ...(t.taskDescription ? { taskDescription: fixMojibake(t.taskDescription) } : {}),
+      ...(t.taskSteps ? { taskSteps: fixMojibake(t.taskSteps) } : {}),
+      ...(t.note ? { note: fixMojibake(t.note) } : {}),
+    })
+    cleaned.tasks = dedupeTasks(cleaned.tasks).map(fixTaskTexts)
+    cleaned.prepTasks = cleaned.prepTasks.map(fixTaskTexts)
+    if (cleaned.charge && Array.isArray(cleaned.charge.tasks)) {
+      cleaned.charge = { ...cleaned.charge, tasks: cleaned.charge.tasks.map(fixTaskTexts) }
+    }
+    cleaned.notes = cleaned.notes.map((n) => ({
+      ...n,
+      title: fixMojibake(n.title),
+      ...(n.content ? { content: fixMojibake(n.content) } : {}),
+    }))
     setTasks(cleaned.tasks)
     setTeams(cleaned.teams)
     setAssignments(cleaned.assignments)

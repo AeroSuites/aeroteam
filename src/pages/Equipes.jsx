@@ -125,10 +125,14 @@ export default function Equipes() {
       ).padStart(2, '0')}`
       const teamTasks = tasks.filter((t) => isAssignedTo(assignments, t.id, sendTeam.id))
       const registrations = [
-        ...new Set(teamTasks.map((t) => t.registration).filter(Boolean)),
+        ...new Set(
+          teamTasks.map((t) => t.registration || t.aircraftType).filter(Boolean)
+        ),
       ]
       const anyRegistration = [
-        ...new Set((tasks || []).map((t) => t.registration).filter(Boolean)),
+        ...new Set(
+          (tasks || []).map((t) => t.registration || t.aircraftType).filter(Boolean)
+        ),
       ][0]
       const aircraft = registrations[0] || anyRegistration || activeProfile?.aircraft || ''
       const chargeTasks = teamTasks.map((t) => ({
@@ -479,10 +483,10 @@ export default function Equipes() {
     ? [...new Set(
         tasks
           .filter((t) => isAssignedTo(assignments, t.id, sendTeam.id))
-          .map((t) => t.registration)
+          .map((t) => t.registration || t.aircraftType)
           .filter(Boolean)
       )][0] ||
-      [...new Set((tasks || []).map((t) => t.registration).filter(Boolean))][0] ||
+      [...new Set((tasks || []).map((t) => t.registration || t.aircraftType).filter(Boolean))][0] ||
       activeProfile?.aircraft ||
       ''
     : ''
