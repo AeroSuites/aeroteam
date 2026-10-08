@@ -11,9 +11,13 @@ const buildLabel = new Date().toLocaleString('fr-FR', {
   timeZone: 'Europe/Paris',
 })
 
+// Chemin de base : /aeroteam/ pour GitHub Pages (défaut),
+// "/" pour un déploiement on-premise à la racine du domaine (VITE_BASE="/").
+const basePath = process.env.VITE_BASE || '/aeroteam/'
+
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/aeroteam/',
+  base: basePath,
   define: {
     __APP_VERSION__: JSON.stringify(buildLabel),
   },
@@ -30,7 +34,7 @@ export default defineConfig({
         theme_color: '#0f172a',
         background_color: '#f1f5f9',
         display: 'standalone',
-        start_url: '/aeroteam/',
+        start_url: basePath,
         icons: [
           {
             src: 'favicon.svg',
@@ -41,8 +45,11 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: '/aeroteam/index.html',
-        navigateFallbackDenylist: [/\/aeroteam\/assets\/.*/, /\/aeroteam\/docs\/.*/],
+        navigateFallback: `${basePath}index.html`,
+        navigateFallbackDenylist: [
+          new RegExp(`^${basePath}assets/.*`),
+          new RegExp(`^${basePath}docs/.*`),
+        ],
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
         // Le bundle principal dépasse 2 Mo : on autorise jusqu'à 5 Mo
         // (sinon la génération du service worker échoue).
