@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 import ConsignesAvions from '../components/ConsignesAvions'
 import SendChargeToAgent from '../components/SendChargeToAgent'
 import { UserPlus, Users, Trash2, Plus, X, BookUser, Upload, Lock, LockOpen, Pencil, Star, ChevronDown, ChevronRight, Send, Search } from 'lucide-react'
-import { consigneDay, logicalToday, assignmentTeams } from '../utils/helpers'
+import { consigneDay, logicalToday, assignmentTeams, TEAM_COLORS } from '../utils/helpers'
 
 const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
 
@@ -1062,4 +1062,4 @@ export default function Equipes() {
   )
 }
 
-const defaultColors = ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#14b8a6']
+const defaultColors = TEAM_COLORS

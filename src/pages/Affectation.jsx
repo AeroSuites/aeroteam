@@ -530,7 +530,7 @@ export default function Affectation() {
                 <span
                   key={t.id}
                   className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold"
-                  style={{ borderColor: t.color || '#0ea5e9', color: t.color || '#0ea5e9' }}
+                  style={{ borderColor: t.color || '#003165', color: t.color || '#003165' }}
                 >
                   {t.name} · {n}
                   {n > 0 && (

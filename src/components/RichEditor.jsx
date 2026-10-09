@@ -16,12 +16,12 @@ import {
 const FONTS = ['Arial', 'Verdana', 'Tahoma', 'Times New Roman', 'Courier New']
 const COLORS = [
   '#051039',
-  '#dc2626',
-  '#ea580c',
-  '#16a34a',
-  '#2563eb',
-  '#7c3aed',
-  '#64748b',
+  '#ff0000',
+  '#0045b6',
+  '#00659d',
+  '#003165',
+  '#14438b',
+  '#767676',
 ]
 
 export const ALLOWED_TAGS = [

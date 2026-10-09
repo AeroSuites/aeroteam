@@ -1,11 +1,24 @@
+// Charte Air France — « Encrier coloriel » :
+// bleus identitaires #051039 / #003165 / #14438B / #0045B6 (+ déclinaisons),
+// blancs/gris, et rouge #FF0000 en touche.
 export const CATEGORY_COLORS = {
-  JIC: '#0ea5e9',
-  CORR: '#f59e0b',
-  MPC: '#8b5cf6',
-  ADHOC: '#ef4444',
-  EO: '#14b8a6',
-  AUTRE: '#64748b',
+  JIC: '#003165',
+  CORR: '#ff0000',
+  MPC: '#0045b6',
+  ADHOC: '#14438b',
+  EO: '#00659d',
+  AUTRE: '#767676',
 }
+
+// Couleurs d'équipe (charte Air France)
+export const TEAM_COLORS = [
+  '#003165',
+  '#14438b',
+  '#0045b6',
+  '#27395d',
+  '#315882',
+  '#00659d',
+]
 
 export const CATEGORIES = Object.keys(CATEGORY_COLORS)
 
@@ -19,33 +32,29 @@ export function getCategoryLabel(type) {
 }
 
 export const SHIFT_COLORS = {
-  'MERCREDI MATIN': '#10b981',
-  'MERCREDI SOIR': '#6366f1',
-  'MERCREDI NUIT': '#3b82f6',
-  'JEUDI MATIN': '#f97316',
-  SUB: '#64748b',
-  'VAC 06': '#a855f7',
-  AUTRE: '#6b7280',
+  'MERCREDI MATIN': '#003165',
+  'MERCREDI SOIR': '#14438b',
+  'MERCREDI NUIT': '#051039',
+  'JEUDI MATIN': '#0045b6',
+  SUB: '#767676',
+  'VAC 06': '#00659d',
+  AUTRE: '#767676',
 }
 
-// Couleurs attribuées aux zones de travail
+// Couleurs attribuées aux zones de travail (charte Air France — bleus)
 export const ZONE_COLORS = [
-  '#0ea5e9',
-  '#ef4444',
-  '#10b981',
-  '#f59e0b',
-  '#8b5cf6',
-  '#14b8a6',
-  '#f97316',
-  '#3b82f6',
-  '#84cc16',
-  '#ec4899',
-  '#06b6d4',
-  '#a855f7',
-  '#22c55e',
-  '#eab308',
-  '#f43f5e',
-  '#6366f1',
+  '#051039',
+  '#003165',
+  '#14438b',
+  '#0045b6',
+  '#27395d',
+  '#315882',
+  '#00659d',
+  '#0070c4',
+  '#62728e',
+  '#3d82bd',
+  '#0e95d3',
+  '#8497b1',
 ]
 
 export function getZoneColor(zone, _allZones) {

@@ -254,8 +254,8 @@ describe('consigneDay', () => {  it('trouve le jour avec ou sans immatriculation
 
 describe('catégories', () => {
   it('colore les blocs connus et retombe sur AUTRE', () => {
-    expect(getCategoryColor('JIC')).toBe('#0ea5e9')
-    expect(getCategoryColor('INCONNU')).toBe('#64748b')
+    expect(getCategoryColor('JIC')).toBe('#003165')
+    expect(getCategoryColor('INCONNU')).toBe('#767676')
   })
 
   it('traduit le label Found Fault', () => {

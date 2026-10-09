@@ -36,10 +36,11 @@ import {
   ClipboardList,
 } from 'lucide-react'
 
+// Charte Air France — bleus identitaires
 const SHIFT_COLORS = {
-  matin: '#10b981',
-  soir: '#6366f1',
-  nuit: '#3b82f6',
+  matin: '#003165',
+  soir: '#14438b',
+  nuit: '#051039',
 }
 
 
@@ -1083,7 +1084,7 @@ export default function ImportConsignes() {
                           className={`px-3 py-1 rounded-full text-xs font-bold border-2 transition-all ${
                             active ? 'text-white border-transparent' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
                           }`}
-                          style={active ? { backgroundColor: SHIFT_COLORS[s] || '#64748b' } : undefined}
+                          style={active ? { backgroundColor: SHIFT_COLORS[s] || '#767676' } : undefined}
                         >
                           {s.charAt(0).toUpperCase() + s.slice(1)}
                         </button>
@@ -1154,7 +1155,7 @@ export default function ImportConsignes() {
                           className={`w-full px-3 py-1.5 text-white text-xs font-bold flex items-center justify-between ${
                             active ? '' : 'hover:brightness-110'
                           }`}
-                          style={{ backgroundColor: SHIFT_COLORS[s] || '#64748b' }}
+                          style={{ backgroundColor: SHIFT_COLORS[s] || '#767676' }}
                         >
                           {s.charAt(0).toUpperCase() + s.slice(1)} ({sh?.members.length || 0})
                         </button>
@@ -1338,7 +1339,7 @@ export default function ImportConsignes() {
                                   <span
                                     key={s}
                                     className="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white"
-                                    style={{ backgroundColor: SHIFT_COLORS[s] || '#64748b' }}
+                                    style={{ backgroundColor: SHIFT_COLORS[s] || '#767676' }}
                                   >
                                     {s} : {(() => {
                                       const ovKey = `${selectedDay}::${b.immat}::${s}`

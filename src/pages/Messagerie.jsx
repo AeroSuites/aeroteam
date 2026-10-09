@@ -442,7 +442,7 @@ export default function Messagerie() {
                             <div
                               className={`group relative max-w-[85%] sm:max-w-[70%] rounded-2xl px-3 py-2 shadow-sm ${
                                 m.mine
-                                  ? 'bg-[#005c4b] text-white rounded-br-sm'
+                                  ? 'bg-[#003165] text-white rounded-br-sm'
                                   : 'bg-white text-slate-800 rounded-bl-sm border border-slate-100'
                               }`}
                             >

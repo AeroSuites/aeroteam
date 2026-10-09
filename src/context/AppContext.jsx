@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import * as profileStore from '../lib/profileStore'
-import { taskContentKey, fixMojibake } from '../utils/helpers'
+import { taskContentKey, fixMojibake, TEAM_COLORS } from '../utils/helpers'
 import { taskActions } from './tasks'
 import { teamActions } from './teams'
 import { prepActions } from './preparation'
@@ -153,6 +153,13 @@ export function AppProvider({ children }) {
     })
     cleaned.tasks = dedupeTasks(cleaned.tasks).map(fixTaskTexts)
     cleaned.prepTasks = cleaned.prepTasks.map(fixTaskTexts)
+    // Conformité charte Air France : couleurs d'équipe hors charte remplacées
+    cleaned.teams = cleaned.teams.map((t, i) => ({
+      ...t,
+      color: TEAM_COLORS.includes(String(t.color || '').toLowerCase())
+        ? t.color
+        : TEAM_COLORS[i % TEAM_COLORS.length],
+    }))
     if (cleaned.charge && Array.isArray(cleaned.charge.tasks)) {
       cleaned.charge = { ...cleaned.charge, tasks: cleaned.charge.tasks.map(fixTaskTexts) }
     }

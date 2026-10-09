@@ -357,7 +357,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                         <span
                           key={t.id}
                           className="px-2 py-0.5 rounded-full text-[11px] font-bold text-white"
-                          style={{ backgroundColor: t.color || '#0ea5e9' }}
+                          style={{ backgroundColor: t.color || '#003165' }}
                         >
                           {t.name}
                           {t.members?.length ? ` · ${t.members.length}` : ''}
@@ -519,7 +519,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                       >
                         <div
                           className="px-3 py-2 flex items-center justify-between gap-2 text-white"
-                          style={{ backgroundColor: team.color || '#64748b' }}
+                          style={{ backgroundColor: team.color || '#767676' }}
                         >
                           <span className="font-bold text-sm truncate">{team.name}</span>
                           <span className="text-xs opacity-90 shrink-0">

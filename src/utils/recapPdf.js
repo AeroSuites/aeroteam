@@ -119,7 +119,7 @@ export function buildRecapPdf(profile, data) {
     items.push({
       h: 8.5,
       draw: (x, yy) => {
-        doc.setFillColor(...hexToRgb(team.color || '#64748b'))
+        doc.setFillColor(...hexToRgb(team.color || '#767676'))
         doc.roundedRect(x + 1.5, yy + 1, colW - 3, 7.5, 1.5, 1.5, 'F')
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(8.5)

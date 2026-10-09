@@ -23,19 +23,20 @@ import {
   ChevronRight,
 } from 'lucide-react'
 
+// Charte Air France — bleus identitaires (+ rouge en touche)
 const PALETTE = [
-  '#0ea5e9',
-  '#8b5cf6',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#14b8a6',
-  '#f97316',
-  '#3b82f6',
-  '#84cc16',
-  '#ec4899',
-  '#a855f7',
-  '#64748b',
+  '#051039',
+  '#003165',
+  '#14438b',
+  '#0045b6',
+  '#27395d',
+  '#315882',
+  '#00659d',
+  '#0070c4',
+  '#0e95d3',
+  '#62728e',
+  '#3d82bd',
+  '#ff0000',
 ]
 
 // Numéro de semaine d'un nom de dossier (tolérant : « Semaine 38 », « S38 », « 38 »…)
@@ -652,7 +653,7 @@ export default function Consignes() {
                             <Plane className="h-4 w-4 text-sky-500 shrink-0" />
                             <span
                               className="h-2.5 w-2.5 rounded-full shrink-0"
-                              style={{ backgroundColor: af.couleur || '#0ea5e9' }}
+                              style={{ backgroundColor: af.couleur || '#003165' }}
                             />
                             <span
                               className={`truncate text-sm ${
@@ -717,7 +718,7 @@ export default function Consignes() {
             <>
               <div
                 className="px-5 py-3 flex items-center justify-between gap-3"
-                style={{ backgroundColor: selectedFolder?.couleur || '#0ea5e9' }}
+                style={{ backgroundColor: selectedFolder?.couleur || '#003165' }}
               >
                 <div className="min-w-0">
                   <h2 className="font-bold text-white text-lg truncate">

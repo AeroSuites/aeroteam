@@ -68,7 +68,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
       <div className="border border-slate-200 rounded-lg overflow-hidden">
         <div
           className="px-3 py-2 flex items-center justify-between gap-2 text-white cursor-pointer select-none"
-          style={{ backgroundColor: team.color || '#64748b' }}
+          style={{ backgroundColor: team.color || '#767676' }}
           onClick={() => setOpen((v) => !v)}
           title={open ? 'Replier cette équipe' : 'Déplier cette équipe'}
         >
