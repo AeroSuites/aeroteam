@@ -616,8 +616,8 @@ export default function Affectation() {
                 }
                 className={`px-3 py-1 rounded-full text-xs font-bold border-2 transition-all ${
                   prioFilter.includes(tok)
-                    ? 'bg-red-600 border-red-600 text-white'
-                    : 'bg-red-50 border-red-200 text-red-700 hover:border-red-400'
+                    ? 'bg-[#ff0000] border-[#ff0000] text-white'
+                    : 'bg-white border-[#ff0000] text-[#ff0000] hover:bg-[#ff0000]/10'
                 }`}
                 title={`Afficher les lignes ${tok} (cumulable avec les autres filtres)`}
               >
@@ -825,7 +825,7 @@ export default function Affectation() {
                                             <span className="truncate">{task.description}</span>
                                             {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
                                               <span
-                                                className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
+                                                className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff0000]/10 text-[#ff0000] border border-[#ff0000]/40 whitespace-nowrap"
                                                 title="Ligne prioritaire (MEL / EXMP)"
                                               >
                                                 {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`)}

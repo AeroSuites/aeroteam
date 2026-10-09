@@ -396,7 +396,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                                     {item}
                                     {tok && (
                                       <span
-                                        className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap"
+                                        className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff0000]/10 text-[#ff0000] border border-[#ff0000]/40 whitespace-nowrap"
                                         title="Ligne prioritaire (MEL / EXMP / NSRE)"
                                       >
                                         {tok}

@@ -3,7 +3,7 @@
 // blancs/gris, et rouge #FF0000 en touche.
 export const CATEGORY_COLORS = {
   JIC: '#003165',
-  CORR: '#ff0000',
+  CORR: '#27395d',
   MPC: '#0045b6',
   ADHOC: '#14438b',
   EO: '#00659d',
