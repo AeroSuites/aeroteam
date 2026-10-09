@@ -368,7 +368,7 @@ export default function Messagerie() {
                         active ? 'bg-slate-100' : 'hover:bg-slate-50'
                       }`}
                     >
-                      <span className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-[#002157] to-[#003a8c] text-white text-xs font-bold flex items-center justify-center">
+                      <span className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-[#003165] to-[#14438b] text-white text-xs font-bold flex items-center justify-center">
                         {initials(i.name)}
                       </span>
                       <span className="flex-1 min-w-0">
@@ -403,7 +403,7 @@ export default function Messagerie() {
             {contact ? (
               <>
                 <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
-                  <span className="h-9 w-9 rounded-full bg-gradient-to-br from-[#002157] to-[#003a8c] text-white text-xs font-bold flex items-center justify-center">
+                  <span className="h-9 w-9 rounded-full bg-gradient-to-br from-[#003165] to-[#14438b] text-white text-xs font-bold flex items-center justify-center">
                     {initials(contact.name)}
                   </span>
                   <div className="min-w-0">

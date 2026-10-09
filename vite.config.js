@@ -31,8 +31,8 @@ export default defineConfig({
         name: 'AeroTeam',
         short_name: 'AeroTeam',
         description: 'Application web de gestion des équipes de maintenance aéronautique',
-        theme_color: '#0f172a',
-        background_color: '#f1f5f9',
+        theme_color: '#051039',
+        background_color: '#f5f5f5',
         display: 'standalone',
         start_url: basePath,
         icons: [

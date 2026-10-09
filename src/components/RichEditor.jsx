@@ -15,7 +15,7 @@ import {
 
 const FONTS = ['Arial', 'Verdana', 'Tahoma', 'Times New Roman', 'Courier New']
 const COLORS = [
-  '#0f172a',
+  '#051039',
   '#dc2626',
   '#ea580c',
   '#16a34a',

@@ -162,7 +162,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <nav className="bg-gradient-to-br from-[#001a45] via-[#002157] to-[#003a8c] text-white border-b-4 border-[#e4002b] shadow-lg">
+      <nav className="bg-gradient-to-br from-[#051039] via-[#003165] to-[#14438b] text-white border-b-4 border-[#ff0000] shadow-lg">
         <div className="relative mx-auto max-w-[1700px] px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 shrink-0">
             <Plane className="h-7 w-7 text-sky-300" />
