@@ -183,7 +183,7 @@ export default function Layout({ children }) {
               <NavLink
                 to="/"
                 end
-                className="flex items-center gap-1.5 text-amber-300 hover:text-amber-200 text-xs font-bold bg-amber-500/10 border border-amber-400/40 rounded-full px-3 py-1.5"
+                className="flex items-center gap-1.5 text-white hover:bg-white/10 text-xs font-bold bg-white/10 border border-white/40 rounded-full px-3 py-1.5"
                 title={`${consignesCount} consigne(s) de l'avion — voir le tableau de bord`}
               >
                 <ClipboardList className="h-4 w-4" /> {consignesCount}
@@ -196,11 +196,11 @@ export default function Layout({ children }) {
                 <p className="text-[10px] sm:text-xs text-slate-400 truncate max-w-[30vw] sm:max-w-[200px]">✈ {activeProfile.aircraft}</p>
               )}
               {saveState === 'saving' && (
-                <p className="text-[10px] sm:text-xs text-amber-300 animate-pulse">Sauvegarde…</p>
+                <p className="text-[10px] sm:text-xs text-[#92c5ed] animate-pulse">Sauvegarde…</p>
               )}
               {saveState === 'offline' && (
                 <p
-                  className="text-[10px] sm:text-xs text-red-400 font-semibold"
+                  className="text-[10px] sm:text-xs text-[#ff0000] font-semibold"
                   title="La sauvegarde a échoué : nouvelle tentative automatique toutes les 30 secondes. Vérifiez la connexion et restez sur cette page."
                 >
                   Hors ligne ⚠
@@ -259,13 +259,13 @@ export default function Layout({ children }) {
                   }
                 >
                   {item.ordre && (
-                    <span className="inline-flex items-center justify-center h-4 w-4 mr-1.5 rounded-full bg-amber-400 text-[10px] font-bold text-slate-900 align-middle" title={`Étape ${item.ordre} — ordre d'utilisation`}>
+                    <span className="inline-flex items-center justify-center h-4 w-4 mr-1.5 rounded-full bg-white text-[10px] font-bold text-[#051039] align-middle" title={`Étape ${item.ordre} — ordre d'utilisation`}>
                       {item.ordre}
                     </span>
                   )}
                   {item.label}
                   {item.messages && msgUnread > 0 && (
-                    <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold align-middle">
+                    <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-[#ff0000] text-white text-[10px] font-bold align-middle">
                       {msgUnread}
                     </span>
                   )}
@@ -292,7 +292,7 @@ export default function Layout({ children }) {
                 >
                   {item.label}
                   {item.messages && msgUnread > 0 && (
-                    <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold align-middle">
+                    <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-[#ff0000] text-white text-[10px] font-bold align-middle">
                       {msgUnread}
                     </span>
                   )}
@@ -317,7 +317,7 @@ export default function Layout({ children }) {
                       >
                         <span>{child.label}</span>
                         {child.messages && msgUnread > 0 && (
-                          <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+                          <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff0000] text-white text-[10px] font-bold">
                             {msgUnread}
                           </span>
                         )}
@@ -347,7 +347,7 @@ export default function Layout({ children }) {
                   }`}
                 />
                 {(primesPending > 0 || adminPending > 0) && (
-                  <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold shadow">
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-[#ff0000] text-white text-[10px] font-bold shadow">
                     {primesPending + adminPending}
                   </span>
                 )}
@@ -365,7 +365,7 @@ export default function Layout({ children }) {
                   >
                     <span>Administration</span>
                     {adminPending > 0 && (
-                      <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+                      <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff0000] text-white text-[10px] font-bold">
                         {adminPending}
                       </span>
                     )}
@@ -381,7 +381,7 @@ export default function Layout({ children }) {
                   >
                     <span>Primes</span>
                     {primesPending > 0 && (
-                      <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+                      <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff0000] text-white text-[10px] font-bold">
                         {primesPending}
                       </span>
                     )}
