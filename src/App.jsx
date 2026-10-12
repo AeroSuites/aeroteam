@@ -5,8 +5,7 @@ import ProfileSelector from './pages/ProfileSelector'
 import Dashboard from './pages/Dashboard'
 import ImportExcel from './pages/ImportExcel'
 import Taches from './pages/Taches'
-import Equipes from './pages/Equipes'
-import Affectation from './pages/Affectation'
+import TeamsAssignment from './pages/TeamsAssignment'
 import Export from './pages/Export'
 import Preparation from './pages/Preparation'
 import BlocNotes from './pages/BlocNotes'
@@ -53,8 +52,8 @@ function AppContent() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/import" element={<ImportExcel />} />
             <Route path="/taches" element={<Taches />} />
-            <Route path="/equipes" element={<Equipes />} />
-            <Route path="/affectation" element={<Affectation />} />
+            <Route path="/equipes" element={<TeamsAssignment />} />
+            <Route path="/affectation" element={<Navigate to="/equipes" replace />} />
             <Route path="/preparation" element={<Preparation />} />
             <Route path="/notes" element={<BlocNotes />} />
             <Route path="/consignes" element={<Consignes />} />

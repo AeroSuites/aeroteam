@@ -9,8 +9,7 @@ const navItems = [
   { to: '/', label: 'Dashboard', end: true, ordre: 5 },
   { to: '/import', label: 'Import Victory', ordre: 1 },
   { to: '/taches', label: 'Tasks', ordre: 2 },
-  { to: '/equipes', label: 'Teams', ordre: 3 },
-  { to: '/affectation', label: 'Assignment', ordre: 4 },
+  { to: '/equipes', label: 'Teams & Assignment', ordre: 3 },
   { to: '/export', label: 'Export/Reset' },
   { to: '/preparation', label: 'Next shift prep' },
   {
