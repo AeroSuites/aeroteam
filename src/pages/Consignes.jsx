@@ -538,7 +538,7 @@ export default function Consignes() {
 
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         {/* Arborescence des dossiers */}
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <button
             onClick={() => openFolderModal('new', null)}
             className="w-full flex items-center justify-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
@@ -702,7 +702,7 @@ export default function Consignes() {
         </div>
 
         {/* Conversation */}
-        <div className="bg-white rounded-xl shadow flex flex-col min-h-[420px]">
+        <div className="min-w-0 bg-white rounded-xl shadow flex flex-col min-h-[420px]">
           {!selectedDossierId && (
             <div className="flex-1 flex flex-col items-center justify-center p-10 text-center text-slate-400">
               <MessageSquare className="h-12 w-12 text-slate-300 mb-3" />

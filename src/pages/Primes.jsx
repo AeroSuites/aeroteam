@@ -338,7 +338,7 @@ export default function Primes() {
       else
         setNotifyMsg('Test email sent — check your inbox (and spam).')
     } catch (err) {
-      setNotifyError(`Failed to send the test: ${err?.message || 'hors ligne ?'}`)
+      setNotifyError(`Failed to send the test: ${err?.message || 'offline?'}`)
     }
     setNotifyBusy(false)
   }
@@ -358,7 +358,7 @@ export default function Primes() {
         )
       else setNotifyError("Failed to send the recap.")
     } catch (err) {
-      setNotifyError(`Failed to send the recap: ${err?.message || 'hors ligne ?'}`)
+      setNotifyError(`Failed to send the recap: ${err?.message || 'offline?'}`)
     }
     setNotifyBusy(false)
   }
@@ -1202,7 +1202,7 @@ export default function Primes() {
               </h2>
               <div className="flex items-center gap-3 shrink-0 text-xs">
                 <span className="bg-amber-500/20 text-amber-200 border border-amber-400/40 rounded-full px-2.5 py-1 font-bold">
-                  {detailInfo?.pending || 0} en attente
+                  {detailInfo?.pending || 0} pending
                 </span>
                 <span className="text-emerald-300 font-bold">
                   T1 : {detailInfo?.valid.V034 || 0} · T2 : {detailInfo?.valid.V035 || 0}
@@ -1214,7 +1214,7 @@ export default function Primes() {
                     className="inline-flex items-center gap-1 text-red-200 border border-red-400/40 hover:bg-red-500/20 rounded-full px-2.5 py-1 font-bold disabled:opacity-50"
                     title="Delete this agent’s entire bonus history"
                   >
-                    <Trash2 className="h-3.5 w-3.5" /> Tout supprimer
+                    <Trash2 className="h-3.5 w-3.5" /> Delete all
                   </button>
                 )}
                 <button
@@ -1301,7 +1301,7 @@ export default function Primes() {
               )}
 
               <div>
-                <h3 className="font-semibold text-slate-700 mb-2">Historique</h3>
+                <h3 className="font-semibold text-slate-700 mb-2">History</h3>
                 {detailMonths.length === 0 && (
                   <p className="text-sm text-slate-400 italic">No history for now.</p>
                 )}

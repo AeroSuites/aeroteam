@@ -296,7 +296,7 @@ export default function ImportConsignes() {
         const sheet = workbook.Sheets[workbook.SheetNames[0]]
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 })
         if (!rows || rows.length < 2) {
-          setChargeError('Le fichier est vide ou ne contient pas assez de lignes.')
+          setChargeError('The file is empty or does not contain enough lines.')
           return
         }
         const detected = detectColumns(rows[0])
@@ -316,7 +316,7 @@ export default function ImportConsignes() {
           filteredOut: rows.length - 1 - parsed.length,
         })
       } catch (err) {
-        setChargeError(`Erreur lors de la lecture du fichier : ${err.message}`)
+        setChargeError(`Error reading the file: ${err.message}`)
       }
     }
     reader.readAsArrayBuffer(file)
@@ -331,7 +331,7 @@ export default function ImportConsignes() {
     try {
       const fresh = await getProfileByCode(chargeProfileCode)
       if (!fresh) {
-        setChargeError('Profil introuvable.')
+        setChargeError('Profile not found.')
         setChargeBusy(false)
         return
       }
@@ -414,7 +414,7 @@ export default function ImportConsignes() {
     try {
       const fresh = await getProfileByCode(chargeProfileCode)
       if (!fresh) {
-        setChargeError('Profil introuvable.')
+        setChargeError('Profile not found.')
         setChargeBusy(false)
         return
       }
@@ -474,7 +474,7 @@ export default function ImportConsignes() {
         setSelectedDay(defaultDayOf(days))
         setSelectedShift('matin')
       } catch (err) {
-        setError(`Erreur lors de la lecture : ${err.message}`)
+        setError(`Error reading: ${err.message}`)
       }
     }
     reader.readAsArrayBuffer(file)
@@ -624,7 +624,7 @@ export default function ImportConsignes() {
       try {
         const lookup = await getProfileByCode(profileCode)
         if (!lookup) {
-          out.push({ immat, ok: false, error: 'profil introuvable' })
+          out.push({ immat, ok: false, error: 'profile not found' })
           continue
         }
         const scope = { day: selectedDay, shift: selectedShift }
@@ -708,7 +708,7 @@ export default function ImportConsignes() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Import consignes (rapport)</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Import instructions (report)</h1>
         <p className="text-slate-600 mt-1">
           Instructions file analysis: choose the day and shift to view.
         </p>
@@ -733,7 +733,7 @@ export default function ImportConsignes() {
                 chargeTab === 'consignes' ? 'text-sky-100' : 'text-slate-400'
               }`}
             >
-              Rapport des consignes (jour × shift)
+              Instructions report (day × shift)
             </span>
           </span>
         </button>
@@ -755,7 +755,7 @@ export default function ImportConsignes() {
                 chargeTab === 'charge' ? 'text-emerald-100' : 'text-emerald-600'
               }`}
             >
-              Workpackage Report → envoyer au profil
+              Workpackage Report → send to the profile
             </span>
           </span>
         </button>
@@ -770,7 +770,7 @@ export default function ImportConsignes() {
             onClick={clearSession}
             className="text-xs font-semibold text-red-600 hover:text-red-800 border border-red-200 hover:bg-red-50 rounded-md px-2 py-1"
           >
-            Effacer la session
+            Clear session
           </button>
         </div>
       )}
@@ -818,7 +818,7 @@ export default function ImportConsignes() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="bg-white rounded-xl shadow p-4 text-center">
               <div className="text-2xl font-bold text-slate-900">{days.length}</div>
-              <div className="text-sm text-slate-500">Feuilles jours lues</div>
+              <div className="text-sm text-slate-500">Day sheets read</div>
             </div>
             <div className="bg-white rounded-xl shadow p-4 text-center">
               <div className="text-2xl font-bold text-slate-900">{totalMembers}</div>
@@ -826,7 +826,7 @@ export default function ImportConsignes() {
             </div>
             <div className="bg-white rounded-xl shadow p-4 text-center">
               <div className="text-2xl font-bold text-slate-900">{totalBlocks}</div>
-              <div className="text-sm text-slate-500">Blocs de charge (avions)</div>
+              <div className="text-sm text-slate-500">Workload blocks (aircraft)</div>
             </div>
           </div>
 
@@ -834,13 +834,13 @@ export default function ImportConsignes() {
             <div className="bg-white rounded-xl shadow p-4 sm:p-6">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-sky-500" /> Historique des imports
+                  <Clock className="h-4 w-4 text-sky-500" /> Import history
                 </h2>
                 <button
                   onClick={clearHistory}
                   className="text-xs text-red-600 hover:text-red-800 border border-red-200 hover:bg-red-50 rounded-md px-2 py-1"
                 >
-                  Effacer
+                  Clear
                 </button>
               </div>
               <ul className="space-y-1">
@@ -942,7 +942,7 @@ export default function ImportConsignes() {
               {skippedBydayshift.length > 0 && (
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
                   {skippedBydayshift.length} aircraft in this shift's staff but without instructions
-                  ce jour : {skippedBydayshift.join(', ')}
+                  on this day: {skippedBydayshift.join(', ')}
                 </p>
               )}
               <div className="space-y-1 mb-4">
@@ -955,7 +955,7 @@ export default function ImportConsignes() {
                       {immat}
                     </span>
                     <span className="text-xs text-slate-400 w-28 shrink-0">
-                      {effectiveTasks(immat).length} consigne(s)
+                      {effectiveTasks(immat).length} instruction(s)
                     </span>
                     <select
                       value={assignments[immat] || ''}
@@ -1065,13 +1065,13 @@ export default function ImportConsignes() {
           {sheet && (
             <div className="space-y-6">
               {/* Effectif du shift sélectionné : un bloc par avion, membres en pastilles */}
-              <div className="bg-white rounded-xl shadow p-4 sm:p-6">
+              <div className="min-w-0 bg-white rounded-xl shadow p-4 sm:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <h2 className="font-semibold flex items-center gap-2">
                     <Users className="h-5 w-5 text-sky-500" /> Effectif {selectedDay} —{' '}
                     {selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)}{' '}
                     <span className="font-normal text-slate-400 text-sm">
-                      ({effectifShift.count} membre{effectifShift.count > 1 ? 's' : ''})
+                      ({effectifShift.count} member{effectifShift.count > 1 ? 's' : ''})
                     </span>
                   </h2>
                   <div className="flex gap-1.5">
@@ -1135,7 +1135,7 @@ export default function ImportConsignes() {
               </div>
 
               <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-              <div className="bg-white rounded-xl shadow p-4">
+              <div className="min-w-0 bg-white rounded-xl shadow p-4">
                 <h2 className="font-semibold flex items-center gap-2 mb-3">
                   <Users className="h-5 w-5 text-sky-500" /> Effectif {selectedDay}
                 </h2>
@@ -1194,12 +1194,12 @@ export default function ImportConsignes() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow p-4 sm:p-6">
+              <div className="min-w-0 bg-white rounded-xl shadow p-4 sm:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <h2 className="font-semibold flex items-center gap-2">
                     <Plane className="h-5 w-5 text-sky-500" />
-                    Charge {selectedDay} — {selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)} (
-                    {visibleBlocks.length} avions)
+                    Workload {selectedDay} — {selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)} (
+                    {visibleBlocks.length} aircraft)
                   </h2>
                   <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
                     <input
@@ -1220,15 +1220,15 @@ export default function ImportConsignes() {
                   <table className="w-full text-sm min-w-[520px]">
                     <thead>
                       <tr className="text-left bg-slate-50">
-                        <th className="px-3 py-2 font-semibold text-slate-700">Avion</th>
-                        <th className="px-3 py-2 font-semibold text-slate-700">Type de visite</th>
-                        <th className="px-3 py-2 font-semibold text-slate-700">Heure</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700">Aircraft</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700">Visit type</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700">Time</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">
                           Tasks{' '}
                           {selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)}{' '}
-                          <span className="font-normal text-slate-400">(crayon = modifier)</span>
+                          <span className="font-normal text-slate-400">(pencil = edit)</span>
                         </th>
-                        <th className="px-3 py-2 font-semibold text-slate-700">Autres shifts</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700">Other shifts</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1324,7 +1324,7 @@ export default function ImportConsignes() {
                                           })
                                         }
                                         className="text-slate-400 hover:text-red-600"
-                                        title="Revenir au fichier"
+                                        title="Back to the file"
                                       >
                                         <RotateCcw className="h-3 w-3" />
                                       </button>
@@ -1382,11 +1382,11 @@ export default function ImportConsignes() {
       ) : (
         <div className="space-y-6">
           <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
-            <h3 className="font-semibold text-sky-800 mb-2">Filtres d'import actifs (comme Import Victory)</h3>
+            <h3 className="font-semibold text-sky-800 mb-2">Active import filters (like Import Victory)</h3>
             <div className="text-sm text-sky-700 space-y-1">
-              <p>• <strong>Skills</strong> : toutes les lignes dont un des skills commence par CABB (ex. B1B2/CABB1B2)</p>
-              <p>• <strong>MTX Status</strong> : uniquement ACTV, PAUSE et IN WORK</p>
-              <p>• <strong>Task Type</strong> : tous les blocs (JIC, Found Fault, MPC, ADHOC, EO)</p>
+              <p>• <strong>Skills</strong>: lines where one of the skills starts with CABB (e.g. B1B2/CABB1B2)</p>
+              <p>• <strong>MTX Status</strong>: only ACTV, PAUSE and IN WORK</p>
+              <p>• <strong>Task Type</strong>: all blocks (JIC, Found Fault, MPC, ADHOC, EO)</p>
             </div>
           </div>
 
@@ -1461,7 +1461,7 @@ export default function ImportConsignes() {
                       }
                       className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-2.5 py-0.5"
                     >
-                      Tout cocher
+                      Check all
                     </button>
                     <button
                       onClick={() => setChargeSelected({})}
@@ -1504,7 +1504,7 @@ export default function ImportConsignes() {
                     className="bg-sky-600 text-white px-4 py-1.5 rounded-md hover:bg-sky-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold"
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                    {chargeBusy ? 'Envoi…' : 'Send the workload au profil'}
+                    {chargeBusy ? 'Sending…' : 'Send the workload to the profile'}
                   </button>
                 </div>
               </div>
@@ -1663,7 +1663,7 @@ export default function ImportConsignes() {
                       }
                       className="text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-50 rounded-full px-2.5 py-0.5"
                     >
-                      Tout cocher
+                      Check all
                     </button>
                     <button
                       onClick={() => setChargeRemoveSel({})}

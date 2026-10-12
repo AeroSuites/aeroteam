@@ -346,7 +346,7 @@ export default function Messagerie() {
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <div className="grid md:grid-cols-[290px_1fr] min-h-[70vh]">
           {/* Contacts / conversations */}
-          <div className="border-r border-slate-200 flex flex-col">
+          <div className="min-w-0 border-r border-slate-200 flex flex-col">
             <div className="p-3 border-b border-slate-100">
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -403,7 +403,7 @@ export default function Messagerie() {
           </div>
 
           {/* Conversation : un seul cadre, messages qui s'enchaînent */}
-          <div className="flex flex-col min-h-[60vh]">
+          <div className="min-w-0 flex flex-col min-h-[60vh]">
             {contact ? (
               <>
                 <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">

@@ -659,7 +659,7 @@ export default function Affectation() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {zoneGroups.length === 0 && (
             <div className="bg-white rounded-xl shadow p-8 text-center text-slate-500">
               <ClipboardList className="h-12 w-12 mx-auto text-slate-300 mb-3" />
@@ -703,8 +703,8 @@ export default function Affectation() {
                     ) : (
                       <ChevronRight className="h-5 w-5 text-white shrink-0" />
                     )}
-                    <h3 className="font-bold text-white text-sm shrink-0">
-                      {group.isFF ? 'Found Fault block' : `📍 ${group.label}`}{' '}
+                    <h3 className="font-bold text-white text-sm truncate">
+                      {group.isFF ? 'Bloc Found Fault' : `📍 ${group.label}`}{' '}
                       <span className="font-normal opacity-80">({groupTasks.length})</span>
                     </h3>
                     {groupMemberNames.length > 0 && (
@@ -810,7 +810,7 @@ export default function Affectation() {
                                   ) : (
                                     <ChevronRight className="h-5 w-5 text-white shrink-0" />
                                   )}
-                                  <span className="text-sm font-bold text-white shrink-0">
+                                  <span className="text-sm font-bold text-white truncate">
                                     📍 {subZone}{' '}
                                     <span className="font-normal opacity-90">({subTasks.length})</span>
                                   </span>
@@ -977,7 +977,7 @@ export default function Affectation() {
           })}
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="bg-slate-900 rounded-xl shadow p-4 text-white">
             <h2 className="font-bold mb-3 flex items-center gap-2">
               <Users className="h-5 w-5 text-sky-400" /> Teams
