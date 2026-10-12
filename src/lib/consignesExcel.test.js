@@ -143,6 +143,28 @@ describe('parseEffectif', () => {
     expect(nuit.members).toHaveLength(1)
   })
 
+  it('ne mélange pas les avions des shifts voisins (groupes sans colonne Remarque)', () => {
+    const rows = []
+    rows[1] = []
+    rows[1][0] = 'Matin'
+    rows[1][4] = 'Soir'
+    rows[2] = []
+    rows[2][0] = 'Nom'
+    rows[2][1] = 'Affectation'
+    rows[2][4] = 'Nom'
+    rows[2][5] = 'Affectation'
+    rows[3] = []
+    rows[3][0] = 'MATIN (A)'
+    rows[3][1] = 'F-AAA'
+    rows[3][4] = 'SOIR (B)'
+    rows[3][5] = 'F-BBB'
+    const eff = parseEffectif(rows)
+    const matin = eff.find((s) => s.shift === 'matin')
+    const soir = eff.find((s) => s.shift === 'soir')
+    expect(matin.members[0].aircrafts).toEqual(['F-AAA'])
+    expect(soir.members[0].aircrafts).toEqual(['F-BBB'])
+  })
+
   it('marque comme leader le membre dont le nom est sur fond bleu', () => {
     const rows = []
     rows[1] = []

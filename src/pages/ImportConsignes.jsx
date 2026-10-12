@@ -627,7 +627,17 @@ export default function ImportConsignes() {
           out.push({ immat, ok: false, error: 'profile not found' })
           continue
         }
-        const scope = { day: selectedDay, shift: selectedShift }
+        const profAircrafts = String(lookup.aircraft || '')
+          .split(',')
+          .map((s) => s.trim().toUpperCase())
+          .filter(Boolean)
+        // Profil propre à cet avion (aucun avion encore, ou uniquement celui-ci) :
+        // l'effectif du fichier REMPLACE les membres du jour (nettoie les anciens
+        // imports pollués). Profil multi-avions : union, comme avant.
+        const ownAircraft =
+          profAircrafts.length === 0 ||
+          (profAircrafts.length === 1 && profAircrafts[0] === String(immat).trim().toUpperCase())
+        const scope = { day: selectedDay, shift: selectedShift, ownAircraft }
         const merged = buildProfileData(lookup?.data || {}, aircraftInfo, scope)
         let saved = await profileStore.saveProfileData(
           profileCode,

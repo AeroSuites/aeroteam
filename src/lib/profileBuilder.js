@@ -70,13 +70,21 @@ export function buildProfileData(existing, aircraftInfo, scope) {
     pockets: [],
   }
 
-  // Membres du jour : union (existants + effectif du jour × shift visé)
+  // Membres du jour : union (existants + effectif du jour × shift visé).
+  // Cas particulier : le profil EST celui de cet avion (aircraft === immat) —
+  // l'effectif du fichier REMPLACE alors la liste, pour effacer les anciens
+  // membres (imports pollués) et ne garder que les membres de l'avion.
   const shift = scope ? scope.shift : 'matin'
   const scopeMembers = shiftMembers(aircraftInfo.days, shift)
-  const dayMembers = [...new Set([...(data.dayMembers || []), ...scopeMembers])]
+  const replaceMembers = Boolean(scope && scope.ownAircraft) && scopeMembers.length > 0
+  const dayMembers = replaceMembers
+    ? [...new Set(scopeMembers)]
+    : [...new Set([...(data.dayMembers || []), ...scopeMembers])]
   // Leaders du jour (nom sur fond bleu dans le fichier) : pour l'affichage en bleu
   const scopeLeaders = shiftLeaders(aircraftInfo.days, shift)
-  const dayLeaders = [...new Set([...(data.dayLeaders || []), ...scopeLeaders])]
+  const dayLeaders = replaceMembers
+    ? [...new Set(scopeLeaders)]
+    : [...new Set([...(data.dayLeaders || []), ...scopeLeaders])]
 
   // Notes consignes : seule la note du jour × shift visé (pour CET avion) est remplacée
   const immat = aircraftInfo?.immat ? String(aircraftInfo.immat).trim() : ''

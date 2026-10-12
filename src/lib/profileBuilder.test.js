@@ -37,6 +37,28 @@ describe('buildProfileData (jour × shift)', () => {
     expect(data.tasks).toHaveLength(1)
   })
 
+  it('profil propre à l’avion : l’effectif remplace les membres du jour (nettoyage des anciens imports)', () => {
+    const existing = {
+      tasks: [],
+      teams: [],
+      assignments: {},
+      members: ['X (Y)'],
+      dayMembers: ['ANCIEN 1', 'ANCIEN 2', 'DIAS (BRUNO)'],
+      dayLeaders: ['ANCIEN 1'],
+      prepTasks: [],
+      notes: [],
+      pockets: [],
+    }
+    const data = buildProfileData(existing, aircraftInfo, {
+      day: 'MERCREDI',
+      shift: 'soir',
+      ownAircraft: true,
+    })
+    expect(data.dayMembers).toEqual(['DIAS (BRUNO)', 'AYAD (FARID)'])
+    expect(data.dayLeaders).toEqual([])
+    expect(data.members).toEqual(['X (Y)'])
+  })
+
   it('mémorise les leaders du shift (nom sur fond bleu) dans dayLeaders', () => {
     const info = {
       immat: 'F-GSQB',

@@ -146,8 +146,13 @@ export function parseEffectif(rows, ws) {
       const affectCols = []
       for (let ac = memberCol + 1; ac < 41; ac++) {
         const h = norm(cell(rows, r + 1, ac))
+        // Fin du groupe : « Remarque / Hangar », début du groupe suivant
+        // (« Nom ») ou libellé du shift suivant sur la ligne d'en-tête.
+        // Sans ces arrêts, les colonnes d'affectation des shifts voisins
+        // étaient absorbées (membres pollués par les avions des autres shifts).
+        if (h === 'remarque' || h === 'hangar' || h === 'nom') break
+        if (SHIFT_RE.test(cell(rows, r, ac))) break
         if (h === 'affectation') affectCols.push(ac)
-        else if (h === 'remarque' || h === 'hangar') break
       }
       const members = []
       for (let dr = r + 2; dr < Math.min(r + 70, rows.length); dr++) {
