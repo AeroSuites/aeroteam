@@ -6,7 +6,7 @@ import * as profileStore from '../lib/profileStore'
 import { PRIMES_ENABLED } from '../utils/helpers'
 
 const navItems = [
-  { to: '/', label: 'Dashboard', end: true, ordre: 5 },
+  { to: '/', label: 'Dashboard', end: true, ordre: 4 },
   { to: '/import', label: 'Import Victory', ordre: 1 },
   { to: '/taches', label: 'Tasks', ordre: 2 },
   { to: '/equipes', label: 'Teams & Assignment', ordre: 3 },
