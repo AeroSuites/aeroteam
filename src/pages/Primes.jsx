@@ -1251,7 +1251,7 @@ export default function Primes() {
                           <span className="text-xs text-slate-400">
                             {d.date_intervention
                               ? new Date(`${d.date_intervention}T12:00:00`).toLocaleDateString(
-                                  'fr-FR'
+                                  'en-GB'
                                 )
                               : new Date(d.created_at).toLocaleDateString('en-GB')}
                           </span>
