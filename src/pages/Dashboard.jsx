@@ -16,6 +16,7 @@ import {
   assignmentTeams,
   consigneDay,
   priorityToken,
+  cleanShortValue,
   logicalToday,
 } from '../utils/helpers'
 import {
