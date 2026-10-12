@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, priorityToken, priorityTokens, cleanTaskText, cleanShortValue } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
-import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check, FileText, Pencil } from 'lucide-react'
+import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check, FileText, Pencil, AlertTriangle } from 'lucide-react'
 
 export default function Taches() {
   const {
@@ -181,6 +181,12 @@ export default function Taches() {
   const blocks = useMemo(() => {
     return [...new Set(tasks.map((t) => t.taskType).filter(Boolean))].sort()
   }, [tasks])
+
+  // Immatriculations présentes dans la charge (alerte si mélange)
+  const taskRegs = useMemo(
+    () => [...new Set(tasks.map((t) => t.registration).filter(Boolean))],
+    [tasks]
+  )
 
   const statuses = useMemo(() => [...new Set(tasks.map((t) => t.mtxStatus).filter(Boolean))], [tasks])
 
@@ -391,12 +397,40 @@ export default function Taches() {
         )}
       </div>
 
+      {/* Alerte : plusieurs immatriculations dans la charge (import accidentel) */}
+      {taskRegs.length > 1 && (
+        <div className="bg-[#ff0000]/10 border border-[#ff0000]/40 text-[#ff0000] rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 shrink-0" />
+          <span>
+            Attention : la charge contient plusieurs immatriculations ({taskRegs.join(', ')}) —
+            vérifiez l'import (pensez à effacer l'ancienne charge dans Export/Reset avant d'importer
+            un nouveau fichier).
+          </span>
+        </div>
+      )}
+
       {/* Ajout manuel — bien visible */}
       <div className="bg-white rounded-xl shadow p-3 flex flex-wrap items-center justify-between gap-2 border-l-4 border-l-sky-600">
         <div>
           <p className="text-sm font-semibold text-slate-800">Ajouter une ligne manuellement</p>
         </div>
-        <ManualTaskForm onAdd={addTasks} zoneOptions={zones} existingTasks={tasks} />
+        <ManualTaskForm
+          onAdd={(list) => {
+            addTasks(list)
+            setExpandedZones((prev) => [
+              ...new Set([
+                ...prev,
+                ...list.map((t) =>
+                  (t.taskType || '') === 'CORR'
+                    ? getCategoryLabel('CORR')
+                    : t.workArea || 'Sans zone'
+                ),
+              ]),
+            ])
+          }}
+          zoneOptions={zones}
+          existingTasks={tasks}
+        />
       </div>
 
       {/* Filtres et recherche */}

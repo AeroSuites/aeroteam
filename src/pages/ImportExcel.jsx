@@ -97,6 +97,39 @@ export default function ImportExcel() {
   const handleImport = () => {
     const list = preview.filter((t) => selected[t.id])
     if (!list.length) return
+
+    // Alerte immatriculations : le fichier concerne-t-il un autre avion que la
+    // charge déjà en place ? (import accidentel sans effacer l'ancienne charge)
+    const regsOf = (arr) =>
+      [...new Set((arr || []).map((t) => t.registration).filter(Boolean))]
+    const newRegs = regsOf(list)
+    const existingRegs = regsOf(tasks)
+    if (newRegs.length > 1) {
+      if (
+        !window.confirm(
+          `⚠ Ce fichier contient plusieurs immatriculations : ${newRegs.join(
+            ', '
+          )}.\n\nContinuer l'import ?`
+        )
+      ) {
+        return
+      }
+    } else if (
+      newRegs.length === 1 &&
+      existingRegs.length > 0 &&
+      !existingRegs.includes(newRegs[0])
+    ) {
+      if (
+        !window.confirm(
+          `⚠ Ce fichier concerne l'avion ${newRegs[0]} alors que la charge actuelle est pour ${existingRegs.join(
+            ', '
+          )}.\n\nLes deux charges vont se mélanger. Pensez à effacer l'ancienne charge (Export/Reset) si nécessaire.\n\nContinuer l'import quand même ?`
+        )
+      ) {
+        return
+      }
+    }
+
     addTasks(list)
     setImportedCount(list.length)
     setImported(true)

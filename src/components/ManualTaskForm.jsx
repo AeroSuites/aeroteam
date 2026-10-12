@@ -5,7 +5,12 @@ import { makeId } from '../utils/helpers'
 const BLOCKS = ['JIC', 'CORR', 'MPC', 'ADHOC', 'EO']
 const STATUSES = ['ACTV', 'PAUSE', 'IN WORK']
 
-export default function ManualTaskForm({ onAdd, defaultBlock = 'ADHOC', zoneOptions = [] }) {
+export default function ManualTaskForm({
+  onAdd,
+  defaultBlock = 'ADHOC',
+  zoneOptions = [],
+  existingTasks = [],
+}) {
   const [open, setOpen] = useState(false)
   const [seq, setSeq] = useState('')
   const [description, setDescription] = useState('')
@@ -38,6 +43,16 @@ export default function ManualTaskForm({ onAdd, defaultBlock = 'ADHOC', zoneOpti
     const desc = description.trim()
     if (!desc) {
       setError('La tâche (description) est obligatoire.')
+      return
+    }
+    const seqValue = seq.trim()
+    if (
+      seqValue &&
+      (existingTasks || []).some((t) => String(t.seq || '') === seqValue)
+    ) {
+      setError(
+        `Le N° ${seqValue} existe déjà : choisissez un autre numéro (la ligne n'a pas été ajoutée).`
+      )
       return
     }
     onAdd([

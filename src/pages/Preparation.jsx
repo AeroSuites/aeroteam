@@ -960,7 +960,19 @@ export default function Preparation() {
       {prepTasks.length > 0 && (
         <div className="bg-white rounded-xl shadow p-3 flex flex-wrap items-center justify-between gap-2 border-l-4 border-l-sky-600">
           <p className="text-sm font-semibold text-slate-800">Ajouter une ligne manuellement</p>
-          <ManualTaskForm onAdd={addPrepTasks} zoneOptions={allZones} />
+          <ManualTaskForm
+            onAdd={(list) => {
+              addPrepTasks(list)
+              const labels = list.map((t) =>
+                (t.taskType || '') === 'CORR'
+                  ? getCategoryLabel('CORR')
+                  : t.workArea || 'Sans zone'
+              )
+              setCollapsed((prev) => prev.filter((z) => !labels.includes(z)))
+            }}
+            zoneOptions={allZones}
+            existingTasks={prepTasks}
+          />
         </div>
       )}
 
@@ -1075,6 +1087,9 @@ export default function Preparation() {
                 const h = parseFloat(t.scheduledHours)
                 return acc + (isNaN(h) ? 0 : h)
               }, 0)
+              // Blocs présents dans cette zone (le choix pochette par bloc
+              // n'apparaît que si la zone en contient plusieurs)
+              const zoneBlocks = [...new Set(zoneTasks.map((t) => t.taskType).filter(Boolean))]
               return (
                 <div
                   key={zone}
@@ -1129,7 +1144,7 @@ export default function Preparation() {
                         <Plus className="h-3 w-3" />
                         <span className="text-[10px] font-bold whitespace-nowrap">sél.</span>
                       </button>
-                      {[...new Set(zoneTasks.map((t) => t.taskType).filter(Boolean))].map((blk) => {
+                      {zoneBlocks.map((blk) => {
                         const n = zoneTasks.filter((t) => t.taskType === blk).length
                         const total = prepTasks.filter((t) => t.taskType === blk).length
                         return (
@@ -1182,20 +1197,22 @@ export default function Preparation() {
                             >
                               <Undo2 className="h-3 w-3" />
                             </button>
-                            <PocketSelect
-                              variant="dark"
-                              compact
-                              pockets={pockets}
-                              placeholder={`${getCategoryLabel(blk)} → pochette`}
-                              onSelect={(pid) =>
-                                assignToPocket(
-                                  pid,
-                                  zoneTasks
-                                    .filter((t) => (t.taskType || 'AUTRE') === blk)
-                                    .map((t) => t.id)
-                                )
-                              }
-                            />
+                            {zoneBlocks.length > 1 && (
+                              <PocketSelect
+                                variant="dark"
+                                compact
+                                pockets={pockets}
+                                placeholder={`${getCategoryLabel(blk)} → pochette`}
+                                onSelect={(pid) =>
+                                  assignToPocket(
+                                    pid,
+                                    zoneTasks
+                                      .filter((t) => (t.taskType || 'AUTRE') === blk)
+                                      .map((t) => t.id)
+                                  )
+                                }
+                              />
+                            )}
                           </span>
                         )
                       })}
@@ -1775,7 +1792,7 @@ function PocketSelect({ pockets, placeholder, onSelect, variant = 'light', compa
         }}
         className={
           compact
-            ? 'border border-slate-300 rounded-md px-1.5 py-1 text-xs text-slate-700 max-w-[120px] bg-white'
+            ? 'h-6 border border-slate-300 rounded-full px-2 text-[11px] leading-none text-slate-700 max-w-[130px] bg-white'
             : dark
               ? 'border border-white/60 rounded-md px-2 py-1 text-xs font-medium bg-white text-slate-800 hover:border-white max-w-[200px]'
               : 'border border-slate-300 rounded-md px-2 py-1.5 text-xs font-medium text-slate-700 bg-white hover:border-sky-400 max-w-[200px]'
@@ -1808,8 +1825,8 @@ function PocketChips({ counts, pocketById, onRemove, dark }) {
             key={pid}
             className={
               dark
-                ? 'inline-flex items-center gap-1.5 pl-1.5 pr-1.5 py-0.5 rounded-full text-[10px] font-bold text-white bg-slate-900 border border-white/90 shadow'
-                : 'inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-full text-xs font-bold text-sky-950 bg-sky-100 border-2 border-sky-500 shadow-sm'
+                ? 'inline-flex items-center gap-1.5 h-6 pl-1.5 pr-1.5 rounded-full text-[10px] font-bold text-white bg-slate-900 border border-white/90 shadow'
+                : 'inline-flex items-center gap-1.5 h-6 pl-1.5 pr-2 rounded-full text-xs font-bold text-sky-950 bg-sky-100 border-2 border-sky-500 shadow-sm'
             }
             title={`Dans la pochette « ${p.name} » (${n}) — cliquez pour retirer`}
           >

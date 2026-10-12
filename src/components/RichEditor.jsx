@@ -92,8 +92,8 @@ export default function RichEditor({
     'p-1.5 rounded hover:bg-slate-200 text-slate-600 transition-colors'
 
   return (
-    <div className="border border-slate-300 rounded-md focus-within:border-sky-400 overflow-hidden">
-      <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 bg-slate-50 border-b border-slate-200">
+    <div className="border border-slate-300 rounded-md focus-within:border-sky-400">
+      <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 bg-slate-50 border-b border-slate-200 rounded-t-md">
         <button type="button" className={toolbarButton} title="Gras" onClick={() => exec('bold')}>
           <Bold className="h-4 w-4" />
         </button>

@@ -369,7 +369,21 @@ export default function Affectation() {
             La ligne apparaît non assignée, prête à être affectée ci-dessous.
           </p>
         </div>
-        <ManualTaskForm onAdd={addTasks} zoneOptions={zones} existingTasks={tasks} />
+        <ManualTaskForm
+          onAdd={(list) => {
+            addTasks(list)
+            setExpandedZoneCards((prev) => [
+              ...new Set([
+                ...prev,
+                ...list.map((t) =>
+                  (t.taskType || '') === 'CORR' ? '__FOUND_FAULT__' : t.workArea || 'Sans zone'
+                ),
+              ]),
+            ])
+          }}
+          zoneOptions={zones}
+          existingTasks={tasks}
+        />
       </div>
 
       {/* Répartition automatique assistée */}
@@ -661,6 +675,15 @@ export default function Affectation() {
             )
             const cardOpen = expandedZoneCards.includes(group.key)
             const groupBlocks = [...new Set(groupTasks.map((t) => t.taskType || 'AUTRE'))].sort()
+            const groupMemberNames = [
+              ...new Set(
+                teams
+                  .filter((t) =>
+                    groupTasks.some((task) => isAssignedTo(assignments, task.id, t.id))
+                  )
+                  .flatMap((t) => t.members)
+              ),
+            ]
             return (
               <div
                 key={group.key}
@@ -672,19 +695,30 @@ export default function Affectation() {
                   onClick={() => toggleZoneCard(group.key)}
                   title={cardOpen ? 'Replier ce bloc' : 'Déplier ce bloc'}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
                     {cardOpen ? (
-                      <ChevronDown className="h-5 w-5 text-white" />
+                      <ChevronDown className="h-5 w-5 text-white shrink-0" />
                     ) : (
-                      <ChevronRight className="h-5 w-5 text-white" />
+                      <ChevronRight className="h-5 w-5 text-white shrink-0" />
                     )}
-                    <h3 className="font-bold text-white text-sm">
+                    <h3 className="font-bold text-white text-sm shrink-0">
                       {group.isFF ? 'Bloc Found Fault' : `📍 ${group.label}`}{' '}
                       <span className="font-normal opacity-80">({groupTasks.length})</span>
                     </h3>
+                    {groupMemberNames.length > 0 && (
+                      <span
+                        className="text-white/90 text-xs font-semibold truncate"
+                        title={`Membres : ${groupMemberNames.join(', ')}`}
+                      >
+                        Membres : {groupMemberNames.join(', ')}
+                      </span>
+                    )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                    <span className="text-white/90 text-xs">
+                  <div
+                    className="flex flex-wrap items-center gap-1.5 justify-end"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="text-white/90 text-[11px] whitespace-nowrap">
                       {unassignedInGroup.length} non assignée(s)
                     </span>
                     {teams.length > 0 && unassignedInGroup.length > 0 && (
@@ -695,7 +729,7 @@ export default function Affectation() {
                           if (group.isFF) assignWholeBlock('CORR', e.target.value)
                           else assignZoneAll(group.label, e.target.value)
                         }}
-                        className="border-none rounded-md px-2 py-1 text-xs bg-white text-slate-800 cursor-pointer font-semibold"
+                        className="h-6 border-none rounded-full px-2 text-[11px] leading-none bg-white text-slate-800 cursor-pointer font-semibold"
                         title={group.isFF ? 'Affecter tout le bloc' : 'Affecter toute la sous-tâche'}
                       >
                         <option value="">{group.isFF ? '— Tout le bloc —' : '— Toute la sous-tâche —'}</option>
@@ -709,7 +743,7 @@ export default function Affectation() {
                       return (
                         <span
                           key={blk}
-                          className="inline-flex items-center gap-1 rounded-full pl-2 pr-1 py-0.5 bg-white/25"
+                          className="inline-flex items-center gap-1 h-6 rounded-full pl-2 pr-1 bg-white/25"
                         >
                           <span className="text-[10px] font-bold text-white whitespace-nowrap">
                             {getCategoryLabel(blk)} · {n}
@@ -747,6 +781,15 @@ export default function Affectation() {
                         const unassignedInZone = subTasks.filter(
                           (t) => assignmentTeams(assignments, t.id).length === 0
                         )
+                        const subMemberNames = [
+                          ...new Set(
+                            teams
+                              .filter((t) =>
+                                subTasks.some((task) => isAssignedTo(assignments, task.id, t.id))
+                              )
+                              .flatMap((t) => t.members)
+                          ),
+                        ]
                         return (
                           <div
                             key={subZone}
@@ -755,23 +798,34 @@ export default function Affectation() {
                           >
                             {group.isFF && (
                               <div
-                                className="px-4 py-2 flex items-center justify-between gap-2 cursor-pointer"
+                                className="px-4 py-2 flex flex-wrap items-center justify-between gap-2 cursor-pointer"
                                 style={{ backgroundColor: zoneColor }}
                                 onClick={() => toggleSubZone(subKey)}
                               >
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
                                   {subOpen ? (
-                                    <ChevronDown className="h-5 w-5 text-white" />
+                                    <ChevronDown className="h-5 w-5 text-white shrink-0" />
                                   ) : (
-                                    <ChevronRight className="h-5 w-5 text-white" />
+                                    <ChevronRight className="h-5 w-5 text-white shrink-0" />
                                   )}
-                                  <span className="text-sm font-bold text-white">
+                                  <span className="text-sm font-bold text-white shrink-0">
                                     📍 {subZone}{' '}
                                     <span className="font-normal opacity-90">({subTasks.length})</span>
                                   </span>
+                                  {subMemberNames.length > 0 && (
+                                    <span
+                                      className="text-white/90 text-xs font-semibold truncate"
+                                      title={`Membres : ${subMemberNames.join(', ')}`}
+                                    >
+                                      Membres : {subMemberNames.join(', ')}
+                                    </span>
+                                  )}
                                 </div>
-                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                  <span className="text-white/90 text-xs">
+                                <div
+                                  className="flex flex-wrap items-center gap-1.5 justify-end"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <span className="text-white/90 text-[11px] whitespace-nowrap">
                                     {unassignedInZone.length} non assignée(s)
                                   </span>
                                   {teams.length > 0 && unassignedInZone.length > 0 && (
@@ -782,7 +836,7 @@ export default function Affectation() {
                                           assignZoneInBlock(subZone, 'CORR', e.target.value)
                                         e.target.value = ''
                                       }}
-                                      className="border-none rounded-md px-2 py-1 text-xs bg-white text-slate-800 cursor-pointer font-semibold"
+                                      className="h-6 border-none rounded-full px-2 text-[11px] leading-none bg-white text-slate-800 cursor-pointer font-semibold"
                                       title="Affecter toute la sous-tâche Found Fault"
                                     >
                                       <option value="">— Toute la sous-tâche —</option>
