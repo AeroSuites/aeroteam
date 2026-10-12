@@ -87,7 +87,8 @@ function RichText({ text }) {
 // Rendu d'un message : HTML enrichi (RichEditor) ou ancien texte simple
 function MessageBody({ body }) {
   const raw = String(body || '')
-  if (/<[a-z][\s\S]*>/i.test(raw)) {
+  // Balises HTML OU entités (&nbsp;…) → rendu HTML (sinon « &nbsp; » s'afficherait)
+  if (/<[a-z][\s\S]*>/i.test(raw) || /&(?:nbsp|amp|lt|gt|quot|#\d+);/i.test(raw)) {
     return (
       <div
         className="text-sm break-words leading-relaxed message-body"
@@ -99,7 +100,7 @@ function MessageBody({ body }) {
   }
   return (
     <p className="text-sm break-words leading-relaxed">
-      <RichText text={raw} />
+      <RichText text={raw.replace(/&nbsp;/gi, ' ')} />
     </p>
   )
 }
@@ -113,7 +114,7 @@ const previewText = (text) => {
         d.innerHTML = DOMPurify.sanitize(raw, { ALLOWED_TAGS, ALLOWED_ATTR })
         return d.textContent || ''
       })()
-    : raw.replace(/^\s*[-•]\s+/gm, '• ').replace(/[*_]/g, '')
+    : raw.replace(/&nbsp;/gi, ' ').replace(/^\s*[-•]\s+/gm, '• ').replace(/[*_]/g, '')
   return plain.replace(/\s+/g, ' ').trim().slice(0, 60)
 }
 
@@ -258,7 +259,10 @@ export default function Messagerie() {
 
   const send = async () => {
     if (!code || !contactId) return
-    const body = String(text || '').trim()
+    // Nettoie les espaces insécables ajoutés par l'éditeur en fin de message
+    const body = String(text || '')
+      .replace(/(?:\s|&nbsp;)+$/gi, '')
+      .trim()
     if (!textPlain && !file) return
     setBusy(true)
     setError('')
