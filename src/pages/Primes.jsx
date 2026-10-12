@@ -388,7 +388,7 @@ export default function Primes() {
   }
 
   const handleRefuse = async (id) => {
-    const motif = window.prompt('Motif du refus (obligatoire) :')
+    const motif = window.prompt('Rejection reason (required):')
     if (!motif || !motif.trim()) return
     setBusyId(id)
     setError('')

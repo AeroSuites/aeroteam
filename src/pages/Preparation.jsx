@@ -18,6 +18,7 @@ import {
   cleanShortValue,
   priorityToken,
   priorityTokens,
+  cleanTaskText,
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
@@ -41,6 +42,8 @@ import {
   RotateCcw,
   Undo2,
   Search,
+  FileText,
+  ListChecks,
 } from 'lucide-react'
 
 export default function Preparation() {
@@ -85,6 +88,7 @@ export default function Preparation() {
   const [prepSearch, setPrepSearch] = useState('')
   const [hiddenBlocks, setHiddenBlocks] = useState([])
   const [prioFilter, setPrioFilter] = useState([])
+  const [descTask, setDescTask] = useState(null)
 
   const toggleSubZone = (key) =>
     setExpandedSubZones((prev) =>
@@ -1349,7 +1353,27 @@ export default function Preparation() {
                                 </td>
                                 <td className="px-2 py-2 font-medium max-w-md" title={task.description}>
                                   <span className="flex items-center gap-1 min-w-0">
-                                    <span className="truncate">{task.description}</span>
+                                    <span
+                                      className={`truncate ${
+                                        task.taskDescription || task.taskSteps
+                                          ? 'cursor-pointer hover:underline decoration-dotted'
+                                          : ''
+                                      }`}
+                                      onClick={() =>
+                                        (task.taskDescription || task.taskSteps) && setDescTask(task)
+                                      }
+                                    >
+                                      {task.description}
+                                    </span>
+                                    {(task.taskDescription || task.taskSteps) && (
+                                      <button
+                                        onClick={() => setDescTask(task)}
+                                        className="shrink-0 text-sky-600 hover:text-sky-800"
+                                        title="View the detailed description and steps (Task_Description / Task_Steps)"
+                                      >
+                                        <FileText className="h-3.5 w-3.5" />
+                                      </button>
+                                    )}
                                     {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
                                       <span
                                         className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff0000]/10 text-[#ff0000] border border-[#ff0000]/40 whitespace-nowrap"
@@ -1770,6 +1794,70 @@ export default function Preparation() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {descTask && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setDescTask(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
+              <div className="min-w-0">
+                <h2 className="font-bold truncate">
+                  No. {descTask.seq || '—'} · {descTask.description}
+                </h2>
+                <p className="text-xs text-slate-300 truncate">
+                  {[
+                    descTask.taskBarcode ? `TRFX ${descTask.taskBarcode}` : '',
+                    descTask.registration || '',
+                    descTask.workArea || '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </div>
+              <button
+                onClick={() => setDescTask(null)}
+                className="text-slate-300 hover:text-white shrink-0"
+                title="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-4 bg-slate-50">
+              {descTask.taskDescription && (
+                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="px-3 py-2 bg-slate-100 border-b border-slate-200 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-sky-600" />
+                    <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                      Detailed description
+                    </p>
+                  </div>
+                  <p className="p-3 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
+                    {cleanTaskText(descTask.taskDescription)}
+                  </p>
+                </div>
+              )}
+              {descTask.taskSteps && (
+                <div className="bg-white border border-emerald-200 rounded-lg overflow-hidden">
+                  <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-200 flex items-center gap-2">
+                    <ListChecks className="h-4 w-4 text-emerald-600" />
+                    <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wide">
+                      Steps (Task Steps)
+                    </p>
+                  </div>
+                  <p className="p-3 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
+                    {cleanTaskText(descTask.taskSteps)}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
