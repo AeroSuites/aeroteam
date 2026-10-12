@@ -162,7 +162,7 @@ export default function ImportConsignes() {
       setAssignments(st.assignments || {})
       if (st.savedAt) {
         setSessionInfo(
-          `Session du ${new Date(st.savedAt).toLocaleString('fr-FR')} restaurée — fichier analysé conservé.`
+          `Session of ${new Date(st.savedAt).toLocaleString('en-GB')} restored — analyzed file kept.`
         )
       }
     } catch {
@@ -218,7 +218,7 @@ export default function ImportConsignes() {
   const unassignAircraft = async (p) => {
     if (
       !window.confirm(
-        `Retirer l'avion de ce profil ?\n\nLa carte « ${p.aircraft} » disparaîtra, et les données de l'avion seront effacées du profil : consignes [C], membres assignés à l'avion du jour et équipes composées uniquement de ces membres.\nLes membres permanents et le reste du travail du leader sont conservés.`
+        `Remove the aircraft from this profile?\n\nThe "${p.aircraft}" card will disappear, and the aircraft data will be erased from the profile: [C] instructions, members assigned to today's aircraft and teams made only of these members.\nPermanent members and the rest of the leader's work are kept.`
       )
     )
       return
@@ -257,11 +257,11 @@ export default function ImportConsignes() {
         false
       )
       if (saved?.error === 'conflict') {
-        setError('Le profil a été modifié entre-temps. Réessayez.')
+        setError('The profile was modified in the meantime. Try again.')
         return
       }
       if (saved?.error) {
-        setError('Échec du retrait.')
+        setError('Failed to remove.')
         return
       }
       const res = await profileStore.adminSetProfileAircraft(
@@ -269,7 +269,7 @@ export default function ImportConsignes() {
         p.code,
         ''
       )
-      if (res?.error) setError('Échec du retrait.')
+      if (res?.error) setError('Failed to remove.')
       else {
         await loadCreatedProfiles()
         setResults((prev) => prev.filter((r) => r.summary || r.immat !== p.aircraft))
@@ -280,7 +280,7 @@ export default function ImportConsignes() {
         })
       }
     } catch {
-      setError('Échec du retrait (hors ligne ?).')
+      setError('Failed to remove (offline?).')
     }
   }
 
@@ -301,7 +301,7 @@ export default function ImportConsignes() {
         }
         const detected = detectColumns(rows[0])
         if (detected.description === undefined) {
-          setChargeError('Colonne "Task_Name" introuvable. Vérifiez le format du fichier.')
+          setChargeError('Column "Task_Name" not found. Check the file format.')
           return
         }
         const parsed = parseExcelRows(rows.slice(1), detected)
@@ -344,8 +344,8 @@ export default function ImportConsignes() {
         false
       )
       if (saved?.error === 'conflict')
-        setChargeError('Le profil a été modifié entre-temps. Réessayez.')
-      else if (saved?.error) setChargeError("Échec de l'envoi de la charge.")
+        setChargeError('The profile was modified in the meantime. Try again.')
+      else if (saved?.error) setChargeError("Failed to send the workload.")
       else {
         if (chargeAircraft) {
           try {
@@ -358,14 +358,14 @@ export default function ImportConsignes() {
             // l'avion pourra être associé manuellement
           }
         }
-        setChargeMsg(`${selectedTasks.length} tâche(s) ajoutée(s) au profil.`)
+        setChargeMsg(`${selectedTasks.length} task(s) added to the profile.`)
         await loadCreatedProfiles()
         const again = await getProfileByCode(chargeProfileCode)
         if (again) setChargeTargetTasks({ tasks: again?.data?.tasks || [] })
         setChargeRemoveSel({})
       }
     } catch {
-      setChargeError("Échec de l'envoi (hors ligne ?).")
+      setChargeError("Failed to send (offline?).")
     }
     setChargeBusy(false)
   }
@@ -430,15 +430,15 @@ export default function ImportConsignes() {
         false
       )
       if (saved?.error === 'conflict')
-        setChargeError('Le profil a été modifié entre-temps. Réessayez.')
-      else if (saved?.error) setChargeError('Échec du retrait.')
+        setChargeError('The profile was modified in the meantime. Try again.')
+      else if (saved?.error) setChargeError('Failed to remove.')
       else {
-        setChargeMsg(`${removeIds.size} tâche(s) retirée(s) du profil.`)
+        setChargeMsg(`${removeIds.size} task(s) removed from the profile.`)
         setChargeTargetTasks({ tasks: keptTasks })
         setChargeRemoveSel({})
       }
     } catch {
-      setChargeError('Échec du retrait (hors ligne ?).')
+      setChargeError('Failed to remove (offline?).')
     }
     setChargeBusy(false)
   }
@@ -678,7 +678,7 @@ export default function ImportConsignes() {
         okCodes.push(immat)
         out.push({ immat, ok: true, profile: lookup.name })
       } catch (err) {
-        out.push({ immat, ok: false, error: err?.message || 'erreur réseau' })
+        out.push({ immat, ok: false, error: err?.message || 'network error' })
       }
       setResults([...out])
     }
@@ -686,15 +686,15 @@ export default function ImportConsignes() {
     setResults([
       ...out,
       {
-        summary: `Terminé : ${okCodes.length} affectation(s), ${
+        summary: `Done: ${okCodes.length} assignment(s), ${
           out.filter((r) => !r.ok).length
-        } échec(s) — ${selectedDay} ${selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)}.`,
+        } failure(s) — ${selectedDay} ${selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)}.`,
       },
     ])
     setRunning(false)
     await loadCreatedProfiles()
     pushHistory({
-      date: new Date().toLocaleString('fr-FR'),
+      date: new Date().toLocaleString('en-GB'),
       day: selectedDay,
       shift: selectedShift,
       assigned: okCodes,
@@ -710,7 +710,7 @@ export default function ImportConsignes() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Import consignes (rapport)</h1>
         <p className="text-slate-600 mt-1">
-          Analyse du fichier de consignes : choisissez le jour et le shift à consulter.
+          Instructions file analysis: choose the day and shift to view.
         </p>
       </div>
 
@@ -727,7 +727,7 @@ export default function ImportConsignes() {
             className={`h-6 w-6 shrink-0 ${chargeTab === 'consignes' ? 'text-white' : 'text-sky-500'}`}
           />
           <span>
-            <span className="block text-base">Consignes</span>
+            <span className="block text-base">Instructions</span>
             <span
               className={`block text-[11px] font-normal ${
                 chargeTab === 'consignes' ? 'text-sky-100' : 'text-slate-400'
@@ -803,7 +803,7 @@ export default function ImportConsignes() {
         />
         <Upload className="h-10 w-10 mx-auto text-slate-400" />
         <p className="mt-3 font-medium text-slate-700">
-          Déposez ici votre fichier de consignes (ex. CONSIGNES S37.xlsm)
+          Drop your instructions file here (e.g. CONSIGNES S37.xlsm)
         </p>
         <p className="text-sm text-slate-500 mt-1">Formats : .xlsm, .xlsx, .xls</p>
         {fileName && (
@@ -822,7 +822,7 @@ export default function ImportConsignes() {
             </div>
             <div className="bg-white rounded-xl shadow p-4 text-center">
               <div className="text-2xl font-bold text-slate-900">{totalMembers}</div>
-              <div className="text-sm text-slate-500">Membres affectés (tous shifts)</div>
+              <div className="text-sm text-slate-500">Assigned members (all shifts)</div>
             </div>
             <div className="bg-white rounded-xl shadow p-4 text-center">
               <div className="text-2xl font-bold text-slate-900">{totalBlocks}</div>
@@ -851,12 +851,12 @@ export default function ImportConsignes() {
                       {h.day} {h.shift.charAt(0).toUpperCase() + h.shift.slice(1)}
                     </span>
                     <span className="text-green-700">
-                      {(h.assigned?.length ?? h.created?.length ?? 0)} affecté(s)
+                      {(h.assigned?.length ?? h.created?.length ?? 0)} assigned
                     </span>
                     {(h.updated?.length ?? 0) > 0 && (
-                      <span className="text-sky-700">{h.updated.length} mis à jour</span>
+                      <span className="text-sky-700">{h.updated.length} updated</span>
                     )}
-                    {h.failed > 0 && <span className="text-red-600">{h.failed} échec(s)</span>}
+                    {h.failed > 0 && <span className="text-red-600">{h.failed} failure(s)</span>}
                     <span className="text-slate-400 truncate">{h.fileName}</span>
                   </li>
                 ))}
@@ -867,7 +867,7 @@ export default function ImportConsignes() {
           {(createdProfiles?.length > 0 || createdProfiles === null) && (
             <div className="bg-white rounded-xl shadow p-4 sm:p-6">
               <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
-                <Plane className="h-5 w-5 text-sky-500" /> Avions assignés (récaps)
+                <Plane className="h-5 w-5 text-sky-500" /> Assigned aircraft (recaps)
                 {createdProfiles && (
                   <span className="text-sm font-normal text-slate-400">
                     ({createdProfiles.length})
@@ -875,14 +875,14 @@ export default function ImportConsignes() {
                 )}
               </h2>
               <p className="text-xs text-slate-500 mb-3">
-                Cliquez sur une carte pour voir le récap du profil (équipes, tâches,
-                répartition) et l'exporter ou l'imprimer.
+                Click a card to view the profile recap (teams, tasks,
+                distribution) and export or print it.
               </p>
               {createdProfiles === null ? (
-                <p className="text-sm text-slate-400">Chargement…</p>
+                <p className="text-sm text-slate-400">Loading…</p>
               ) : createdProfiles.length === 0 ? (
                 <p className="text-sm text-slate-400 italic">
-                  Aucun avion assigné pour le moment (affectez les consignes ci-dessus).
+                  No assigned aircraft for now (assign the instructions above).
                 </p>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -891,7 +891,7 @@ export default function ImportConsignes() {
                       key={p.id}
                       onClick={() => setViewProfile(p)}
                       className="relative bg-white border border-slate-200 hover:border-sky-400 hover:shadow-md rounded-xl p-4 text-left transition-all cursor-pointer"
-                      title={`Voir le récap de ${p.name}`}
+                      title={`View the recap of ${p.name}`}
                     >
                       <button
                         onClick={(e) => {
@@ -899,7 +899,7 @@ export default function ImportConsignes() {
                           unassignAircraft(p)
                         }}
                         className="absolute top-2 right-2 text-slate-400 hover:text-red-600"
-                        title={`Retirer l'avion « ${p.aircraft} » (la carte disparaît, le profil est conservé)`}
+                        title={`Remove aircraft "${p.aircraft}" (the card disappears, the profile is kept)`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -912,9 +912,9 @@ export default function ImportConsignes() {
                       <p className="text-xs text-slate-500 truncate mt-1">{p.name}</p>
                       <p className="text-[11px] text-slate-400">
                         {p.created_at
-                          ? `créé le ${new Date(p.created_at).toLocaleDateString('fr-FR')}`
+                          ? `created on ${new Date(p.created_at).toLocaleDateString('en-GB')}`
                           : ''}
-                        {' '}· cliquer pour le récap
+                        {' '}· click for the recap
                       </p>
                     </div>
                   ))}
@@ -927,21 +927,21 @@ export default function ImportConsignes() {
           {report && (
             <div className="bg-white rounded-xl shadow p-4 sm:p-6">
               <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
-                <Rocket className="h-5 w-5 text-sky-500" /> Affectation des consignes
+                <Rocket className="h-5 w-5 text-sky-500" /> Instructions assignment
               </h2>
               <p className="text-xs text-slate-500 mb-4">
-                Choisissez pour chaque avion le <strong>profil existant</strong> qui recevra
-                l'effectif et la consigne du jour{' '}
+                For each aircraft, choose the <strong>existing profile</strong> that will receive
+                the staff and the day's instructions{' '}
                 <strong>
                   {selectedDay} — {selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)}
                 </strong>
-                . Aucun profil n'est créé automatiquement : la note [C] est insérée dans le
-                Bloc-notes du profil choisi et son effectif est complété. Si le profil n'a pas
-                encore d'avion, l'immatriculation lui est affectée.
+                . No profile is created automatically: the [C] note is inserted into the
+                Notepad of the chosen profile and its staff is completed. If the profile has no
+                aircraft yet, the registration is assigned to it.
               </p>
               {skippedBydayshift.length > 0 && (
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
-                  {skippedBydayshift.length} avion(s) à l'effectif de ce shift mais sans consigne
+                  {skippedBydayshift.length} aircraft in this shift's staff but without instructions
                   ce jour : {skippedBydayshift.join(', ')}
                 </p>
               )}
@@ -964,7 +964,7 @@ export default function ImportConsignes() {
                       }
                       className={`${selectClass} flex-1 min-w-[200px]`}
                     >
-                      <option value="">— Choisir un profil existant —</option>
+                      <option value="">— Choose an existing profile —</option>
                       {(allProfiles || []).map((p) => (
                         <option key={p.id} value={p.code}>
                           {p.name}
@@ -976,7 +976,7 @@ export default function ImportConsignes() {
                 ))}
                 {allProfiles && allProfiles.length === 0 && (
                   <p className="text-xs text-slate-400 italic">
-                    Aucun profil disponible — créez d'abord les profils dans Administration.
+                    No profile available — first create the profiles in Administration.
                   </p>
                 )}
               </div>
@@ -989,7 +989,7 @@ export default function ImportConsignes() {
                   <CheckCircle2 className="h-4 w-4" />
                   {running
                     ? 'Application en cours…'
-                    : `Appliquer à ${activeAssignments.length} avion(s) (${selectedDay} ${selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)})`}
+                    : `Apply to ${activeAssignments.length} aircraft (${selectedDay} ${selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)})`}
                 </button>
                 {running && <span className="text-sm text-slate-500">ne fermez pas l'onglet</span>}
               </div>
@@ -1008,7 +1008,7 @@ export default function ImportConsignes() {
                         <>
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           <span className="font-mono font-bold">{r.immat}</span>
-                          {' — consignes affectées à '}
+                          {' — instructions assigned to '}
                           <span className="font-semibold">{r.profile}</span>
                         </>
                       ) : (
@@ -1027,7 +1027,7 @@ export default function ImportConsignes() {
           {/* Choix jour + shift */}
           <div className="bg-white rounded-xl shadow p-4 flex flex-wrap items-center gap-4">
             <label className="text-sm font-medium text-slate-700">
-              Jour
+              Day
               <select
                 className={`${selectClass} ml-2`}
                 value={selectedDay}
@@ -1056,7 +1056,7 @@ export default function ImportConsignes() {
             </label>
             {reportWeek > 0 && (
               <span className="text-sm font-semibold text-slate-700 bg-slate-100 border border-slate-200 rounded-full px-3 py-1">
-                Semaine {reportWeek}
+                Week {reportWeek}
               </span>
             )}
           </div>
@@ -1094,7 +1094,7 @@ export default function ImportConsignes() {
                 </div>
                 {effectifShift.aircrafts.length === 0 ? (
                   <p className="text-sm text-slate-400 italic">
-                    Aucun membre affecté à un avion sur ce shift.
+                    No member assigned to an aircraft on this shift.
                   </p>
                 ) : (
                   <div className="flex flex-wrap gap-3">
@@ -1183,7 +1183,7 @@ export default function ImportConsignes() {
                               ))}
                             {(!sh || sh.members.length === 0) && (
                               <li className="px-3 py-2 text-xs text-slate-400 italic">
-                                Aucun membre pour ce shift.
+                                No member for this shift.
                               </li>
                             )}
                           </ul>
@@ -1208,10 +1208,10 @@ export default function ImportConsignes() {
                       onChange={(e) => setHideNoConsignes(e.target.checked)}
                       className="h-4 w-4 accent-sky-600"
                     />
-                    Masquer les avions sans consignes
+                    Hide aircraft without instructions
                     {hiddenBlocksCount > 0 && (
                       <span className="text-slate-400">
-                        ({hiddenBlocksCount} masqué{hiddenBlocksCount > 1 ? 's' : ''})
+                        ({hiddenBlocksCount} hidden)
                       </span>
                     )}
                   </label>
@@ -1224,7 +1224,7 @@ export default function ImportConsignes() {
                         <th className="px-3 py-2 font-semibold text-slate-700">Type de visite</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">Heure</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">
-                          Tâches{' '}
+                          Tasks{' '}
                           {selectedShift.charAt(0).toUpperCase() + selectedShift.slice(1)}{' '}
                           <span className="font-normal text-slate-400">(crayon = modifier)</span>
                         </th>
@@ -1259,7 +1259,7 @@ export default function ImportConsignes() {
                                     onChange={(e) => setEditText(e.target.value)}
                                     rows={Math.max(3, Math.min(tasks.length + 1, 12))}
                                     className="border border-slate-300 rounded-md px-2 py-1 text-xs w-full"
-                                    placeholder="Une tâche par ligne"
+                                    placeholder="One task per line"
                                   />
                                   <div className="flex gap-1">
                                     <button
@@ -1281,7 +1281,7 @@ export default function ImportConsignes() {
                                       onClick={() => setEditRow(null)}
                                       className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1"
                                     >
-                                      Annuler
+                                      Cancel
                                     </button>
                                   </div>
                                 </div>
@@ -1289,7 +1289,7 @@ export default function ImportConsignes() {
                                 <div className="flex items-start gap-1">
                                   <ul className="space-y-0.5 flex-1 min-w-0">
                                     {tasks.length === 0 ? (
-                                      <li className="text-xs text-slate-400 italic">aucune tâche</li>
+                                      <li className="text-xs text-slate-400 italic">no task</li>
                                     ) : (
                                       tasks.map((t, j) => (
                                         <li key={j} className="text-xs text-slate-600 leading-snug">
@@ -1301,7 +1301,7 @@ export default function ImportConsignes() {
                                   <div className="flex flex-col gap-1 shrink-0">
                                     {overridden && (
                                       <span className="text-[10px] font-bold text-amber-700 bg-amber-100 rounded px-1 py-0.5">
-                                        modifié
+                                        edited
                                       </span>
                                     )}
                                     <button
@@ -1310,7 +1310,7 @@ export default function ImportConsignes() {
                                         setEditText(tasks.join('\n'))
                                       }}
                                       className="text-slate-400 hover:text-sky-600"
-                                      title={`Modifier les consignes de ${b.immat}`}
+                                      title={`Edit the instructions for ${b.immat}`}
                                     >
                                       <Pencil className="h-3.5 w-3.5" />
                                     </button>
@@ -1356,15 +1356,15 @@ export default function ImportConsignes() {
                       {sheet.blocks.length === 0 && (
                         <tr>
                           <td colSpan={5} className="px-3 py-6 text-center text-slate-400 text-sm">
-                            Aucun bloc de charge détecté ce jour.
+                            No workload block detected on this day.
                           </td>
                         </tr>
                       )}
                       {sheet.blocks.length > 0 && visibleBlocks.length === 0 && (
                         <tr>
                           <td colSpan={5} className="px-3 py-6 text-center text-slate-400 text-sm">
-                            Aucun avion avec consignes sur ce shift — décochez « Masquer les avions
-                            sans consignes » pour tout afficher.
+                            No aircraft with instructions on this shift — uncheck “Hide aircraft
+                            without instructions” to show everything.
                           </td>
                         </tr>
                       )}
@@ -1418,7 +1418,7 @@ export default function ImportConsignes() {
             />
             <Upload className="h-10 w-10 mx-auto text-slate-400" />
             <p className="mt-3 font-medium text-slate-700">
-              Déposez ici le Workpackage Report : les tâches filtrées seront envoyées au profil choisi.
+              Drop the Workpackage Report here: the filtered tasks will be sent to the chosen profile.
             </p>
             <p className="text-sm text-slate-500 mt-1">Formats : .xlsx, .xls, .csv</p>
             {chargeFileName && (
@@ -1436,7 +1436,7 @@ export default function ImportConsignes() {
               </div>
               <div className="bg-white rounded-xl shadow p-4 text-center">
                 <div className="text-2xl font-bold text-green-600">{chargeStats.kept}</div>
-                <div className="text-sm text-slate-500">Après filtres</div>
+                <div className="text-sm text-slate-500">After filters</div>
               </div>
               <div className="bg-white rounded-xl shadow p-4 text-center">
                 <div className="text-2xl font-bold text-slate-400">{chargeStats.filteredOut}</div>
@@ -1450,7 +1450,7 @@ export default function ImportConsignes() {
               <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b">
                 <div>
                   <h2 className="text-xl font-semibold">
-                    Sélection — {chargeSelectedCount} / {chargePreview.length} tâche(s)
+                    Selection — {chargeSelectedCount} / {chargePreview.length} task(s)
                   </h2>
                   <div className="flex gap-1.5 mt-1">
                     <button
@@ -1467,7 +1467,7 @@ export default function ImportConsignes() {
                       onClick={() => setChargeSelected({})}
                       className="text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 rounded-full px-2.5 py-0.5"
                     >
-                      Tout décocher
+                      Uncheck all
                     </button>
                   </div>
                 </div>
@@ -1477,7 +1477,7 @@ export default function ImportConsignes() {
                     onChange={(e) => setChargeProfileCode(e.target.value)}
                     className="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white"
                   >
-                    <option value="">— Choisir le profil destinataire —</option>
+                    <option value="">— Choose the recipient profile —</option>
                     {(allProfiles || []).map((p) => (
                       <option key={p.id} value={p.code}>
                         {p.name}
@@ -1489,9 +1489,9 @@ export default function ImportConsignes() {
                     value={chargeAircraft}
                     onChange={(e) => setChargeAircraft(e.target.value)}
                     className="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white"
-                    title="Avion associé au profil : la carte apparaîtra dans « Avions assignés »"
+                    title="Aircraft linked to the profile: the card will appear in “Assigned aircraft”"
                   >
-                    <option value="">— Avion associé (optionnel) —</option>
+                    <option value="">— Linked aircraft (optional) —</option>
                     {chargeRegistrations.map((immat) => (
                       <option key={immat} value={immat}>
                         {immat}
@@ -1504,7 +1504,7 @@ export default function ImportConsignes() {
                     className="bg-sky-600 text-white px-4 py-1.5 rounded-md hover:bg-sky-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold"
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                    {chargeBusy ? 'Envoi…' : 'Envoyer la charge au profil'}
+                    {chargeBusy ? 'Envoi…' : 'Send the workload au profil'}
                   </button>
                 </div>
               </div>
@@ -1650,9 +1650,9 @@ export default function ImportConsignes() {
               <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b">
                 <div>
                   <h2 className="text-lg font-semibold">
-                    Retirer des lignes de ce profil —{' '}
+                    Remove des lignes de ce profil —{' '}
                     {Object.values(chargeRemoveSel).filter(Boolean).length} /{' '}
-                    {chargeTargetTasks.tasks.length} sélectionnée(s)
+                    {chargeTargetTasks.tasks.length} selected
                   </h2>
                   <div className="flex gap-1.5 mt-1">
                     <button
@@ -1669,7 +1669,7 @@ export default function ImportConsignes() {
                       onClick={() => setChargeRemoveSel({})}
                       className="text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 rounded-full px-2.5 py-0.5"
                     >
-                      Tout décocher
+                      Uncheck all
                     </button>
                   </div>
                 </div>
@@ -1677,9 +1677,9 @@ export default function ImportConsignes() {
                   onClick={removeChargeTasks}
                   disabled={chargeBusy || !Object.values(chargeRemoveSel).some(Boolean)}
                   className="bg-red-600 text-white px-4 py-1.5 rounded-md hover:bg-red-700 disabled:opacity-50 text-sm font-semibold"
-                  title="Retirer définitivement les lignes cochées de la charge du profil"
+                  title="Permanently remove the checked lines from the profile workload"
                 >
-                  {chargeBusy ? 'Retrait…' : 'Retirer la sélection'}
+                  {chargeBusy ? 'Removing…' : 'Remove selection'}
                 </button>
               </div>
               <div className="max-h-[420px] overflow-y-auto">

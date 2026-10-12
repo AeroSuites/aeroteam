@@ -55,12 +55,12 @@ export default function LeaderPrimesForm() {
     [...new Set(
       (tasks || [])
         .filter((t) => (t.taskType || 'AUTRE') === block)
-        .map((t) => t.workArea || 'Autre')
+        .map((t) => t.workArea || 'Other')
     )].sort()
 
   const tasksFor = (block, zone) =>
     (tasks || [])
-      .filter((t) => (t.taskType || 'AUTRE') === block && (t.workArea || 'Autre') === zone)
+      .filter((t) => (t.taskType || 'AUTRE') === block && (t.workArea || 'Other') === zone)
       .sort((a, b) => Number(a.seq) - Number(b.seq))
 
   const setRow = (member, updates) =>
@@ -75,31 +75,31 @@ export default function LeaderPrimesForm() {
     setError('')
     setMsg('')
     if (checked.length === 0) {
-      setError('Cochez au moins un bénéficiaire.')
+      setError('Check at least one beneficiary.')
       return
     }
     if (!date) {
-      setError("La date d'intervention est obligatoire.")
+      setError("The intervention date is required.")
       return
     }
     const lines = []
     for (const member of checked) {
       const r = rows[member] || {}
       if (!r.block || !r.zone || !r.taskId) {
-        setError(`Choisissez la tâche effectuée pour « ${member} ».`)
+        setError(`Select the completed task for "${member}".`)
         return
       }
       const task = (tasks || []).find((t) => t.id === r.taskId)
       if (!task) {
-        setError(`Tâche introuvable pour « ${member} ».`)
+        setError(`Task not found for "${member}".`)
         return
       }
       const avion = (r.avion || task.registration || '').trim().toUpperCase()
       if (!avion) {
-        setError(`Renseignez l'avion pour « ${member} » (la tâche choisie n'en a pas).`)
+        setError(`Enter the aircraft for "${member}" (the selected task has none).`)
         return
       }
-      const element = `${getCategoryLabel(r.block)} / ${r.zone} — N° ${task.seq || '—'} · ${
+      const element = `${getCategoryLabel(r.block)} / ${r.zone} — No. ${task.seq || '—'} · ${
         task.description || ''
       }`
       lines.push({
@@ -116,18 +116,18 @@ export default function LeaderPrimesForm() {
     lines.forEach((l) => addPrimeRequest(l))
     setChecked([])
     setRows({})
-    setMsg(`${lines.length} ligne(s) ajoutée(s) — cliquez « Enregistrer » ou transmettez.`)
+    setMsg(`${lines.length} line(s) added — click "Save" or submit.`)
   }
 
   const transmettre = async () => {
     setError('')
     setMsg('')
     if (!managerId) {
-      setError('Choisissez le manager destinataire.')
+      setError('Select the recipient manager.')
       return
     }
     if (!primeRequests.length) {
-      setError('Aucune ligne à transmettre.')
+      setError('No lines to submit.')
       return
     }
     setBusy(true)
@@ -142,20 +142,20 @@ export default function LeaderPrimesForm() {
         description: r.description || '',
       }))
       const res = await profileStore.leaderSubmitPrimes(code, managerId, items)
-      if (res?.error === 'manager_inconnu') setError('Manager inconnu.')
-      else if (res?.error === 'aucune_ligne') setError('Aucune ligne à transmettre.')
+      if (res?.error === 'manager_inconnu') setError('Unknown manager.')
+      else if (res?.error === 'aucune_ligne') setError('No lines to submit.')
       else if (res?.error)
-        setError("Échec de la transmission — aucune ligne n'a été envoyée.")
+        setError("Failed to submit — no lines were sent.")
       else {
         clearPrimeRequests()
         setMsg(
           res.count > 1
-            ? `${res.count} déclarations transmises au manager — un seul email groupé envoyé.`
-            : 'Déclaration transmise au manager — email envoyé.'
+            ? `${res.count} declarations submitted to the manager — a single grouped email sent.`
+            : 'Declaration submitted to the manager — email sent.'
         )
       }
     } catch {
-      setError('Échec de la transmission (hors ligne ?).')
+      setError('Failed to submit (offline?).')
     }
     setBusy(false)
   }
@@ -166,17 +166,17 @@ export default function LeaderPrimesForm() {
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow p-4 sm:p-6 border-l-4 border-l-emerald-500">
         <h2 className="font-semibold text-slate-800 mb-1">
-          Déclarer les bénéficiaires de la prime toilettes
+          Declare the toilet bonus beneficiaries
         </h2>
         <p className="text-xs text-slate-500 mb-4">
-          Cochez les membres des équipes, choisissez pour chacun la <strong>tâche effectuée</strong>{' '}
-          (bloc → sous-bloc → ligne importée de Victory), puis transmettez au manager. Le{' '}
-          <strong>type de prime (T1/T2) reste choisi par le manager</strong> à la validation.
+          Check the team members, choose for each the <strong>completed task</strong>{' '}
+          (block → sub-block → line imported from Victory), then submit to the manager. The{' '}
+          <strong>bonus type (T1/T2) is still chosen by the manager</strong> at approval.
         </p>
 
         <div className="flex flex-wrap items-end gap-3 mb-5">
           <label className="text-xs font-medium text-slate-600">
-            Date d'intervention *
+            Intervention date *
             <input
               type="date"
               value={date}
@@ -185,22 +185,22 @@ export default function LeaderPrimesForm() {
             />
           </label>
           <label className="text-xs font-medium text-slate-600 flex-1 min-w-[220px]">
-            Note commune (facultatif)
+            Common note (optional)
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Ex : intervention duo sur le même avion"
+              placeholder="E.g. two-person intervention on the same aircraft"
               className={`${inputClass} block mt-1 w-full`}
             />
           </label>
         </div>
 
         <h3 className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-          <Users className="h-4 w-4 text-sky-500" /> Membres des équipes ({members.length})
+          <Users className="h-4 w-4 text-sky-500" /> Team members ({members.length})
         </h3>
         {members.length === 0 && (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            Aucun membre dans vos équipes — composez d'abord vos équipes dans la page Équipes.
+            No members in your teams — first build your teams on the Teams page.
           </p>
         )}
         <div className="space-y-2">
@@ -234,7 +234,7 @@ export default function LeaderPrimesForm() {
                       }
                       className={inputClass}
                     >
-                      <option value="">— Bloc —</option>
+                      <option value="">— Block —</option>
                       {blocks.map((b) => (
                         <option key={b} value={b}>
                           {getCategoryLabel(b)}
@@ -247,7 +247,7 @@ export default function LeaderPrimesForm() {
                       className={inputClass}
                       disabled={!r.block}
                     >
-                      <option value="">— Sous-bloc —</option>
+                      <option value="">— Sub-block —</option>
                       {zoneOptions.map((z) => (
                         <option key={z} value={z}>
                           {z}
@@ -266,10 +266,10 @@ export default function LeaderPrimesForm() {
                       className={inputClass}
                       disabled={!r.zone}
                     >
-                      <option value="">— Tâche —</option>
+                      <option value="">— Task —</option>
                       {taskOptions.map((t) => (
                         <option key={t.id} value={t.id}>
-                          N° {t.seq || '—'}
+                          No. {t.seq || '—'}
                           {t.taskBarcode ? ` · ${t.taskBarcode}` : ''} ·{' '}
                           {String(t.description || '').slice(0, 60)}
                         </option>
@@ -278,7 +278,7 @@ export default function LeaderPrimesForm() {
                     <input
                       value={r.avion || ''}
                       onChange={(e) => setRow(m, { avion: e.target.value })}
-                      placeholder="Avion (auto depuis la tâche)"
+                      placeholder="Aircraft (auto from task)"
                       className={`${inputClass} font-mono`}
                     />
                   </div>
@@ -292,7 +292,7 @@ export default function LeaderPrimesForm() {
             onClick={addCheckedLines}
             className="mt-4 flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 text-sm font-semibold"
           >
-            Ajouter les bénéficiaires cochés
+            Add checked beneficiaries
           </button>
         )}
       </div>
@@ -319,22 +319,22 @@ export default function LeaderPrimesForm() {
 
       <div className="bg-white rounded-xl shadow p-4 sm:p-6">
         <h3 className="font-semibold text-slate-800 mb-3">
-          Lignes à transmettre{' '}
+          Lines to submit{' '}
           <span className="text-sm font-normal text-slate-400">({primeRequests.length})</span>
         </h3>
         {primeRequests.length === 0 ? (
           <p className="text-sm text-slate-400 italic">
-            Aucune ligne pour le moment — cochez les bénéficiaires ci-dessus.
+            No lines yet — check the beneficiaries above.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[760px]">
               <thead>
                 <tr className="text-left bg-slate-50">
-                  <th className="px-3 py-2 font-semibold text-slate-700">Bénéficiaire</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Beneficiary</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">TRFX</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Tâche (bloc / zone / ligne)</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Avion</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Task (block / zone / line)</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Aircraft</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Date</th>
                   <th className="px-3 py-2"></th>
                 </tr>
@@ -350,14 +350,14 @@ export default function LeaderPrimesForm() {
                     <td className="px-3 py-2 font-mono font-bold text-sky-700 whitespace-nowrap">{r.avion}</td>
                     <td className="px-3 py-2 text-slate-600">
                       {r.date
-                        ? new Date(`${r.date}T12:00:00`).toLocaleDateString('fr-FR')
+                        ? new Date(`${r.date}T12:00:00`).toLocaleDateString('en-GB')
                         : '—'}
                     </td>
                     <td className="px-3 py-2 text-right">
                       <button
                         onClick={() => removePrimeRequest(r.id)}
                         className="text-slate-400 hover:text-red-600"
-                        title="Retirer cette ligne"
+                        title="Remove this line"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -373,13 +373,13 @@ export default function LeaderPrimesForm() {
           <button
             onClick={() => {
               setError('')
-              setMsg('Lignes enregistrées — synchronisation automatique avec le cloud.')
+              setMsg('Lines saved — automatic sync with the cloud.')
             }}
             disabled={primeRequests.length === 0}
             className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-md hover:bg-slate-900 disabled:opacity-50 text-sm font-semibold"
-            title="Vos lignes sont conservées dans votre profil (aucun envoi à ce stade)"
+            title="Your lines are kept in your profile (nothing is sent at this stage)"
           >
-            <Save className="h-4 w-4" /> Enregistrer
+            <Save className="h-4 w-4" /> Save
           </button>
           <select
             value={managerId}
@@ -387,7 +387,7 @@ export default function LeaderPrimesForm() {
             className="border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
           >
             <option value="">
-              {managers === null ? 'Chargement des managers…' : '— Choisir le manager —'}
+              {managers === null ? 'Loading managers…' : '— Choose the manager —'}
             </option>
             {(managers || []).map((m) => (
               <option key={m.id} value={m.id}>
@@ -400,7 +400,7 @@ export default function LeaderPrimesForm() {
             disabled={busy || primeRequests.length === 0 || !managerId}
             className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
           >
-            <Send className="h-4 w-4" /> {busy ? 'Transmission…' : 'Transmettre au manager'}
+            <Send className="h-4 w-4" /> {busy ? 'Submitting…' : 'Submit to manager'}
           </button>
         </div>
       </div>

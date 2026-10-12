@@ -34,14 +34,14 @@ export default function NoteCell({ note, onSave, className = '' }) {
         <button
           onClick={save}
           className="text-amber-700 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded p-1"
-          title="Enregistrer la note"
+          title="Save the note"
         >
           <Check className="h-3.5 w-3.5" />
         </button>
         <button
           onClick={() => setEditing(false)}
           className="text-slate-400 hover:text-slate-700 p-1"
-          title="Annuler"
+          title="Cancel"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -54,7 +54,7 @@ export default function NoteCell({ note, onSave, className = '' }) {
       <button
         onClick={start}
         className={`inline-flex items-center gap-1 max-w-[180px] shrink-0 text-amber-800 bg-amber-50 border border-amber-200 hover:bg-amber-100 rounded px-1.5 py-0.5 text-[10px] font-semibold ${className}`}
-        title={`${note} — cliquer pour modifier`}
+        title={`${note} — click to edit`}
       >
         <Pencil className="h-3 w-3 shrink-0" />
         <span className="truncate">{note}</span>
@@ -66,10 +66,10 @@ export default function NoteCell({ note, onSave, className = '' }) {
     <button
       onClick={start}
       className={`inline-flex items-center gap-1 shrink-0 text-amber-700 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded px-1.5 py-0.5 text-[10px] font-semibold ${className}`}
-      title="Ajouter une note"
+      title="Add a note"
     >
       <Pencil className="h-3 w-3" />
-      Ajouter une note
+      Add a note
     </button>
   )
 }

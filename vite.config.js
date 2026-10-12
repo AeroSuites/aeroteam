@@ -30,7 +30,7 @@ export default defineConfig({
       manifest: {
         name: 'AeroTeam',
         short_name: 'AeroTeam',
-        description: 'Application web de gestion des équipes de maintenance aéronautique',
+        description: 'Aircraft maintenance team management web app',
         theme_color: '#051039',
         background_color: '#f5f5f5',
         display: 'standalone',

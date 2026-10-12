@@ -22,7 +22,7 @@ function AppContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center gap-3">
-        <p className="text-slate-500">Chargement…</p>
+        <p className="text-slate-500">Loading…</p>
         {error && <p className="text-sm text-red-600 max-w-md text-center">{error}</p>}
       </div>
     )
@@ -31,7 +31,7 @@ function AppContent() {
   if (isAdmin === null) {
     return (
       <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center gap-3">
-        <p className="text-slate-500">Vérification des droits…</p>
+        <p className="text-slate-500">Checking permissions…</p>
       </div>
     )
   }

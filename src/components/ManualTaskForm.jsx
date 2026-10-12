@@ -42,7 +42,7 @@ export default function ManualTaskForm({
   const submit = () => {
     const desc = description.trim()
     if (!desc) {
-      setError('La tâche (description) est obligatoire.')
+      setError('The task (description) is required.')
       return
     }
     const seqValue = seq.trim()
@@ -51,7 +51,7 @@ export default function ManualTaskForm({
       (existingTasks || []).some((t) => String(t.seq || '') === seqValue)
     ) {
       setError(
-        `Le N° ${seqValue} existe déjà : choisissez un autre numéro (la ligne n'a pas été ajoutée).`
+        `No. ${seqValue} already exists: choose another number (the line was not added).`
       )
       return
     }
@@ -86,9 +86,9 @@ export default function ManualTaskForm({
       <button
         onClick={reset}
         className="flex items-center justify-center gap-2 text-sm font-semibold text-white bg-sky-600 hover:bg-sky-700 border border-sky-700 shadow-sm rounded-lg px-4 py-2.5"
-        title="Ajouter une ligne manuellement au planning"
+        title="Add a line manually to the schedule"
       >
-        <Plus className="h-4 w-4" /> Ajouter une ligne
+        <Plus className="h-4 w-4" /> Add a line
       </button>
     )
   }
@@ -97,26 +97,26 @@ export default function ManualTaskForm({
     <div className="bg-sky-50/50 border border-sky-200 rounded-lg p-3 space-y-3">
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <label className="text-xs font-medium text-slate-600">
-          N° de ligne
+          Line no.
           <input
             value={seq}
             onChange={(e) => setSeq(e.target.value)}
-            placeholder="Ex : 72"
+            placeholder="e.g. 72"
             className={`${inputClass} mt-1`}
           />
         </label>
         <label className="text-xs font-medium text-slate-600 lg:col-span-2">
-          Tâche
+          Task
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Description de la tâche"
+            placeholder="Task description"
             className={`${inputClass} mt-1`}
             autoFocus
           />
         </label>
         <label className="text-xs font-medium text-slate-600">
-          Bloc
+          Block
           <select
             value={block}
             onChange={(e) => setBlock(e.target.value)}
@@ -132,7 +132,7 @@ export default function ManualTaskForm({
           <input
             value={skills}
             onChange={(e) => setSkills(e.target.value)}
-            placeholder="Ex : CABB1B2"
+            placeholder="e.g. CABB1B2"
             className={`${inputClass} mt-1`}
           />
         </label>
@@ -141,12 +141,12 @@ export default function ManualTaskForm({
           <input
             value={trfx}
             onChange={(e) => setTrfx(e.target.value)}
-            placeholder="Ex : TRFX900…"
+            placeholder="e.g. TRFX900…"
             className={`${inputClass} mt-1`}
           />
         </label>
         <label className="text-xs font-medium text-slate-600">
-          Statut
+          Status
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -158,14 +158,14 @@ export default function ManualTaskForm({
           </select>
         </label>
         <label className="text-xs font-medium text-slate-600 sm:col-span-2">
-          Sous-tâche
+          Sub-task
           <input
             value={subTask}
             onChange={(e) => setSubTask(e.target.value)}
-            placeholder="Choisissez une existante ou tapez-en une nouvelle"
+            placeholder="Choose an existing one or type a new one"
             list="manual-task-subtasks"
             className={`${inputClass} mt-1`}
-            title="Sous-tâche / zone de la ligne — une nouvelle valeur crée son propre classement"
+            title="Sub-task / line zone — a new value creates its own grouping"
           />
           <datalist id="manual-task-subtasks">
             {zoneOptions.map((z) => (
@@ -174,20 +174,20 @@ export default function ManualTaskForm({
           </datalist>
         </label>
         <label className="text-xs font-medium text-slate-600">
-          Appareil
+          Aircraft
           <input
             value={registration}
             onChange={(e) => setRegistration(e.target.value)}
-            placeholder="Ex : F-GKXT"
+            placeholder="e.g. F-GKXT"
             className={`${inputClass} mt-1`}
           />
         </label>
         <label className="text-xs font-medium text-slate-600">
-          Note (ex : stock 0)
+          Note (e.g. stock 0)
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Précision attachée à cette ligne…"
+            placeholder="Detail attached to this line…"
             className={`${inputClass} mt-1`}
           />
         </label>
@@ -195,7 +195,7 @@ export default function ManualTaskForm({
       {error && <p className="text-xs text-red-600">{error}</p>}
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-slate-500 italic">
-          Équipe : <strong>non assignée</strong> — à affecter dans la page Affectation.
+          Team: <strong>unassigned</strong> — to be assigned on the Assignment page.
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -205,13 +205,13 @@ export default function ManualTaskForm({
             }}
             className="text-slate-500 hover:text-slate-800 flex items-center gap-1 text-xs"
           >
-            <X className="h-3.5 w-3.5" /> Annuler
+            <X className="h-3.5 w-3.5" /> Cancel
           </button>
           <button
             onClick={submit}
             className="flex items-center gap-1.5 bg-sky-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-sky-700"
           >
-            <Check className="h-3.5 w-3.5" /> Ajouter la ligne
+            <Check className="h-3.5 w-3.5" /> Add the line
           </button>
         </div>
       </div>

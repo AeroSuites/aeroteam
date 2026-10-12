@@ -233,7 +233,7 @@ export function currentWeekLabel(date = new Date()) {
   d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7))
   const week1 = new Date(d.getFullYear(), 0, 4)
   const week = 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7)
-  return `Semaine ${week}`
+  return `Week ${week}`
 }
 
 // Affectations multi-équipes : assignments[taskId] = [teamId, ...]

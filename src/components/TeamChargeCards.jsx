@@ -22,7 +22,7 @@ export function trfxTail(task) {
 function groupTeamTasks(teamTasks) {
   const zones = {}
   teamTasks.forEach((t) => {
-    const z = t.workArea || 'Autre'
+    const z = t.workArea || 'Other'
     if (!zones[z]) zones[z] = []
     zones[z].push(t)
   })
@@ -70,7 +70,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
           className="px-3 py-2 flex items-center justify-between gap-2 text-white cursor-pointer select-none"
           style={{ backgroundColor: team.color || '#767676' }}
           onClick={() => setOpen((v) => !v)}
-          title={open ? 'Replier cette équipe' : 'Déplier cette équipe'}
+          title={open ? 'Collapse this team' : 'Expand this team'}
         >
           <span className="flex items-center gap-1.5 min-w-0">
             {open ? (
@@ -90,7 +90,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                   <button
                     onClick={() => onExportPdf(team)}
                     className="flex items-center gap-1 bg-white text-slate-800 rounded-full px-2 py-1 text-[10px] font-bold shadow-sm hover:bg-slate-100"
-                    title={`Exporter la charge de « ${team.name} » en PDF (mise en page tableau)`}
+                    title={`Export the workload of "${team.name}" to PDF (table layout)`}
                   >
                     <FileDown className="h-3.5 w-3.5" /> PDF
                   </button>
@@ -99,9 +99,9 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                   <button
                     onClick={() => onPrint(team)}
                     className="flex items-center gap-1 bg-white/20 border border-white/60 text-white rounded-full px-2 py-1 text-[10px] font-bold hover:bg-white/30"
-                    title={`Imprimer la charge de « ${team.name} »`}
+                    title={`Print the workload of "${team.name}"`}
                   >
-                    <Printer className="h-3.5 w-3.5" /> Imprimer
+                    <Printer className="h-3.5 w-3.5" /> Print
                   </button>
                 )}
               </span>
@@ -113,13 +113,13 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                     ? 'bg-emerald-500 text-white'
                     : 'bg-white/25 text-white'
                 }`}
-                title={`Agent ${agentInfo.name} : ${agentDone}/${agentTotal} faite(s)`}
+                title={`Agent ${agentInfo.name}: ${agentDone}/${agentTotal} done`}
               >
                 👤 {agentDone}/{agentTotal}
               </span>
             )}
             <span className="text-xs opacity-90">
-              {teamTasks.length} tâche{teamTasks.length > 1 ? 's' : ''}
+              {teamTasks.length} task{teamTasks.length > 1 ? 's' : ''}
             </span>
           </span>
         </div>
@@ -202,7 +202,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                           })
                                         }}
                                         className="h-4 w-4 rounded-full bg-amber-100 border border-amber-300 hover:bg-amber-200 flex items-center justify-center"
-                                        title="Lire la note de l'agent"
+                                        title="Read the agent's note"
                                       >
                                         <StickyNote className="h-2.5 w-2.5 text-amber-700" />
                                       </button>
@@ -211,7 +211,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                 {(t.taskBarcode || t.registration) && (
                                   <span
                                     className="shrink-0 ml-auto font-mono text-[10px] font-bold text-sky-700"
-                                    title={t.taskBarcode ? `TRFX ${t.taskBarcode}` : 'Avion'}
+                                    title={t.taskBarcode ? `TRFX ${t.taskBarcode}` : 'Aircraft'}
                                   >
                                     {t.taskBarcode || t.registration}
                                   </span>
@@ -225,7 +225,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                         ? 'bg-amber-500'
                                         : 'bg-slate-300'
                                     }`}
-                                    title={`Agent ${agentInfo.name} : ${
+                                    title={`Agent ${agentInfo.name}: ${
                                       agentByKey[taskContentKey(t)].mtxStatus || 'ACTV'
                                     }`}
                                   />
@@ -255,7 +255,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
             <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
               <div className="min-w-0">
                 <h2 className="font-bold truncate">
-                  N° {cleanShortValue(descTask.seq) || '—'} · {descTask.description}
+                  No. {cleanShortValue(descTask.seq) || '—'} · {descTask.description}
                 </h2>
                 <p className="text-xs text-slate-300 truncate">
                   {[
@@ -270,7 +270,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
               <button
                 onClick={() => setDescTask(null)}
                 className="text-slate-300 hover:text-white shrink-0"
-                title="Fermer"
+                title="Close"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -281,7 +281,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                   <div className="px-3 py-2 bg-slate-100 border-b border-slate-200 flex items-center gap-2">
                     <FileText className="h-4 w-4 text-sky-600" />
                     <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
-                      Description détaillée
+                      Detailed description
                     </p>
                   </div>
                   <p className="p-3 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
@@ -294,7 +294,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                   <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-200 flex items-center gap-2">
                     <ListChecks className="h-4 w-4 text-emerald-600" />
                     <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wide">
-                      Étapes (Task Steps)
+                      Steps (Task Steps)
                     </p>
                   </div>
                   <p className="p-3 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
@@ -318,7 +318,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
             <div className="px-5 py-4 flex items-start justify-between gap-3 bg-amber-500 text-white rounded-t-xl">
               <div className="min-w-0">
                 <h2 className="font-bold truncate">
-                  Note de {notePopup.agentName} · N°{' '}
+                  Note from {notePopup.agentName} · No.{' '}
                   {cleanShortValue(notePopup.task.seq) || '—'}
                 </h2>
                 <p className="text-xs text-amber-100 truncate">
@@ -328,7 +328,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
               <button
                 onClick={() => setNotePopup(null)}
                 className="text-amber-100 hover:text-white shrink-0"
-                title="Fermer"
+                title="Close"
               >
                 <X className="h-5 w-5" />
               </button>

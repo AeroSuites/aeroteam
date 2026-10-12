@@ -63,7 +63,7 @@ export default function Affectation() {
   tasks.forEach((t) => {
     if (assignmentTeams(assignments, t.id).length) return
     const block = t.taskType || 'AUTRE'
-    const zone = t.workArea || 'Autre'
+    const zone = t.workArea || 'Other'
     if (!allBlockZones[block]) allBlockZones[block] = {}
     allBlockZones[block][zone] = (allBlockZones[block][zone] || 0) + 1
   })
@@ -74,7 +74,7 @@ export default function Affectation() {
         if (assignmentTeams(assignments, t.id).length) return false
         const block = t.taskType || 'AUTRE'
         if (!autoSelectedBlocks.includes(block)) return false
-        const zone = t.workArea || 'Autre'
+        const zone = t.workArea || 'Other'
         return !autoExcludedZones.includes(zoneScopeKey(block, zone))
       }),
     [tasks, assignments, autoSelectedBlocks, autoExcludedZones]
@@ -225,7 +225,7 @@ export default function Affectation() {
     const groups = {}
     filteredTasks.forEach((t) => {
       const isFF = (t.taskType || '') === 'CORR'
-      const key = isFF ? '__FOUND_FAULT__' : t.workArea || 'Autre'
+      const key = isFF ? '__FOUND_FAULT__' : t.workArea || 'Other'
       if (!groups[key]) {
         groups[key] = {
           key,
@@ -234,7 +234,7 @@ export default function Affectation() {
           zones: {},
         }
       }
-      const sub = t.workArea || 'Sans sous-tâche'
+      const sub = t.workArea || 'No sub-task'
       if (!groups[key].zones[sub]) groups[key].zones[sub] = []
       groups[key].zones[sub].push(t)
     })
@@ -250,7 +250,7 @@ export default function Affectation() {
     filteredTasks
       .filter(
         (t) =>
-          (t.workArea || 'Autre') === zone && (t.taskType || 'AUTRE') !== 'CORR'
+          (t.workArea || 'Other') === zone && (t.taskType || 'AUTRE') !== 'CORR'
       )
       .forEach((t) => manualAssign(t.id, teamId))
   }
@@ -261,7 +261,7 @@ export default function Affectation() {
     filteredTasks
       .filter(
         (t) =>
-          (t.workArea || 'Autre') === zone && (t.taskType || 'AUTRE') === block
+          (t.workArea || 'Other') === zone && (t.taskType || 'AUTRE') === block
       )
       .forEach((t) => manualAssign(t.id, teamId))
   }
@@ -302,7 +302,7 @@ export default function Affectation() {
     const groups = {}
     tasks.forEach((t) => {
       if (isAssignedTo(assignments, t.id, teamId) && t.taskType) {
-        const zone = t.workArea || 'Autre'
+        const zone = t.workArea || 'Other'
         const key = `${t.taskType} / ${zone}`
         if (!groups[key]) groups[key] = { count: 0, tasks: [] }
         groups[key].count += 1
@@ -327,9 +327,9 @@ export default function Affectation() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Affectation des tâches</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Task assignment</h1>
         <p className="text-slate-600 mt-1">
-          Affectez par <strong>bloc complet</strong> (menu en haut de chaque bloc) ou <strong>ligne par ligne</strong>. Glissez-déposez également possible.
+          Assign by <strong>entire block</strong> (menu at the top of each block) or <strong>line by line</strong>. Drag and drop is also possible.
         </p>
       </div>
 
@@ -342,7 +342,7 @@ export default function Affectation() {
               : 'bg-white border-slate-200 text-slate-600 hover:border-sky-400 hover:bg-sky-50'
           }`}
         >
-          Affectation des tâches
+          Task assignment
         </button>
         <button
           onClick={() => setTab('primes')}
@@ -352,7 +352,7 @@ export default function Affectation() {
               : 'bg-white border-emerald-300 text-emerald-800 hover:border-emerald-500 hover:bg-emerald-50'
           }`}
         >
-          Primes toilettes — bénéficiaires
+          Toilet bonuses — beneficiaries
         </button>
       </div>
 
@@ -364,9 +364,9 @@ export default function Affectation() {
 
       <div className="bg-white rounded-xl shadow p-3 flex flex-wrap items-center justify-between gap-2 border-l-4 border-l-sky-600">
         <div>
-          <p className="text-sm font-semibold text-slate-800">Ajouter une ligne manuellement</p>
+          <p className="text-sm font-semibold text-slate-800">Add a line manually</p>
           <p className="text-xs text-slate-500">
-            La ligne apparaît non assignée, prête à être affectée ci-dessous.
+            The line appears unassigned, ready to be assigned below.
           </p>
         </div>
         <ManualTaskForm
@@ -376,7 +376,7 @@ export default function Affectation() {
               ...new Set([
                 ...prev,
                 ...list.map((t) =>
-                  (t.taskType || '') === 'CORR' ? '__FOUND_FAULT__' : t.workArea || 'Sans zone'
+                  (t.taskType || '') === 'CORR' ? '__FOUND_FAULT__' : t.workArea || 'No zone'
                 ),
               ]),
             ])
@@ -392,19 +392,19 @@ export default function Affectation() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                <Wand2 className="h-4 w-4 text-sky-600" /> Répartition automatique
+                <Wand2 className="h-4 w-4 text-sky-600" /> Automatic distribution
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 {autoTeams.length === 0
-                  ? 'Toutes les équipes sont verrouillées : déverrouillez-en au moins une pour répartir.'
+                  ? 'All teams are locked: unlock at least one to distribute.'
                   : autoSelectedBlocks.length === 0
-                    ? 'Aucun bloc sélectionné : la répartition automatique ne touchera aucune tâche. Cochez d’abord un bloc.'
+                    ? 'No block selected: automatic distribution will not touch any task. First check a block.'
                     : autoScopeCount === 0
-                      ? 'Bloc(s) sélectionné(s) mais aucun sous-bloc coché : cochez les sous-blocs voulus (ou « Tous »).'
-                      : `${autoScopeCount} tâche(s) sélectionnée(s) — équilibre par nombre de tâches entre les ${autoTeams.length} équipe(s) déverrouillée(s) (blocs entiers quand l'équilibre le permet), Found Fault en priorité.`}
+                      ? 'Block(s) selected but no sub-block checked: check the required sub-blocks (or "All").'
+                      : `${autoScopeCount} task(s) selected — balanced by number of tasks across the ${autoTeams.length} unlocked team(s) (whole blocks when balance allows), Found Fault first.`}
                 {autoLockedCount > 0 && autoTeams.length > 0 && (
                   <span className="text-amber-600 font-semibold">
-                    {' '}— {autoLockedCount} équipe(s) verrouillée(s) ne recevront rien.
+                    {' '}— {autoLockedCount} locked team(s) will receive nothing.
                   </span>
                 )}
               </p>
@@ -414,24 +414,24 @@ export default function Affectation() {
                 <button
                   onClick={undoAutoAssign}
                   className="flex items-center gap-1.5 text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-md"
-                  title="Rétablir les affectations d'avant la répartition automatique"
+                  title="Restore the assignments from before automatic distribution"
                 >
-                  <Undo2 className="h-3.5 w-3.5" /> Annuler
+                  <Undo2 className="h-3.5 w-3.5" /> Cancel
                 </button>
               )}
               <button
                 onClick={autoAssign}
                 disabled={autoScopeCount === 0 || autoTeams.length === 0}
                 className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
-                title="Répartir les tâches sans équipe des blocs et sous-blocs sélectionnés sur les équipes déverrouillées"
+                title="Distribute unassigned tasks from the selected blocks and sub-blocks across the unlocked teams"
               >
-                <Users className="h-4 w-4" /> Répartir automatiquement
+                <Users className="h-4 w-4" /> Distribute automatically
               </button>
             </div>
           </div>
           {blocks.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-slate-500">Blocs à répartir :</span>
+              <span className="text-xs font-semibold text-slate-500">Blocks to distribute:</span>
               {blocks.map((block) => {
                 const active = autoSelectedBlocks.includes(block)
                 const color = getCategoryColor(block)
@@ -452,8 +452,8 @@ export default function Affectation() {
                     }}
                     title={
                       active
-                        ? 'Cliquer pour ne pas répartir ce bloc'
-                        : 'Cliquer pour inclure ce bloc dans la répartition'
+                        ? 'Click to exclude this block from the distribution'
+                        : 'Click to include this block in the distribution'
                     }
                   >
                     {getCategoryLabel(block)} ({count})
@@ -470,7 +470,7 @@ export default function Affectation() {
                   return (
                     <div key={block} className="w-full flex flex-wrap items-center gap-1.5 pl-3">
                       <span className="text-[11px] font-semibold text-slate-400">
-                        {getCategoryLabel(block)} : sous-blocs
+                        {getCategoryLabel(block)}: sub-blocks
                       </span>
                       {zoneEntries.map(([zone, count]) => {
                         const key = zoneScopeKey(block, zone)
@@ -488,8 +488,8 @@ export default function Affectation() {
                             }}
                             title={
                               active
-                                ? 'Cliquer pour retirer ce sous-bloc de la répartition'
-                                : 'Cliquer pour inclure ce sous-bloc dans la répartition'
+                                ? 'Click to remove this sub-block from the distribution'
+                                : 'Click to include this sub-block in the distribution'
                             }
                           >
                             {zone} ({count})
@@ -504,9 +504,9 @@ export default function Affectation() {
                             )
                           }
                           className="text-[11px] text-sky-600 hover:underline"
-                          title={`Ré-inclure tous les sous-blocs de ${getCategoryLabel(block)}`}
+                          title={`Re-include all sub-blocks of ${getCategoryLabel(block)}`}
                         >
-                          Tous
+                          All
                         </button>
                       )}
                     </div>
@@ -515,8 +515,8 @@ export default function Affectation() {
               {blocks.length > 1 && (
                 <button onClick={toggleAutoAll} className="text-xs text-sky-600 hover:underline">
                   {autoSelectedBlocks.length === blocks.length
-                    ? 'Tout désélectionner'
-                    : 'Tout sélectionner'}
+                    ? 'Unselect all'
+                    : 'Select all'}
                 </button>
               )}
             </div>
@@ -529,10 +529,10 @@ export default function Affectation() {
         <div className="bg-white rounded-xl shadow p-4">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <Users className="h-4 w-4 text-sky-500" /> Charge par équipe
+              <Users className="h-4 w-4 text-sky-500" /> Workload per team
             </h2>
             <span className="text-xs text-slate-400">
-              Corbeille = vider la charge de l'équipe d'un coup (les lignes restent dans les tâches)
+              Trash = clear the team's workload at once (the lines remain in the tasks)
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -552,7 +552,7 @@ export default function Affectation() {
                       <button
                         onClick={() => setSendTeam(t)}
                         className="text-slate-400 hover:text-sky-600"
-                        title={`Envoyer la charge de ${t.name} à un profil agent`}
+                        title={`Send ${t.name}'s workload to an agent profile`}
                       >
                         <Send className="h-3.5 w-3.5" />
                       </button>
@@ -560,14 +560,14 @@ export default function Affectation() {
                         onClick={() => {
                           if (
                             window.confirm(
-                              `Vider la charge de l'équipe « ${t.name} » (${n} tâche(s)) ?\n\nLes lignes seront désassignées (elles restent dans les tâches) et la charge envoyée à l'agent sera retirée.`
+                              `Clear the workload of team "${t.name}" (${n} task(s))?\n\nThe lines will be unassigned (they remain in the tasks) and the workload sent to the agent will be removed.`
                             )
                           ) {
                             clearTeamCharge(t.id)
                           }
                         }}
                         className="text-slate-400 hover:text-red-600"
-                        title={`Vider la charge de ${t.name}`}
+                        title={`Clear ${t.name}'s workload`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -584,11 +584,11 @@ export default function Affectation() {
       {blocks.length > 0 && (
         <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-slate-700">Filtrer par bloc</h2>
+            <h2 className="text-sm font-semibold text-slate-700">Filter by block</h2>
             <div className="flex gap-2 text-xs">
-              <button onClick={selectAll} className="text-sky-600 hover:underline">Tout afficher</button>
+              <button onClick={selectAll} className="text-sky-600 hover:underline">Show all</button>
               <span className="text-slate-300">|</span>
-              <button onClick={selectNone} className="text-slate-500 hover:underline">Tout masquer</button>
+              <button onClick={selectNone} className="text-slate-500 hover:underline">Hide all</button>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -614,12 +614,12 @@ export default function Affectation() {
             })}
             {selectedBlocks.length > 0 && (
               <span className="text-xs text-slate-400 self-center">
-                Affichage : {visibleBlocksList.length} bloc(s)
+                Showing: {visibleBlocksList.length} block(s)
               </span>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-100">
-            <span className="text-xs font-semibold text-slate-500">Priorités :</span>
+            <span className="text-xs font-semibold text-slate-500">Priorities:</span>
             {['MEL', 'EXMP', 'NSRE', 'TLI', 'IDT'].map((tok) => (
               <button
                 key={tok}
@@ -633,7 +633,7 @@ export default function Affectation() {
                     ? 'bg-[#ff0000] border-[#ff0000] text-white'
                     : 'bg-white border-[#ff0000] text-[#ff0000] hover:bg-[#ff0000]/10'
                 }`}
-                title={`Afficher les lignes ${tok} (cumulable avec les autres filtres)`}
+                title={`Show ${tok} lines (can be combined with the other filters)`}
               >
                 {tok} ({prioCounts[tok]})
               </button>
@@ -643,7 +643,7 @@ export default function Affectation() {
                 onClick={() => setPrioFilter([])}
                 className="text-xs text-sky-600 hover:underline"
               >
-                Tout réafficher
+                Show all again
               </button>
             )}
           </div>
@@ -652,7 +652,7 @@ export default function Affectation() {
 
       {teams.length === 0 && (
         <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg">
-          Créez d'abord des équipes avant d'affecter des tâches. Allez dans la page « Équipes ».
+          Create teams first before assigning tasks. Go to the "Teams" page.
         </div>
       )}
 
@@ -661,7 +661,7 @@ export default function Affectation() {
           {zoneGroups.length === 0 && (
             <div className="bg-white rounded-xl shadow p-8 text-center text-slate-500">
               <ClipboardList className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-              Aucun bloc n'est affiché. Sélectionnez des blocs ci-dessus, ou importez votre fichier Excel.
+              No block is displayed. Select blocks above, or import your Excel file.
             </div>
           )}
 
@@ -693,7 +693,7 @@ export default function Affectation() {
                   className="px-4 py-2 flex flex-wrap items-center justify-between gap-2 cursor-pointer"
                   style={{ backgroundColor: cardColor }}
                   onClick={() => toggleZoneCard(group.key)}
-                  title={cardOpen ? 'Replier ce bloc' : 'Déplier ce bloc'}
+                  title={cardOpen ? 'Collapse this block' : 'Expand this block'}
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     {cardOpen ? (
@@ -702,15 +702,15 @@ export default function Affectation() {
                       <ChevronRight className="h-5 w-5 text-white shrink-0" />
                     )}
                     <h3 className="font-bold text-white text-sm shrink-0">
-                      {group.isFF ? 'Bloc Found Fault' : `📍 ${group.label}`}{' '}
+                      {group.isFF ? 'Found Fault block' : `📍 ${group.label}`}{' '}
                       <span className="font-normal opacity-80">({groupTasks.length})</span>
                     </h3>
                     {groupMemberNames.length > 0 && (
                       <span
                         className="text-white/90 text-xs font-semibold truncate"
-                        title={`Membres : ${groupMemberNames.join(', ')}`}
+                        title={`Members: ${groupMemberNames.join(', ')}`}
                       >
-                        Membres : {groupMemberNames.join(', ')}
+                        Members: {groupMemberNames.join(', ')}
                       </span>
                     )}
                   </div>
@@ -719,7 +719,7 @@ export default function Affectation() {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <span className="text-white/90 text-[11px] whitespace-nowrap">
-                      {unassignedInGroup.length} non assignée(s)
+                      {unassignedInGroup.length} unassigned
                     </span>
                     {teams.length > 0 && unassignedInGroup.length > 0 && (
                       <select
@@ -730,11 +730,11 @@ export default function Affectation() {
                           else assignZoneAll(group.label, e.target.value)
                         }}
                         className="h-6 border-none rounded-full px-2 text-[11px] leading-none bg-white text-slate-800 cursor-pointer font-semibold"
-                        title={group.isFF ? 'Affecter tout le bloc' : 'Affecter toute la sous-tâche'}
+                        title={group.isFF ? 'Assign the entire block' : 'Assign the entire sub-task'}
                       >
-                        <option value="">{group.isFF ? '— Tout le bloc —' : '— Toute la sous-tâche —'}</option>
+                        <option value="">{group.isFF ? '— Entire block —' : '— Entire sub-task —'}</option>
                         {teams.map((t) => (
-                          <option key={t.id} value={t.id}>À {t.name}</option>
+                          <option key={t.id} value={t.id}>To {t.name}</option>
                         ))}
                       </select>
                     )}
@@ -753,14 +753,14 @@ export default function Affectation() {
                               const total = tasks.filter((t) => (t.taskType || 'AUTRE') === blk).length
                               if (
                                 window.confirm(
-                                  `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} tâches, toutes zones) ?\n\nToutes ces tâches disparaîtront du planning.`
+                                  `Delete the entire block ${getCategoryLabel(blk)} (${total} tasks, all zones)?\n\nAll these tasks will disappear from the planning.`
                                 )
                               ) {
                                 removeTasksByBlock(blk)
                               }
                             }}
                             className="text-white/80 hover:text-white"
-                            title={`Supprimer tout le bloc ${getCategoryLabel(blk)}`}
+                            title={`Delete the entire block ${getCategoryLabel(blk)}`}
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>
@@ -815,9 +815,9 @@ export default function Affectation() {
                                   {subMemberNames.length > 0 && (
                                     <span
                                       className="text-white/90 text-xs font-semibold truncate"
-                                      title={`Membres : ${subMemberNames.join(', ')}`}
+                                      title={`Members: ${subMemberNames.join(', ')}`}
                                     >
-                                      Membres : {subMemberNames.join(', ')}
+                                      Members: {subMemberNames.join(', ')}
                                     </span>
                                   )}
                                 </div>
@@ -826,7 +826,7 @@ export default function Affectation() {
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <span className="text-white/90 text-[11px] whitespace-nowrap">
-                                    {unassignedInZone.length} non assignée(s)
+                                    {unassignedInZone.length} unassigned
                                   </span>
                                   {teams.length > 0 && unassignedInZone.length > 0 && (
                                     <select
@@ -837,11 +837,11 @@ export default function Affectation() {
                                         e.target.value = ''
                                       }}
                                       className="h-6 border-none rounded-full px-2 text-[11px] leading-none bg-white text-slate-800 cursor-pointer font-semibold"
-                                      title="Affecter toute la sous-tâche Found Fault"
+                                      title="Assign the entire Found Fault sub-task"
                                     >
-                                      <option value="">— Toute la sous-tâche —</option>
+                                      <option value="">— Entire sub-task —</option>
                                       {teams.map((t) => (
-                                        <option key={t.id} value={t.id}>À {t.name}</option>
+                                        <option key={t.id} value={t.id}>To {t.name}</option>
                                       ))}
                                     </select>
                                   )}
@@ -866,7 +866,7 @@ export default function Affectation() {
                                       <span
                                         className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
                                         style={{ backgroundColor: getCategoryColor(task.taskType) }}
-                                        title={`Bloc ${getCategoryLabel(task.taskType)}`}
+                                        title={`Block ${getCategoryLabel(task.taskType)}`}
                                       >
                                         {getCategoryLabel(task.taskType) || '—'}
                                       </span>
@@ -880,7 +880,7 @@ export default function Affectation() {
                                             {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
                                               <span
                                                 className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff0000]/10 text-[#ff0000] border border-[#ff0000]/40 whitespace-nowrap"
-                                                title="Ligne prioritaire (MEL / EXMP)"
+                                                title="Priority line (MEL / EXMP)"
                                               >
                                                 {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`)}
                                               </span>
@@ -915,7 +915,7 @@ export default function Affectation() {
                                               <button
                                                 onClick={() => manualUnassign(task.id, teamChip.id)}
                                                 className="text-white/70 hover:text-white"
-                                                title={`Retirer de ${teamChip.name}`}
+                                                title={`Unassign from ${teamChip.name}`}
                                               >
                                                 <X className="h-3 w-3" />
                                               </button>
@@ -930,9 +930,9 @@ export default function Affectation() {
                                                 if (e.target.value) manualAssign(task.id, e.target.value)
                                               }}
                                               className="border border-slate-300 rounded-md px-2 py-1 text-xs shrink-0"
-                                              title="Ajouter une autre équipe"
+                                              title="Add another team"
                                             >
-                                              <option value="">+ équipe</option>
+                                              <option value="">+ team</option>
                                               {teams
                                                 .filter(
                                                   (tm) => !assignedTeams.some((c) => c.id === tm.id)
@@ -952,9 +952,9 @@ export default function Affectation() {
                                             if (e.target.value) manualAssign(task.id, e.target.value)
                                           }}
                                           className="border border-slate-300 rounded-md px-2 py-1 text-xs shrink-0"
-                                          title="Affecter cette ligne"
+                                          title="Assign this line"
                                         >
-                                          <option value="">— Ligne —</option>
+                                          <option value="">— Line —</option>
                                           {teams.map((t) => (
                                             <option key={t.id} value={t.id}>{t.name}</option>
                                           ))}
@@ -978,10 +978,10 @@ export default function Affectation() {
         <div className="space-y-4">
           <div className="bg-slate-900 rounded-xl shadow p-4 text-white">
             <h2 className="font-bold mb-3 flex items-center gap-2">
-              <Users className="h-5 w-5 text-sky-400" /> Équipes
+              <Users className="h-5 w-5 text-sky-400" /> Teams
             </h2>
             {teams.length === 0 && (
-              <p className="text-sm text-slate-400">Aucune équipe créée.</p>
+              <p className="text-sm text-slate-400">No teams created.</p>
             )}
             {teams.map((team) => (
               <div
@@ -1002,13 +1002,13 @@ export default function Affectation() {
                       {team.name}
                     </span>
                     <span className="text-xs text-slate-400 flex items-center gap-2">
-                      {team.locked && <span className="text-[10px] text-amber-400 font-semibold">verrouillée</span>}
-                      {assignedCount(team.id)} tâche(s)
+                      {team.locked && <span className="text-[10px] text-amber-400 font-semibold">locked</span>}
+                      {assignedCount(team.id)} task(s)
                       {assignedCount(team.id) > 0 && (
                         <button
                           onClick={() => setSendTeam(team)}
                           className="text-slate-400 hover:text-sky-300"
-                          title={`Envoyer la charge de ${team.name} à un profil agent`}
+                          title={`Send ${team.name}'s workload to an agent profile`}
                         >
                           <Send className="h-4 w-4" />
                         </button>
@@ -1018,8 +1018,8 @@ export default function Affectation() {
                         className={team.locked ? 'text-amber-300 hover:text-amber-100' : 'text-slate-500 hover:text-amber-300'}
                         title={
                           team.locked
-                            ? 'Déverrouiller cette équipe (elle pourra recevoir des tâches à la répartition automatique)'
-                            : 'Verrouiller cette équipe (elle ne recevra plus de tâches à la répartition automatique)'
+                            ? 'Unlock this team (it will be able to receive tasks in automatic distribution)'
+                            : 'Lock this team (it will no longer receive tasks in automatic distribution)'
                         }
                       >
                         {team.locked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
@@ -1036,7 +1036,7 @@ export default function Affectation() {
                   </div>
                   <div className="mt-2 flex flex-col gap-1">
                     {Object.keys(teamBlocks(team.id)).length === 0 && (
-                      <span className="text-xs text-slate-500 italic">Aucun bloc affecté</span>
+                      <span className="text-xs text-slate-500 italic">No block assigned</span>
                     )}
                     {Object.entries(teamBlocks(team.id))
                       .sort((a, b) => a[0].localeCompare(b[0]))
@@ -1055,7 +1055,7 @@ export default function Affectation() {
                             >
                               {getCategoryLabel(blk)} · {zone}{' '}
                               <span className="font-normal opacity-90">
-                                ({info.count} tâche{info.count > 1 ? 's' : ''})
+                                ({info.count} task{info.count > 1 ? 's' : ''})
                               </span>
                             </div>
                             {info.tasks.length > 0 && (
@@ -1079,7 +1079,7 @@ export default function Affectation() {
                                     <button
                                       onClick={() => manualUnassign(t.id, team.id)}
                                       className="text-slate-400 hover:text-red-600 shrink-0"
-                                      title="Retirer de l'équipe (la tâche redevient non affectée)"
+                                      title="Unassign from team (the task becomes unassigned again)"
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </button>

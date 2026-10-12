@@ -39,7 +39,7 @@ import {
 function groupByZone(blockTasks) {
   const groups = {}
   blockTasks.forEach((t) => {
-    const zone = t.workArea || 'Autre'
+    const zone = t.workArea || 'Other'
     if (!groups[zone]) groups[zone] = []
     groups[zone].push(t)
   })
@@ -111,9 +111,9 @@ export default function Dashboard() {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
     doc.text(
-      `${teamTasks.length} tâche(s) · ${team.members.length} membre(s) : ${
+      `${teamTasks.length} task(s) · ${team.members.length} member(s) : ${
         team.members.join(', ') || '—'
-      } · ${new Date().toLocaleDateString('fr-FR')}`,
+      } · ${new Date().toLocaleDateString('en-GB')}`,
       margin,
       21
     )
@@ -121,7 +121,7 @@ export default function Dashboard() {
     const groups = {}
     teamTasks.forEach((t) => {
       const blk = t.taskType || 'AUTRE'
-      const zone = t.workArea || 'Sans zone'
+      const zone = t.workArea || 'No zone'
       if (!groups[blk]) groups[blk] = { zones: {} }
       if (!groups[blk].zones[zone]) groups[blk].zones[zone] = []
       groups[blk].zones[zone].push(t)
@@ -140,7 +140,7 @@ export default function Dashboard() {
       doc.setFontSize(10)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(255, 255, 255)
-      doc.text(`Bloc ${getCategoryLabel(blk)} · ${count} tâche(s)`, margin + 2, y + 4.6)
+      doc.text(`Block ${getCategoryLabel(blk)} · ${count} task(s)`, margin + 2, y + 4.6)
       doc.setTextColor(0, 0, 0)
       y += 10
 
@@ -252,36 +252,36 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Tableau de bord</h1>
-        <p className="text-slate-600 mt-1">Vue d'ensemble du workpackage</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Dashboard</h1>
+        <p className="text-slate-600 mt-1">Workpackage overview</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard icon={<ClipboardList className="h-6 w-6" />} label="Tâches totales" value={stats.total} color="bg-sky-50 text-sky-600" />
-        <StatCard icon={<CheckCircle2 className="h-6 w-6" />} label="Tâches assignées" value={stats.assigned} color="bg-green-50 text-green-600" />
-        <StatCard icon={<AlertTriangle className="h-6 w-6" />} label="Non assignées" value={stats.unassigned} color="bg-amber-50 text-amber-600" />
-        <StatCard icon={<Clock className="h-6 w-6" />} label="Heures totales" value={`${hoursTotal.toFixed(1)}h`} color="bg-violet-50 text-violet-600" />
+        <StatCard icon={<ClipboardList className="h-6 w-6" />} label="Total tasks" value={stats.total} color="bg-sky-50 text-sky-600" />
+        <StatCard icon={<CheckCircle2 className="h-6 w-6" />} label="Assigned tasks" value={stats.assigned} color="bg-green-50 text-green-600" />
+        <StatCard icon={<AlertTriangle className="h-6 w-6" />} label="Unassigned" value={stats.unassigned} color="bg-amber-50 text-amber-600" />
+        <StatCard icon={<Clock className="h-6 w-6" />} label="Total hours" value={`${hoursTotal.toFixed(1)}h`} color="bg-violet-50 text-violet-600" />
       </div>
 
       {weekConsignes.length > 0 && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <h2 className="text-xl font-semibold flex items-center gap-2">
-              <ClipboardList className="h-5 w-5 text-amber-500" /> Consignes{' '}
-              {showAllConsignes ? 'de la semaine' : 'du jour'}
+              <ClipboardList className="h-5 w-5 text-amber-500" /> Instructions{' '}
+              {showAllConsignes ? 'of the week' : 'of the day'}
               <span className="text-sm font-normal text-slate-400">({consignes.length})</span>
             </h2>
             <button
               onClick={() => setShowAllConsignes((v) => !v)}
               className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1"
             >
-              {showAllConsignes ? "Voir aujourd'hui uniquement" : 'Voir toute la semaine'}
+              {showAllConsignes ? 'Show today only' : 'Show the whole week'}
             </button>
           </div>
           {consignes.length === 0 ? (
             <p className="text-sm text-slate-400 italic">
-              Aucune consigne pour aujourd'hui — utilisez « Voir toute la semaine » pour afficher
-              les autres jours.
+              No instructions for today — use "Show the whole week" to display
+              the other days.
             </p>
           ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -299,7 +299,7 @@ export default function Dashboard() {
                           setConsigneText(n.content || '')
                         }}
                         className="text-slate-400 hover:text-sky-600 p-0.5"
-                        title="Modifier cette consigne"
+                        title="Edit this instruction"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
@@ -307,14 +307,14 @@ export default function Dashboard() {
                         onClick={() => {
                           if (
                             window.confirm(
-                              `Supprimer la consigne « ${String(n.title).replace('[C] ', '')} » ?`
+                              `Delete the instruction "${String(n.title).replace('[C] ', '')}"?`
                             )
                           ) {
                             removeNote(n.id)
                           }
                         }}
                         className="text-slate-400 hover:text-red-600 p-0.5"
-                        title="Supprimer cette consigne"
+                        title="Delete this instruction"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -338,13 +338,13 @@ export default function Dashboard() {
                         }}
                         className="flex items-center gap-1 bg-amber-600 text-white px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-amber-700"
                       >
-                        <Check className="h-3.5 w-3.5" /> Enregistrer
+                        <Check className="h-3.5 w-3.5" /> Save
                       </button>
                       <button
                         onClick={() => setEditingConsigneId(null)}
                         className="text-xs text-slate-500 hover:text-slate-800 px-1"
                       >
-                        Annuler
+                        Cancel
                       </button>
                     </div>
                   </div>
@@ -372,7 +372,7 @@ export default function Dashboard() {
                               {tok && (
                                 <span
                                   className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff0000]/10 text-[#ff0000] border border-[#ff0000]/40 whitespace-nowrap"
-                                  title="Ligne prioritaire (MEL / EXMP / NSRE)"
+                                  title="Priority line (MEL / EXMP / NSRE)"
                                 >
                                   {tok}
                                 </span>
@@ -394,7 +394,7 @@ export default function Dashboard() {
         {/* Membres assignés à l'avion du jour (effectif reçu avec les consignes) */}
         <div className="bg-white rounded-xl shadow p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Users className="h-5 w-5 text-sky-500" /> Membres assignés à l'avion
+            <Users className="h-5 w-5 text-sky-500" /> Members assigned to the aircraft
             {activeProfile?.aircraft && (
               <span className="text-sm font-normal text-slate-400">
                 · {activeProfile.aircraft}
@@ -403,14 +403,14 @@ export default function Dashboard() {
           </h2>
           {dayMembers.length === 0 ? (
             <p className="text-slate-500 text-sm">
-              Aucun membre assigné pour le moment — ils arrivent avec les consignes importées
-              (Import consignes).
+              No members assigned yet — they come with the imported instructions
+              (Import instructions).
             </p>
           ) : (
             <>
               <p className="text-sm text-slate-500 mb-3">
-                <span className="font-semibold text-slate-700">{dayMembers.length}</span> membre(s)
-                assigné(s) à l'avion du jour
+                <span className="font-semibold text-slate-700">{dayMembers.length}</span> member(s)
+                assigned to the day's aircraft
               </p>
               {/* Même style que l'effectif d'Import consignes : bloc avion + pastilles */}
               <div className="border border-slate-200 rounded-lg overflow-hidden max-w-[420px]">
@@ -419,7 +419,7 @@ export default function Dashboard() {
                   style={{ backgroundColor: getZoneColor(activeProfile?.aircraft || 'Avion') }}
                 >
                   <span className="text-white font-mono font-bold text-sm">
-                    {activeProfile?.aircraft || 'Avion'}
+                    {activeProfile?.aircraft || 'Aircraft'}
                   </span>
                   <span className="text-white/90 text-xs font-semibold">{dayMembers.length}</span>
                 </div>
@@ -449,10 +449,10 @@ export default function Dashboard() {
 
         <div className="bg-white rounded-xl shadow p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Plane className="h-5 w-5 text-sky-500" /> Répartition par bloc
+            <Plane className="h-5 w-5 text-sky-500" /> Distribution by block
           </h2>
           {tasks.length === 0 ? (
-            <p className="text-slate-500">Importez des tâches pour voir la répartition.</p>
+            <p className="text-slate-500">Import tasks to see the distribution.</p>
           ) : (
             <div className="space-y-3">
               {Object.entries(byBlock)
@@ -479,8 +479,8 @@ export default function Dashboard() {
         {allUnassigned.length > 0 && (
           <div className="bg-white rounded-xl shadow p-4 sm:p-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xl font-semibold">À traiter (non assignées)</h2>
-              <span className="text-sm text-slate-500">{allUnassigned.length} tâche(s)</span>
+              <h2 className="text-xl font-semibold">To handle (unassigned)</h2>
+              <span className="text-sm text-slate-500">{allUnassigned.length} task(s)</span>
             </div>
             <div className="max-h-80 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100">
               {Object.entries(groupTasksByCategory(allUnassigned)).map(([block, blockTasks]) => {
@@ -502,7 +502,7 @@ export default function Dashboard() {
                         <span className="font-semibold text-sm" style={{ color }}>
                           {getCategoryLabel(block)}
                         </span>
-                        <span className="text-xs text-slate-500">({blockTasks.length} tâche(s))</span>
+                        <span className="text-xs text-slate-500">({blockTasks.length} task(s))</span>
                       </div>
                     </div>
                     {blockExpanded && (
@@ -572,7 +572,7 @@ export default function Dashboard() {
         <div className="bg-white rounded-xl shadow p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Users className="h-5 w-5 text-sky-500" /> Équipes et charge
+              <Users className="h-5 w-5 text-sky-500" /> Teams and workload
             </h2>
             <div className="flex items-center gap-2">
               <button
@@ -596,9 +596,9 @@ export default function Dashboard() {
                   )
                 }}
                 className="flex items-center gap-1.5 bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 text-sm font-semibold"
-                title="Récap complet de toutes les équipes (cartes) — même document que la vue manager"
+                title="Full recap of all teams (cards) — same document as the manager view"
               >
-                <FileDown className="h-4 w-4" /> Récap complet (PDF)
+                <FileDown className="h-4 w-4" /> Full recap (PDF)
               </button>
               <button
                 onClick={() =>
@@ -615,9 +615,9 @@ export default function Dashboard() {
                   )
                 }
                 className="flex items-center gap-1.5 text-sky-700 border border-sky-200 hover:bg-sky-50 px-3 py-1.5 rounded-md text-sm font-semibold"
-                title="Imprimer le récap complet"
+                title="Print the full recap"
               >
-                <Printer className="h-4 w-4" /> Imprimer
+                <Printer className="h-4 w-4" /> Print
               </button>
             </div>
           </div>
@@ -643,10 +643,10 @@ export default function Dashboard() {
           <button
             onClick={() => setAgentsOpen((v) => !v)}
             className="w-full flex items-center justify-between gap-2 text-left"
-            title={agentsOpen ? 'Replier cette section' : 'Déplier cette section'}
+            title={agentsOpen ? 'Collapse this section' : 'Expand this section'}
           >
             <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Users className="h-5 w-5 text-emerald-500" /> Avancement des agents
+              <Users className="h-5 w-5 text-emerald-500" /> Agent progress
               <span className="text-sm font-normal text-slate-400">
                 ({agentsProgress.length})
               </span>
@@ -667,7 +667,7 @@ export default function Dashboard() {
               const paused = list.filter((t) => t.mtxStatus === 'PAUSE').length
               const pct = list.length ? Math.round((done / list.length) * 100) : 0
               const last = a.updated_at
-                ? new Date(a.updated_at).toLocaleString('fr-FR', {
+                ? new Date(a.updated_at).toLocaleString('en-GB', {
                     day: '2-digit',
                     month: '2-digit',
                     hour: '2-digit',
@@ -693,15 +693,15 @@ export default function Dashboard() {
                           onClick={async () => {
                             if (
                               window.confirm(
-                                `Retirer la charge de « ${a.name} » ? (elle part dans l'historique)`
+                                `Remove the workload of "${a.name}"? (it moves to the history)`
                               )
                             ) {
                               const res = await clearAgentCharge(a.id)
-                              if (res?.error) window.alert("Échec du retrait de la charge.")
+                              if (res?.error) window.alert("Failed to remove the workload.")
                             }
                           }}
                           className="text-slate-300 hover:text-red-600"
-                          title="Retirer la charge de cet agent"
+                          title="Remove this agent's workload"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -716,7 +716,7 @@ export default function Dashboard() {
                         {a.date ? ` · ${a.date}` : ''}
                       </>
                     ) : (
-                      'Aucune charge en cours'
+                      'No current workload'
                     )}
                   </p>
                   {hasActive ? (
@@ -725,11 +725,11 @@ export default function Dashboard() {
                         <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
                       </div>
                       <p className="text-[11px] text-slate-400 mt-1">
-                        {paused > 0 ? `${paused} en pause · ` : ''}maj {last || '—'}
+                        {paused > 0 ? `${paused} paused · ` : ''}updated {last || '—'}
                       </p>
                     </>
                   ) : (
-                    <p className="text-[11px] text-slate-400 mt-1">maj {last || '—'}</p>
+                    <p className="text-[11px] text-slate-400 mt-1">updated {last || '—'}</p>
                   )}
                   {hist.length > 0 && (
                     <button
@@ -738,10 +738,9 @@ export default function Dashboard() {
                         setOpenHist([])
                       }}
                       className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 rounded-full px-2 py-0.5"
-                      title={`Consulter les ${hist.length} charge(s) précédente(s)`}
+                      title={`View the ${hist.length} previous workload(s)`}
                     >
-                      📜 {hist.length} charge{hist.length > 1 ? 's' : ''} précédente
-                      {hist.length > 1 ? 's' : ''}
+                      📜 {hist.length} previous workload{hist.length > 1 ? 's' : ''}
                     </button>
                   )}
                 </div>
@@ -765,17 +764,17 @@ export default function Dashboard() {
             <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
               <div className="min-w-0">
                 <h2 className="font-bold truncate">
-                  Charges précédentes · {historyAgent.name}
+                  Previous workloads · {historyAgent.name}
                 </h2>
                 <p className="text-xs text-slate-300">
-                  {(historyAgent.chargeHistory || []).length} archive(s) — clique pour voir les
-                  lignes
+                  {(historyAgent.chargeHistory || []).length} archive(s) — click to view the
+                  lines
                 </p>
               </div>
               <button
                 onClick={() => setHistoryAgent(null)}
                 className="text-slate-300 hover:text-white shrink-0"
-                title="Fermer"
+                title="Close"
               >
                 <X className="h-5 w-5" />
               </button>

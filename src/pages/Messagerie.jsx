@@ -19,7 +19,7 @@ const MAX_ATTACHMENT = 5 * 1024 * 1024 // 5 Mo (comme côté serveur)
 const frTime = (iso) => {
   if (!iso) return ''
   const d = new Date(iso)
-  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 }
 
 const frDay = (iso) => {
@@ -27,11 +27,11 @@ const frDay = (iso) => {
   const d = new Date(iso)
   const today = new Date()
   const same = d.toDateString() === today.toDateString()
-  if (same) return "Aujourd'hui"
+  if (same) return "Today"
   const hier = new Date(today)
   hier.setDate(hier.getDate() - 1)
-  if (d.toDateString() === hier.toDateString()) return 'Hier'
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  if (d.toDateString() === hier.toDateString()) return 'Yesterday'
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 const initials = (name) =>
@@ -44,9 +44,9 @@ const initials = (name) =>
 
 const humanSize = (n) => {
   const v = Number(n || 0)
-  if (v < 1024) return `${v} o`
-  if (v < 1024 * 1024) return `${(v / 1024).toFixed(0)} Ko`
-  return `${(v / (1024 * 1024)).toFixed(1)} Mo`
+  if (v < 1024) return `${v} B`
+  if (v < 1024 * 1024) return `${(v / 1024).toFixed(0)} KB`
+  return `${(v / (1024 * 1024)).toFixed(1)} MB`
 }
 
 // Mise en forme des messages : pastilles (- ou •), gras (*...*) et italique (_..._)
@@ -163,7 +163,7 @@ export default function Messagerie() {
       else setMessages([])
       window.dispatchEvent(new Event('messages-updated'))
     } catch {
-      setError('Impossible de charger la conversation (hors ligne ?).')
+      setError('Unable to load the conversation (offline?).')
     }
   }
 
@@ -240,7 +240,7 @@ export default function Messagerie() {
   const pickFile = (f) => {
     if (!f) return
     if (f.size > MAX_ATTACHMENT) {
-      setError(`Pièce jointe trop lourde (${humanSize(f.size)}) — maximum 5 Mo.`)
+      setError(`Attachment too large (${humanSize(f.size)}) — 5 MB maximum.`)
       return
     }
     setError('')
@@ -268,9 +268,9 @@ export default function Messagerie() {
     setError('')
     try {
       const res = await profileStore.msgSend(code, contactId, body, file)
-      if (res?.error === 'piece_jointe_trop_lourde') setError('Pièce jointe trop lourde (5 Mo max).')
-      else if (res?.error === 'message_trop_long') setError('Message trop long (4000 caractères max).')
-      else if (res?.error) setError("Échec de l'envoi.")
+      if (res?.error === 'piece_jointe_trop_lourde') setError('Attachment too large (5 MB max).')
+      else if (res?.error === 'message_trop_long') setError('Message too long (4000 characters max).')
+      else if (res?.error) setError("Failed to send.")
       else {
         setText('')
         setTextPlain('')
@@ -279,7 +279,7 @@ export default function Messagerie() {
         await loadLists()
       }
     } catch {
-      setError("Échec de l'envoi (hors ligne ?).")
+      setError("Failed to send (offline?).")
     }
     setBusy(false)
   }
@@ -288,7 +288,7 @@ export default function Messagerie() {
     try {
       const res = await profileStore.msgAttachment(code, m.id)
       if (!res?.ok) {
-        setError('Pièce jointe introuvable.')
+        setError('Attachment not found.')
         return
       }
       const bytes = Uint8Array.from(atob(res.data || ''), (c) => c.charCodeAt(0))
@@ -301,7 +301,7 @@ export default function Messagerie() {
       a.click()
       setTimeout(() => URL.revokeObjectURL(url), 30000)
     } catch {
-      setError('Téléchargement impossible.')
+      setError('Unable to download.')
     }
   }
 
@@ -310,27 +310,27 @@ export default function Messagerie() {
       const res = await profileStore.msgAttachment(code, m.id)
       if (res?.ok) setLightbox({ src: `data:${res.type};base64,${res.data}`, name: res.name })
     } catch {
-      setError('Aperçu impossible.')
+      setError('Unable to preview.')
     }
   }
 
   const removeMessage = async (m) => {
-    if (!window.confirm('Supprimer ce message de votre côté ?')) return
+    if (!window.confirm('Delete this message on your side?')) return
     try {
       await profileStore.msgDelete(code, m.id)
       await loadThread(contactId)
       await loadLists()
     } catch {
-      setError('Suppression impossible.')
+      setError('Unable to delete.')
     }
   }
 
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Messagerie</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Messages</h1>
         <p className="text-slate-600 mt-1">
-          Messages entre profils — texte et pièces jointes (5 Mo max).
+          Messages between profiles — text and attachments (5 MB max).
         </p>
       </div>
 
@@ -353,14 +353,14 @@ export default function Messagerie() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Rechercher un profil…"
+                  placeholder="Search for a profile…"
                   className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm"
                 />
               </div>
             </div>
             <ul className="flex-1 overflow-y-auto max-h-[60vh] md:max-h-none">
               {visibleList.length === 0 && (
-                <li className="px-3 py-4 text-sm text-slate-400 italic">Aucun profil.</li>
+                <li className="px-3 py-4 text-sm text-slate-400 italic">No profile.</li>
               )}
               {visibleList.map((i) => {
                 const active = i.id === contactId
@@ -424,11 +424,11 @@ export default function Messagerie() {
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 px-3 sm:px-5 py-4 space-y-2">
                   {messages === null ? (
-                    <p className="text-sm text-slate-400">Chargement…</p>
+                    <p className="text-sm text-slate-400">Loading…</p>
                   ) : messages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2 py-16">
                       <MessageSquare className="h-10 w-10 text-slate-300" />
-                      <p className="text-sm">Aucun message — écrivez le premier.</p>
+                      <p className="text-sm">No messages — write the first one.</p>
                     </div>
                   ) : (
                     messages.map((m, idx) => {
@@ -461,7 +461,7 @@ export default function Messagerie() {
                                           ? 'bg-white/15 text-white hover:bg-white/25'
                                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                       }`}
-                                      title="Voir l'image"
+                                      title="View the image"
                                     >
                                       🖼 {m.attachment_name}
                                     </button>
@@ -473,7 +473,7 @@ export default function Messagerie() {
                                         ? 'bg-white/15 text-white hover:bg-white/25'
                                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                     }`}
-                                    title="Télécharger la pièce jointe"
+                                    title="Download the attachment"
                                   >
                                     <Download className="h-3.5 w-3.5" />
                                     {m.attachment_name} · {humanSize(m.attachment_size)}
@@ -486,14 +486,14 @@ export default function Messagerie() {
                                 }`}
                               >
                                 {frTime(m.created_at)}
-                                {m.mine && m.read_at && <span title="Lu">✓✓</span>}
+                                {m.mine && m.read_at && <span title="Read">✓✓</span>}
                               </div>
                               <button
                                 onClick={() => removeMessage(m)}
                                 className={`absolute -top-2 ${
                                   m.mine ? '-left-2' : '-right-2'
                                 } hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 hover:text-red-600 shadow`}
-                                title="Supprimer de mon côté"
+                                title="Delete on my side"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </button>
@@ -523,7 +523,7 @@ export default function Messagerie() {
                     <button
                       onClick={() => fileRef.current?.click()}
                       className="shrink-0 h-10 w-10 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
-                      title="Joindre un fichier (5 Mo max)"
+                      title="Attach a file (5 MB max)"
                     >
                       <Paperclip className="h-5 w-5" />
                     </button>
@@ -541,7 +541,7 @@ export default function Messagerie() {
                           setTextPlain(plain)
                         }}
                         onEnterSend={send}
-                        placeholder="Écrivez un message… (Entrée pour envoyer, Maj+Entrée = nouvelle ligne)"
+                        placeholder="Write a message… (Enter to send, Shift+Enter = new line)"
                         minHeight={44}
                       />
                     </div>
@@ -549,7 +549,7 @@ export default function Messagerie() {
                       onClick={send}
                       disabled={busy || (!textPlain && !file)}
                       className="shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-40"
-                      title="Envoyer"
+                      title="Send"
                     >
                       <Send className="h-4 w-4" />
                     </button>
@@ -559,7 +559,7 @@ export default function Messagerie() {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2 py-20">
                 <MessageSquare className="h-12 w-12 text-slate-300" />
-                <p className="text-sm">Choisissez un profil pour discuter.</p>
+                <p className="text-sm">Choose a profile to chat.</p>
               </div>
             )}
           </div>

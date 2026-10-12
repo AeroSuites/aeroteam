@@ -118,8 +118,8 @@ export default function Consignes() {
         myKey,
         activeProfile?.code
       )
-      if (res?.error === 'not_allowed') setEditMsgError('Vous ne pouvez modifier que vos messages.')
-      else if (res?.error) setEditMsgError('Échec de la modification.')
+      if (res?.error === 'not_allowed') setEditMsgError('You can only edit your own messages.')
+      else if (res?.error) setEditMsgError('Failed to update.')
       else {
         setEditMsgId(null)
         setEditMsgHtml('')
@@ -127,7 +127,7 @@ export default function Consignes() {
         await loadMessages(selectedDossierId)
       }
     } catch {
-      setEditMsgError('Échec de la modification (hors ligne ?).')
+      setEditMsgError('Failed to update (offline?).')
     }
     setEditMsgBusy(false)
   }
@@ -152,7 +152,7 @@ export default function Consignes() {
       .filter(Boolean)
     if (!chosen.length) return
     const html =
-      '<p>&nbsp;</p><p><strong>À suivre :</strong></p><p>&nbsp;</p>' +
+      '<p>&nbsp;</p><p><strong>To follow:</strong></p><p>&nbsp;</p>' +
       chosen
       .map((p) => {
         const lines = pocketLines(p)
@@ -160,7 +160,7 @@ export default function Consignes() {
         const zoneCounts = {}
         lines.forEach((t) => {
           const b = t.taskType || 'AUTRE'
-          const z = t.workArea || 'Autre'
+          const z = t.workArea || 'Other'
           blockCounts[b] = (blockCounts[b] || 0) + 1
           zoneCounts[z] = (zoneCounts[z] || 0) + 1
         })
@@ -172,7 +172,7 @@ export default function Consignes() {
         const items = lines
           .map((t) => {
             const b = t.taskType || 'AUTRE'
-            const z = t.workArea || 'Autre'
+            const z = t.workArea || 'Other'
             if (compactBlocks.has(b)) {
               const key = `bloc:${b}`
               if (emitted.has(key)) return ''
@@ -182,18 +182,18 @@ export default function Consignes() {
                 .map((x) => escapeHtml(x.seq))
                 .filter(Boolean)
                 .join(', ')
-              return `<li><strong>${escapeHtml(getCategoryLabel(b))}</strong> (${blockCounts[b]} lignes) : N° ${nums}</li>`
+              return `<li><strong>${escapeHtml(getCategoryLabel(b))}</strong> (${blockCounts[b]} lines): N° ${nums}</li>`
             }
             if (compactZones.has(z)) {
               const key = `zone:${z}`
               if (emitted.has(key)) return ''
               emitted.add(key)
               const nums = lines
-                .filter((x) => (x.workArea || 'Autre') === z)
+                .filter((x) => (x.workArea || 'Other') === z)
                 .map((x) => escapeHtml(x.seq))
                 .filter(Boolean)
                 .join(', ')
-              return `<li><strong>📍 ${escapeHtml(z)}</strong> (${zoneCounts[z]} lignes) : N° ${nums}</li>`
+              return `<li><strong>📍 ${escapeHtml(z)}</strong> (${zoneCounts[z]} lines): N° ${nums}</li>`
             }
             const parts = []
             if (t.seq !== undefined && t.seq !== '') parts.push(`N° ${escapeHtml(t.seq)}`)
@@ -204,7 +204,7 @@ export default function Consignes() {
           .filter(Boolean)
           .join('')
         return (
-          `<p><strong>📁 ${escapeHtml(p.name)}</strong> (${lines.length} ligne(s))</p>` +
+          `<p><strong>📁 ${escapeHtml(p.name)}</strong> (${lines.length} line(s))</p>` +
           '<p>&nbsp;</p>' +
           '<ul>' +
           items +
@@ -238,7 +238,7 @@ export default function Consignes() {
   const insertTeamStatus = () => {
     const picked = teamsForStatus.filter((x) => teamPick[x.team.id])
     if (!picked.length) return
-    const raw = logicalToday().toLocaleDateString('fr-FR', {
+    const raw = logicalToday().toLocaleDateString('en-GB', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -248,7 +248,7 @@ export default function Consignes() {
     const done = picked
       .map(
         ({ team }) =>
-          `<p><strong>${escapeHtml(team.name)}</strong> : ${escapeHtml(teamPick[team.id])}</p>`
+          `<p><strong>${escapeHtml(team.name)}</strong>: ${escapeHtml(teamPick[team.id])}</p>`
       )
       .join('')
     const remaining = teamsForStatus
@@ -258,7 +258,7 @@ export default function Consignes() {
     const html =
       `<p><strong>${escapeHtml(dateLabel)}</strong></p><p>&nbsp;</p>` +
       done +
-      (remaining ? `<p><strong>Reste à suivre :</strong></p><ul>${remaining}</ul>` : '')
+      (remaining ? `<p><strong>Remaining:</strong></p><ul>${remaining}</ul>` : '')
     setReplyHtml((prev) => `${prev || ''}${html}`)
     setReplyText((prev) =>
       `${prev || ''} ${html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}`.trim()
@@ -285,7 +285,7 @@ export default function Consignes() {
         setError('')
         setFolders(res?.folders || [])
       } catch {
-        setError('Impossible de charger les consignes (hors ligne ?).')
+        setError('Unable to load instructions (offline?).')
       }
     },
     [folderModal]
@@ -304,7 +304,7 @@ export default function Consignes() {
       setMessagesError('')
       setMessages(res?.messages || [])
     } catch {
-      setMessagesError('Impossible de charger la conversation (hors ligne ?).')
+      setMessagesError('Unable to load the conversation (offline?).')
       setMessages([])
     }
   }, [])
@@ -376,7 +376,7 @@ export default function Consignes() {
   const saveFolder = async () => {
     const name = folderName.trim()
     if (!name) {
-      setFolderError('Le nom du dossier est obligatoire.')
+      setFolderError('The folder name is required.')
       return
     }
     setFolderSaving(true)
@@ -399,7 +399,7 @@ export default function Consignes() {
       }
       setFolderModal(null)
     } catch {
-      setFolderError('Échec de l’enregistrement (hors ligne ?).')
+      setFolderError('Failed to save (offline?).')
     }
     setFolderSaving(false)
   }
@@ -408,21 +408,21 @@ export default function Consignes() {
     const isWeek = !folder.parent_id
     if (
       !window.confirm(
-        `Supprimer le dossier « ${folder.name} » ?` +
+        `Delete folder « ${folder.name} »?` +
           (isWeek
-            ? '\n\nTous ses sous-dossiers et leurs conversations seront supprimés.'
-            : '\n\nToute sa conversation sera supprimée.') +
-          '\nCette action est irréversible.'
+            ? '\n\nAll its subfolders and their conversations will be deleted.'
+            : '\n\nIts entire conversation will be deleted.') +
+          '\nThis action is irreversible.'
       )
     ) {
       return
     }
     if (isWeek) {
       const confirmedTwice = window.confirm(
-        `DERNIÈRE VÉRIFICATION — semaine « ${folder.name} »\n\n` +
-          'Cliquez OK pour supprimer DÉFINITIVEMENT cette semaine, tous ses dossiers avions ' +
-          'et toutes leurs conversations.\n\n' +
-          'Cette suppression est IRRÉVERSIBLE. En cas de doute, cliquez Annuler.'
+        `LAST CHECK — week « ${folder.name} »\n\n` +
+          'Click OK to PERMANENTLY delete this week, all its aircraft folders ' +
+          'and all their conversations.\n\n' +
+          'This deletion is IRREVERSIBLE. If in doubt, click Cancel.'
       )
       if (!confirmedTwice) return
     }
@@ -432,21 +432,21 @@ export default function Consignes() {
       setExpanded((prev) => prev.filter((f) => f !== folder.id))
       await loadFolders(false)
     } catch {
-      setError("Impossible de supprimer le dossier (hors ligne ?).")
+      setError("Unable to delete the folder (offline?).")
     }
   }
 
   const removeReply = async (m) => {
-    if (!window.confirm('Supprimer cette réponse ? Cette action est irréversible.')) return
+    if (!window.confirm('Delete this reply? This action is irreversible.')) return
     try {
       const res = await profileStore.deleteMessage(m.id, myKey, code)
       if (res?.error === 'not_authorized') {
-        setMessagesError('Vous ne pouvez supprimer que vos propres réponses.')
+        setMessagesError('You can only delete your own replies.')
         return
       }
       if (selectedDossierId) await loadMessages(selectedDossierId)
     } catch {
-      setMessagesError("Impossible de supprimer la réponse (hors ligne ?).")
+      setMessagesError("Unable to delete the reply (offline?).")
     }
   }
 
@@ -499,7 +499,7 @@ export default function Consignes() {
       await loadFolders(false)
     } catch (err) {
       setReplyError(
-        `Échec de l’envoi : ${err?.message || 'hors ligne ? photo trop lourde ?'}`
+        `Failed to send: ${err?.message || 'offline? photo too large?'}`
       )
     }
     setSending(false)
@@ -511,7 +511,7 @@ export default function Consignes() {
       : folderMap.get(selectedDossierId) || null
 
   const selectedPath = useMemo(() => {
-    if (selectedDossierId === '__none__') return 'Sans dossier'
+    if (selectedDossierId === '__none__') return 'No folder'
     if (!selectedFolder) return ''
     const wf = selectedFolder.parent_id
       ? folderMap.get(selectedFolder.parent_id)
@@ -524,10 +524,10 @@ export default function Consignes() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Consignes</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Instructions</h1>
         <p className="text-slate-600 mt-1">
-          Dossiers partagés entre tous les profils — ouvrez un avion pour accéder directement à sa
-          conversation.
+          Folders shared between all profiles — open an aircraft to access its
+          conversation directly.
         </p>
       </div>
 
@@ -542,16 +542,16 @@ export default function Consignes() {
           <button
             onClick={() => openFolderModal('new', null)}
             className="w-full flex items-center justify-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
-            title="Créer un dossier semaine (ex : Semaine 37)"
+            title="Create a week folder (e.g. Week 37)"
           >
-            <FolderPlus className="h-4 w-4" /> Dossier semaine
+            <FolderPlus className="h-4 w-4" /> Week folder
           </button>
           <div className="bg-white rounded-xl shadow overflow-hidden">
-            {folders === null && !error && <p className="text-sm text-slate-400 p-4">Chargement…</p>}
+            {folders === null && !error && <p className="text-sm text-slate-400 p-4">Loading…</p>}
             {folders && folders.length === 0 && (
               <p className="text-sm text-slate-500 p-4">
-                Aucun dossier. Créez un dossier semaine (ex : « Semaine 37 »), puis ajoutez-y un
-                sous-dossier par immatriculation d'avion.
+                No folder. Create a week folder (e.g. « Week 37 »), then add a
+                subfolder per aircraft registration.
               </p>
             )}
             {tree.map(({ folder: wf, weekNum, children }) => {
@@ -571,7 +571,7 @@ export default function Consignes() {
                     <button
                       onClick={() => toggleWeek(wf.id)}
                       className="flex items-center gap-2 flex-1 min-w-0 text-left"
-                      title={weekOpen ? `Replier « ${wf.name} »` : `Ouvrir « ${wf.name} »`}
+                      title={weekOpen ? `Collapse « ${wf.name} »` : `Open « ${wf.name} »`}
                     >
                       {weekOpen ? (
                         <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
@@ -597,13 +597,13 @@ export default function Consignes() {
                       {isCurrent && (
                         <span
                           className="ml-1 shrink-0 px-1.5 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-semibold leading-none"
-                          title="Semaine en cours"
+                          title="Current week"
                         >
-                          en cours
+                          current
                         </span>
                       )}
                       <span className="ml-auto text-[11px] text-slate-400 shrink-0 pl-1">
-                        {children.length} av.
+                        {children.length} aircraft
                       </span>
                     </button>
                     {!wf.id.startsWith('__') && (
@@ -611,14 +611,14 @@ export default function Consignes() {
                         <button
                           onClick={() => openFolderModal('new', wf)}
                           className="text-slate-400 hover:text-sky-600 p-0.5 shrink-0"
-                          title={`Ajouter un avion dans « ${wf.name} »`}
+                          title={`Add an aircraft in « ${wf.name} »`}
                         >
                           <Plus className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openFolderModal('rename', wf)}
                           className="text-slate-400 hover:text-sky-600 p-0.5 shrink-0"
-                          title={`Renommer « ${wf.name} »`}
+                          title={`Rename « ${wf.name} »`}
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
@@ -626,7 +626,7 @@ export default function Consignes() {
                           <button
                             onClick={() => removeFolder(wf)}
                             className="text-slate-400 hover:text-red-600 p-0.5 shrink-0"
-                            title={`Supprimer « ${wf.name} » (administrateur uniquement)`}
+                            title={`Delete « ${wf.name} » (administrator only)`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -648,7 +648,7 @@ export default function Consignes() {
                           <button
                             onClick={() => setSelectedDossierId(af.id)}
                             className="flex items-center gap-2 flex-1 min-w-0 text-left py-2.5"
-                            title={`Ouvrir la conversation de « ${af.name} »`}
+                            title={`Open the conversation for « ${af.name} »`}
                           >
                             <Plane className="h-4 w-4 text-sky-500 shrink-0" />
                             <span
@@ -668,7 +668,7 @@ export default function Consignes() {
                               <button
                                 onClick={() => openFolderModal('rename', af)}
                                 className="text-slate-400 hover:text-sky-600 p-0.5 shrink-0"
-                                title={`Renommer « ${af.name} »`}
+                                title={`Rename « ${af.name} »`}
                               >
                                 <Pencil className="h-4 w-4" />
                               </button>
@@ -676,7 +676,7 @@ export default function Consignes() {
                                 <button
                                   onClick={() => removeFolder(af)}
                                   className="text-slate-400 hover:text-red-600 p-0.5 shrink-0"
-                                  title={`Supprimer « ${af.name} » (administrateur uniquement)`}
+                                  title={`Delete « ${af.name} » (administrator only)`}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </button>
@@ -690,13 +690,13 @@ export default function Consignes() {
               )
             })}
             <p className="text-[11px] text-slate-400 px-4 py-2">
-              {totalAvions} avion{totalAvions > 1 ? 's' : ''} au total
-              {' · '}semaine en cours :{' '}
-              {currentWeekNum > 0 ? `S${currentWeekNum}` : 'non détectée'}
+              {totalAvions} aircraft in total
+              {' · '}current week:{' '}
+              {currentWeekNum > 0 ? `S${currentWeekNum}` : 'not detected'}
               {currentWeekNum > 0 &&
                 (currentFolder
-                  ? ` — dossier « ${currentFolder.name} »`
-                  : ' — aucun dossier ne correspond')}
+                  ? ` — folder « ${currentFolder.name} »`
+                  : ' — no matching folder')}
             </p>
           </div>
         </div>
@@ -708,8 +708,8 @@ export default function Consignes() {
               <MessageSquare className="h-12 w-12 text-slate-300 mb-3" />
               <p className="text-sm">
                 {totalAvions > 0
-                  ? 'Ouvrez une semaine, puis cliquez sur un avion pour lire sa conversation.'
-                  : 'Créez un dossier semaine, puis un sous-dossier par avion.'}
+                  ? 'Open a week, then click an aircraft to read its conversation.'
+                  : 'Create a week folder, then a subfolder per aircraft.'}
               </p>
             </div>
           )}
@@ -722,17 +722,17 @@ export default function Consignes() {
               >
                 <div className="min-w-0">
                   <h2 className="font-bold text-white text-lg truncate">
-                    {selectedFolder?.name || 'Sans dossier'}
+                    {selectedFolder?.name || 'No folder'}
                   </h2>
                   <p className="text-white/90 text-xs">
                     <span className="font-semibold">{selectedPath}</span>
                     {' · '}
                     {selectedFolder?.updated_by
-                      ? `dernière activité par ${selectedFolder.updated_by}`
-                      : 'dernière activité'}{' '}
+                      ? `last activity by ${selectedFolder.updated_by}`
+                      : 'last activity'}{' '}
                     ·{' '}
                     {selectedFolder?.updated_at
-                      ? new Date(selectedFolder.updated_at).toLocaleString('fr-FR')
+                      ? new Date(selectedFolder.updated_at).toLocaleString('en-GB')
                       : ''}
                   </p>
                 </div>
@@ -741,14 +741,14 @@ export default function Consignes() {
                     <button
                       onClick={() => openFolderModal('rename', selectedFolder)}
                       className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-1.5"
-                      title={`Renommer « ${selectedFolder.name} »`}
+                      title={`Rename « ${selectedFolder.name} »`}
                     >
-                      <Pencil className="h-4 w-4" /> Renommer
+                      <Pencil className="h-4 w-4" /> Rename
                     </button>
                     <button
                       onClick={() => removeFolder(selectedFolder)}
                       className="text-white/80 hover:text-white p-2"
-                      title={`Supprimer « ${selectedFolder.name} » et sa conversation`}
+                      title={`Delete « ${selectedFolder.name} » and its conversation`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -763,10 +763,10 @@ export default function Consignes() {
               )}
 
               <div className="flex-1 overflow-y-auto max-h-[50vh] p-4 space-y-3">
-                {messages === null && <p className="text-sm text-slate-400 p-2">Chargement…</p>}
+                {messages === null && <p className="text-sm text-slate-400 p-2">Loading…</p>}
                 {messages && messages.length === 0 && (
                   <p className="text-sm text-slate-400 p-2">
-                    Aucune réponse pour le moment. Écrivez la première.
+                    No replies yet. Write the first one.
                   </p>
                 )}
                 {messages &&
@@ -788,8 +788,8 @@ export default function Consignes() {
                           <span className="text-xs font-semibold text-slate-700">
                             {m.auteur || '—'}{' '}
                             <span className="font-normal text-slate-400">
-                              · {new Date(m.created_at).toLocaleString('fr-FR')}
-                              {m.edited_at ? ' · modifié' : ''}
+                              · {new Date(m.created_at).toLocaleString('en-GB')}
+                              {m.edited_at ? ' · edited' : ''}
                             </span>
                           </span>
                           {(mine || isAdmin) && (
@@ -802,7 +802,7 @@ export default function Consignes() {
                                   setEditMsgError('')
                                 }}
                                 className="text-slate-400 hover:text-sky-600"
-                                title="Modifier ce message"
+                                title="Edit this message"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </button>
@@ -812,8 +812,8 @@ export default function Consignes() {
                                   className="text-slate-400 hover:text-red-600"
                                   title={
                                     mine
-                                      ? 'Supprimer votre réponse'
-                                      : 'Supprimer cette réponse (administrateur)'
+                                      ? 'Delete your reply'
+                                      : 'Delete this reply (administrator)'
                                   }
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
@@ -831,7 +831,7 @@ export default function Consignes() {
                                   setEditMsgHtml(html)
                                   setEditMsgText(text)
                                 }}
-                                placeholder="Modifier le message…"
+                                placeholder="Edit the message…"
                                 minHeight={70}
                               />
                               {editMsgError && (
@@ -843,7 +843,7 @@ export default function Consignes() {
                                   disabled={editMsgBusy || (!editMsgText && !editMsgHtml)}
                                   className="bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 disabled:opacity-50 text-xs font-semibold"
                                 >
-                                  {editMsgBusy ? 'Enregistrement…' : 'Enregistrer'}
+                                  {editMsgBusy ? 'Saving…' : 'Save'}
                                 </button>
                                 <button
                                   onClick={() => {
@@ -852,7 +852,7 @@ export default function Consignes() {
                                   }}
                                   className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5"
                                 >
-                                  Annuler
+                                  Cancel
                                 </button>
                               </div>
                             </div>
@@ -869,7 +869,7 @@ export default function Consignes() {
                           {(m.images || []).length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-2">
                               {(m.images || []).map((url, i) => (
-                                <a key={i} href={url} target="_blank" rel="noreferrer" title="Ouvrir la photo en grand">
+                                <a key={i} href={url} target="_blank" rel="noreferrer" title="Open the photo full size">
                                   <img
                                     src={url}
                                     alt={m.contenu ? m.contenu.slice(0, 40) : 'photo'}
@@ -895,15 +895,15 @@ export default function Consignes() {
                         setTeamPick({})
                       }}
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200 hover:bg-emerald-50 rounded-full px-3 py-1"
-                      title="Insérer l'état des tâches des équipes (Fait / Fait partiellement + reste à suivre)"
+                      title="Insert the teams' task status (Done / Partially done + remaining)"
                     >
-                      ✅ Insérer l'état des tâches ({teamsForStatus.length})
+                      ✅ Insert the task status ({teamsForStatus.length})
                     </button>
                     {teamPickerOpen && (
                       <div className="mt-2 bg-white border border-slate-200 rounded-lg p-3 max-w-xl">
                         <p className="text-xs text-slate-500 mb-2">
-                          Cocher les équipes et choisir leur statut — les autres seront listées en
-                          « Reste à suivre » :
+                          Check the teams and choose their status — the others will be listed under
+                          « Remaining »:
                         </p>
                         <div className="space-y-1 max-h-52 overflow-y-auto mb-2">
                           {teamsForStatus.map(({ team, count }) => {
@@ -921,7 +921,7 @@ export default function Consignes() {
                                       setTeamPick((prev) => {
                                         const next = { ...prev }
                                         if (next[team.id]) delete next[team.id]
-                                        else next[team.id] = 'Fait'
+                                        else next[team.id] = 'Done'
                                         return next
                                       })
                                     }
@@ -931,7 +931,7 @@ export default function Consignes() {
                                     {team.name}
                                   </span>
                                   <span className="text-xs text-slate-400 shrink-0">
-                                    {count} tâche(s)
+                                    {count} task(s)
                                   </span>
                                 </label>
                                 {checked && (
@@ -945,8 +945,8 @@ export default function Consignes() {
                                     }
                                     className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white shrink-0"
                                   >
-                                    <option value="Fait">Fait</option>
-                                    <option value="Fait partiellement">Fait partiellement</option>
+                                    <option value="Done">Done</option>
+                                    <option value="Partially done">Partially done</option>
                                   </select>
                                 )}
                               </div>
@@ -959,13 +959,13 @@ export default function Consignes() {
                             disabled={Object.keys(teamPick).length === 0}
                             className="bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 disabled:opacity-50 text-xs font-semibold"
                           >
-                            Insérer ({Object.keys(teamPick).length})
+                            Insert ({Object.keys(teamPick).length})
                           </button>
                           <button
                             onClick={() => setTeamPickerOpen(false)}
                             className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5"
                           >
-                            Annuler
+                            Cancel
                           </button>
                         </div>
                       </div>
@@ -980,14 +980,14 @@ export default function Consignes() {
                         setPocketPick([])
                       }}
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1"
-                      title="Insérer le contenu d'une ou plusieurs pochettes virtuelles dans la consigne"
+                      title="Insert the content of one or more virtual pockets into the instruction"
                     >
-                      📁 Insérer des pochettes ({(pockets || []).length})
+                      📁 Insert pockets ({(pockets || []).length})
                     </button>
                     {pocketPickerOpen && (
                       <div className="mt-2 bg-white border border-slate-200 rounded-lg p-3 max-w-xl">
                         <p className="text-xs text-slate-500 mb-2">
-                          Cocher les pochettes à inclure dans la consigne :
+                          Check the pockets to include in the instruction:
                         </p>
                         <div className="space-y-1 max-h-52 overflow-y-auto mb-2">
                           {(pockets || []).map((p) => {
@@ -1011,7 +1011,7 @@ export default function Consignes() {
                                   className="h-4 w-4 accent-sky-600"
                                 />
                                 <span className="flex-1">{p.name}</span>
-                                <span className="text-xs text-slate-400">{n} ligne(s)</span>
+                                <span className="text-xs text-slate-400">{n} line(s)</span>
                               </label>
                             )
                           })}
@@ -1022,13 +1022,13 @@ export default function Consignes() {
                             disabled={pocketPick.length === 0}
                             className="bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 disabled:opacity-50 text-xs font-semibold"
                           >
-                            Insérer ({pocketPick.length})
+                            Insert ({pocketPick.length})
                           </button>
                           <button
                             onClick={() => setPocketPickerOpen(false)}
                             className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5"
                           >
-                            Annuler
+                            Cancel
                           </button>
                         </div>
                       </div>
@@ -1041,7 +1041,7 @@ export default function Consignes() {
                     setReplyHtml(html)
                     setReplyText(text)
                   }}
-                  placeholder={`Répondre dans ${selectedFolder?.name || 'ce dossier'}…`}
+                  placeholder={`Reply in ${selectedFolder?.name || 'this folder'}…`}
                   minHeight={70}
                 />
                 {replyPreviews.length > 0 && (
@@ -1050,13 +1050,13 @@ export default function Consignes() {
                       <div key={i} className="relative">
                         <img
                           src={preview}
-                          alt="À envoyer"
+                          alt="To send"
                           className="h-16 w-16 object-cover rounded-md border border-slate-300"
                         />
                         <button
                           onClick={() => removePendingFile(i)}
                           className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full p-0.5"
-                          title="Retirer la photo"
+                          title="Remove the photo"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -1068,10 +1068,10 @@ export default function Consignes() {
                 <div className="flex items-center justify-between gap-2 mt-2">
                   <label
                     className="inline-flex items-center gap-1.5 bg-slate-200 text-slate-700 px-3 py-2 rounded-md hover:bg-slate-300 text-sm cursor-pointer"
-                    title={`Ajouter des photos (${replyFiles.length}/5)`}
+                    title={`Add photos (${replyFiles.length}/5)`}
                   >
                     <ImagePlus className="h-4 w-4" />
-                    {replyFiles.length > 0 ? `Photos (${replyFiles.length})` : 'Ajouter des photos'}
+                    {replyFiles.length > 0 ? `Photos (${replyFiles.length})` : 'Add photos'}
                     <input
                       type="file"
                       accept="image/*"
@@ -1088,7 +1088,7 @@ export default function Consignes() {
                     disabled={!canSend}
                     className="flex items-center gap-1.5 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
                   >
-                    <Send className="h-4 w-4" /> {sending ? 'Envoi…' : 'Envoyer'}
+                    <Send className="h-4 w-4" /> {sending ? 'Sending…' : 'Send'}
                   </button>
                 </div>
               </div>
@@ -1111,14 +1111,14 @@ export default function Consignes() {
               <h2 className="font-bold">
                 {folderModal.mode === 'new'
                   ? folderModal.parentId
-                    ? 'Nouveau dossier avion'
-                    : 'Nouveau dossier semaine'
-                  : 'Renommer le dossier'}
+                    ? 'New aircraft folder'
+                    : 'New week folder'
+                  : 'Rename the folder'}
               </h2>
               <button
                 onClick={() => setFolderModal(null)}
                 className="text-slate-400 hover:text-white p-1"
-                title="Fermer"
+                title="Close"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1126,12 +1126,12 @@ export default function Consignes() {
             <div className="p-5 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  {folderModal.parentId ? "Immatriculation de l'avion" : 'Nom de la semaine'}
+                  {folderModal.parentId ? 'Aircraft registration' : 'Week name'}
                 </label>
                 <input
                   value={folderName}
                   onChange={(e) => setFolderName(e.target.value)}
-                  placeholder={folderModal.parentId ? 'Ex : F-GKXT' : 'Ex : Semaine 37'}
+                  placeholder={folderModal.parentId ? 'e.g. F-GKXT' : 'e.g. Week 37'}
                   className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
                   autoFocus
                 />
@@ -1139,7 +1139,7 @@ export default function Consignes() {
               {folderModal.mode === 'new' && folderModal.parentId && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Couleur de la conversation
+                    Conversation colour
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {PALETTE.map((color) => (
@@ -1162,7 +1162,7 @@ export default function Consignes() {
                   onClick={() => setFolderModal(null)}
                   className="px-4 py-2 rounded-md border border-slate-300 text-sm hover:bg-slate-50"
                 >
-                  Annuler
+                  Cancel
                 </button>
                 <button
                   onClick={saveFolder}
@@ -1170,7 +1170,7 @@ export default function Consignes() {
                   className="flex items-center gap-1.5 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
                 >
                   <Check className="h-4 w-4" />
-                  {folderSaving ? 'Enregistrement…' : folderModal.mode === 'rename' ? 'Renommer' : 'Créer'}
+                  {folderSaving ? 'Saving…' : folderModal.mode === 'rename' ? 'Rename' : 'Create'}
                 </button>
               </div>
             </div>

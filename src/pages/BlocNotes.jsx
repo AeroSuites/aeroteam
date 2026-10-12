@@ -52,15 +52,15 @@ export default function BlocNotes() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Bloc-notes</h1>
-          <p className="text-slate-600 mt-1">{visibleNotes.length} note(s) — conservées même après réinitialisation</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Notepad</h1>
+          <p className="text-slate-600 mt-1">{visibleNotes.length} note(s) — kept even after reset</p>
         </div>
         {!creating && (
           <button
             onClick={startCreate}
             className="flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600 text-sm font-semibold"
           >
-            <Plus className="h-4 w-4" /> Nouvelle note
+            <Plus className="h-4 w-4" /> New note
           </button>
         )}
       </div>
@@ -68,7 +68,7 @@ export default function BlocNotes() {
       {creating && (
         <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 shadow">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-amber-800">Nouvelle note</h2>
+            <h2 className="font-semibold text-amber-800">New note</h2>
             <button onClick={() => setCreating(false)} className="text-slate-400 hover:text-slate-600">
               <X className="h-5 w-5" />
             </button>
@@ -76,23 +76,23 @@ export default function BlocNotes() {
           <input
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="Titre de la note"
+            placeholder="Note title"
             className="w-full border border-amber-300 rounded-md px-3 py-2 text-sm font-medium bg-white mb-2"
             autoFocus
           />
           <textarea
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
-            placeholder="Contenu..."
+            placeholder="Content..."
             rows={4}
             className="w-full border border-amber-300 rounded-md px-3 py-2 text-sm bg-white resize-y"
           />
           <div className="flex justify-end gap-2 mt-3">
             <button onClick={() => setCreating(false)} className="px-4 py-2 rounded-md border border-slate-300 text-sm hover:bg-slate-50">
-              Annuler
+              Cancel
             </button>
             <button onClick={saveCreate} className="flex items-center gap-1.5 bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600 text-sm font-semibold">
-              <Check className="h-4 w-4" /> Enregistrer
+              <Check className="h-4 w-4" /> Save
             </button>
           </div>
         </div>
@@ -101,7 +101,7 @@ export default function BlocNotes() {
       {visibleNotes.length === 0 && !creating && (
         <div className="bg-white rounded-xl shadow p-10 text-center text-slate-500">
           <StickyNote className="h-10 w-10 mx-auto text-slate-300 mb-2" />
-          Aucune note. Cliquez sur « Nouvelle note » pour commencer.
+          No notes. Click "New note" to start.
         </div>
       )}
 
@@ -113,14 +113,14 @@ export default function BlocNotes() {
                 <input
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  placeholder="Titre"
+                  placeholder="Title"
                   className="w-full border border-amber-300 rounded-md px-3 py-2 text-sm font-medium bg-white mb-2"
                   autoFocus
                 />
                 <textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  placeholder="Contenu..."
+                  placeholder="Content..."
                   rows={5}
                   className="w-full border border-amber-300 rounded-md px-3 py-2 text-sm bg-white resize-y mb-3"
                 />
@@ -138,15 +138,15 @@ export default function BlocNotes() {
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <h3 className="font-bold text-slate-800">{note.title}</h3>
                   <div className="flex gap-1 shrink-0">
-                    <button onClick={() => startEdit(note)} className="text-slate-400 hover:text-sky-600 p-1" title="Modifier">
+                    <button onClick={() => startEdit(note)} className="text-slate-400 hover:text-sky-600 p-1" title="Edit">
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => {
-                        if (window.confirm('Supprimer cette note ?')) removeNote(note.id)
+                        if (window.confirm('Delete this note?')) removeNote(note.id)
                       }}
                       className="text-slate-400 hover:text-red-600 p-1"
-                      title="Supprimer"
+                      title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

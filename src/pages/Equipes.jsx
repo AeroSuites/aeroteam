@@ -376,7 +376,7 @@ export default function Equipes() {
   const handleClearDayMembers = () => {
     if (
       !window.confirm(
-        'Effacer tous les membres assignés à l’avion du jour ? (les membres permanents et les équipes existantes sont conservés)'
+        "Clear all members assigned to today's aircraft? (permanent members and existing teams are kept)"
       )
     )
       return
@@ -392,10 +392,10 @@ export default function Equipes() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Gestion des équipes</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Team management</h1>
           <p className="text-slate-600 mt-1">
-            {teams.length} équipe(s) — créez vos équipes depuis l'onglet « Membres permanents »
-            ou « Assignés à l'avion du jour ».
+            {teams.length} team(s) — create your teams from the "Permanent members"
+            or "Assigned to today's aircraft" tab.
           </p>
         </div>
         <button
@@ -403,46 +403,46 @@ export default function Equipes() {
           className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 flex items-center gap-2"
         >
           {showAdd ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {showAdd ? 'Annuler' : 'Nouvelle équipe'}
+          {showAdd ? 'Cancel' : 'New team'}
         </button>
       </div>
 
       {showAdd && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6 max-w-md">
           <h2 className="text-lg font-semibold mb-1">
-            Créer une équipe{' '}
+            Create a team{' '}
             <span className="text-xs font-normal text-slate-400">
-              — depuis l'onglet « {tab === 'permanent' ? 'Membres permanents' : "Assignés à l'avion du jour"} »
+              — from the "{tab === 'permanent' ? 'Permanent members' : "Assigned to today's aircraft"}" tab
             </span>
           </h2>
-          <label className="block text-sm font-medium text-slate-700 mb-1 mt-3">Nom de l'équipe</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1 mt-3">Team name</label>
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Ex: Équipe mécanique matin"
+            placeholder="e.g. Morning mechanical team"
             className="w-full border border-slate-300 rounded-md px-3 py-2 mb-4"
           />
           <label className="block text-sm font-medium text-slate-700 mb-2">
-            Membres (cochez les noms de l'onglet actif)
+            Members (check the names from the active tab)
           </label>
           {availableMembers.length > 0 && (
             <input
               value={memberSearch}
               onChange={(e) => setMemberSearch(e.target.value)}
-              placeholder={`Rechercher un nom parmi ${availableMembers.length}…`}
+              placeholder={`Search a name among ${availableMembers.length}…`}
               className="w-full border border-slate-300 rounded-md px-3 py-2 mb-2 text-sm"
             />
           )}
           {availableMembers.length === 0 && (
             <p className="text-sm text-amber-600 mb-3">
-              Aucun membre disponible dans cet onglet. Ajoutez-en dans le panneau ci-dessus, ou
-              retirez d'abord les membres déjà affectés.
+              No members available in this tab. Add some in the panel above, or
+              first remove the members already assigned.
             </p>
           )}
           <div className="max-h-52 overflow-y-auto border border-slate-200 rounded-md p-2 space-y-1 mb-2">
             {availableMembers.length > 0 && visibleMembers.length === 0 && (
               <p className="text-sm text-slate-400 italic px-2 py-1">
-                Aucun nom ne correspond à « {memberSearch.trim()} ».
+                No name matches "{memberSearch.trim()}".
               </p>
             )}
             {visibleMembers.map((m) => {
@@ -462,7 +462,7 @@ export default function Equipes() {
           </div>
           {selected.length > 0 && (
             <p className="text-xs text-slate-500 mb-2">
-              Sélection : {selected.join(', ')}
+              Selection: {selected.join(', ')}
             </p>
           )}
           <button
@@ -471,8 +471,8 @@ export default function Equipes() {
             className="w-full bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50"
           >
             {selected.length > 0
-              ? `Créer l'équipe (${selected.length} membre${selected.length > 1 ? 's' : ''})`
-              : "Créer l'équipe (vide — membres à ajouter plus tard)"}
+              ? `Create team (${selected.length} member${selected.length > 1 ? 's' : ''})`
+              : "Create team (empty — members to add later)"}
           </button>
         </div>
       )}
@@ -484,7 +484,7 @@ export default function Equipes() {
       <div className="bg-white rounded-xl shadow p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <BookUser className="h-5 w-5 text-sky-500" /> Membres
+            <BookUser className="h-5 w-5 text-sky-500" /> Members
           </h2>
           <div className="inline-flex p-1 rounded-lg bg-slate-100">
             <button
@@ -495,7 +495,7 @@ export default function Equipes() {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Membres permanents ({members.length})
+              Permanent members ({members.length})
             </button>
             <button
               onClick={() => switchTab('jour')}
@@ -505,15 +505,15 @@ export default function Equipes() {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Assignés à l'avion du jour ({dayMembers.length})
+              Assigned to today's aircraft ({dayMembers.length})
             </button>
           </div>
         </div>
 
         <p className="text-sm text-slate-500 mb-4">
           {tab === 'permanent'
-            ? 'Liste permanente des techniciens : jamais effacée par la réinitialisation, elle sert à composer les équipes stables.'
-            : 'Effectif assigné à l’avion du jour : effaçable à tout moment (et lors de la réinitialisation), sert à composer les équipes du jour.'}
+            ? 'Permanent list of technicians: never erased by reset, used to build stable teams.'
+            : "Staff assigned to today's aircraft: can be cleared at any time (and on reset), used to build the day's teams."}
         </p>
 
         <div className="flex flex-wrap gap-4">
@@ -529,8 +529,8 @@ export default function Equipes() {
               }}
               placeholder={
                 tab === 'permanent'
-                  ? 'Ajouter des membres permanents (séparés par des virgules)'
-                  : 'Ajouter des membres du jour (séparés par des virgules)'
+                  ? 'Add permanent members (comma-separated)'
+                  : "Add today's members (comma-separated)"
               }
               className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm"
             />
@@ -538,14 +538,14 @@ export default function Equipes() {
               onClick={handleBulkAdd}
               className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm"
             >
-              Ajouter
+              Add
             </button>
             <label
               className="inline-flex items-center gap-1.5 bg-slate-200 text-slate-700 px-4 py-2 rounded-md hover:bg-slate-300 text-sm cursor-pointer"
-              title="Charger une liste de membres depuis un fichier (.txt, .csv)"
+              title="Upload a member list from a file (.txt, .csv)"
             >
               <Upload className="h-4 w-4" />
-              Charger un fichier
+              Upload a file
               <input
                 type="file"
                 accept=".txt,.csv"
@@ -559,15 +559,15 @@ export default function Equipes() {
               onClick={handleClearDayMembers}
               className="text-red-600 border border-red-300 hover:bg-red-50 px-4 py-2 rounded-md text-sm font-semibold"
             >
-              Effacer les membres du jour
+              Clear the day's members
             </button>
           )}
           <div className="flex flex-wrap gap-1.5 content-start">
             {activeMembers.length === 0 && (
               <span className="text-sm text-slate-400 italic">
                 {tab === 'permanent'
-                  ? 'Aucun membre permanent.'
-                  : 'Aucun membre du jour (ils arrivent avec les consignes importées).'}
+                  ? 'No permanent members.'
+                  : 'No members for the day (they arrive with imported instructions).'}
               </span>
             )}
             {activeMembers.map((m) => {
@@ -602,31 +602,31 @@ export default function Equipes() {
       {tab === 'jour' && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6 border-l-4 border-l-sky-500">
           <h2 className="font-semibold flex items-center gap-2 mb-1">
-            <Users className="h-5 w-5 text-sky-500" /> Équipes d'après les consignes
+            <Users className="h-5 w-5 text-sky-500" /> Teams from instructions
             {consignesDay && (
               <span className="text-sm font-normal text-slate-400">({consignesDay})</span>
             )}
           </h2>
           {dayConsignes.length === 0 ? (
             <p className="text-sm text-slate-500">
-              Aucune consigne trouvée dans ce profil. Les consignes arrivent avec le fichier
-              (Import consignes → envoi au profil).
+              No instructions found in this profile. Instructions arrive with the file
+              (Import instructions → sent to the profile).
             </p>
           ) : (
             <>
               <p className="text-sm text-slate-500 mb-2">
-                Coche les consignes à transformer en équipes ({pickedConsignes.length}/
-                {proposedTeams.length}) · membres non assignés :{' '}
+                Check the instructions to turn into teams ({pickedConsignes.length}/
+                {proposedTeams.length}) · unassigned members:{' '}
                 <span className="font-semibold text-slate-700">{availableMembers.length}</span> ·
-                à répartir : <span className="font-semibold text-slate-700">{assignableMembers.length}</span> ·
-                restants : <span className="font-semibold text-sky-700">{remainingToAssign}</span>
+                to distribute: <span className="font-semibold text-slate-700">{assignableMembers.length}</span> ·
+                remaining: <span className="font-semibold text-sky-700">{remainingToAssign}</span>
               </p>
 
               {availableMembers.length > 0 && (
                 <div className="mb-3">
                   <p className="text-[11px] text-slate-500 mb-1">
-                    Cliquer un membre pour le masquer de l'assignation automatique (il restera
-                    ajoutable à la main plus tard) :
+                    Click a member to hide them from automatic assignment (they can still
+                    be added manually later):
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {availableMembers.map((m) => {
@@ -642,8 +642,8 @@ export default function Equipes() {
                           }`}
                           title={
                             off
-                              ? 'Masqué : ne sera pas assigné automatiquement'
-                              : 'Disponible pour l\'assignation automatique (cliquer pour masquer)'
+                              ? 'Hidden: will not be assigned automatically'
+                              : 'Available for automatic assignment (click to hide)'
                           }
                         >
                           {m}
@@ -657,7 +657,7 @@ export default function Equipes() {
               <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-md p-2 space-y-1 mb-3">
                 {dayConsignes.length === 0 && (
                   <p className="text-sm text-slate-400 italic px-2 py-1">
-                    Aucune consigne pour ce jour.
+                    No instructions for this day.
                   </p>
                 )}
                 {dayConsignes.map((c) => {
@@ -694,7 +694,7 @@ export default function Equipes() {
                           className={`flex items-start gap-2 text-sm flex-1 min-w-0 ${
                             consumed ? 'cursor-default' : 'cursor-pointer'
                           }`}
-                          title={consumed ? 'Consigne déjà assignée à une équipe' : undefined}
+                          title={consumed ? 'Instruction already assigned to a team' : undefined}
                         >
                           <input
                             type="checkbox"
@@ -710,7 +710,7 @@ export default function Equipes() {
                           </span>
                           {consumed && (
                             <span className="shrink-0 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5">
-                              assignée
+                              assigned
                             </span>
                           )}
                         </label>
@@ -724,9 +724,9 @@ export default function Equipes() {
                                 value={perTeamCounts[c] ?? ''}
                                 onChange={(e) => setCount(c, e.target.value)}
                                 className="w-16 border border-slate-300 rounded px-1.5 py-1 text-sm"
-                                title="Nombre de membres pour cette consigne (bloqué si le total dépasse les membres à répartir)"
+                                title="Number of members for this instruction (blocked if the total exceeds the members to distribute)"
                               />
-                              membre(s)
+                              member(s)
                             </label>
                             <button
                               onClick={() =>
@@ -737,9 +737,9 @@ export default function Equipes() {
                                   ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                                   : 'bg-white border-slate-300 text-slate-600'
                               }`}
-                              title="Choisir une ou plusieurs personnes de l'effectif du jour pour cette consigne"
+                              title="Choose one or more people from the day's staff for this instruction"
                             >
-                              👥 {picked.length ? `(${picked.length})` : 'Choisir'}
+                              👥 {picked.length ? `(${picked.length})` : 'Choose'}
                             </button>
                           </div>
                         )}
@@ -747,7 +747,7 @@ export default function Equipes() {
                       {checked && memberPickerFor === c && (
                         <div className="mx-2 mb-1 border border-slate-200 rounded-md p-2 bg-slate-50">
                           <p className="text-[11px] text-slate-500 mb-1">
-                            Personnes affectées à cette consigne (effectif du jour) :
+                            People assigned to this instruction (day's staff):
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {pickerMembers.map((m) => {
@@ -761,7 +761,7 @@ export default function Equipes() {
                                       ? 'bg-sky-600 border-sky-700 text-white font-bold'
                                       : 'bg-white border-slate-200 text-slate-700'
                                   }`}
-                                  title={on ? 'Retirer' : 'Affecter à cette consigne'}
+                                  title={on ? 'Unassign' : 'Assign to this instruction'}
                                 >
                                   {on ? '✓ ' : ''}
                                   {m}
@@ -771,15 +771,15 @@ export default function Equipes() {
                           </div>
                           {availableMembers.length - pickerMembers.length > 0 && (
                             <p className="text-[10px] text-slate-400 mt-1">
-                              {availableMembers.length - pickerMembers.length} personne(s) déjà
-                              prise(s) par une autre consigne (retire-la de l'autre consigne pour
-                              la récupérer).
+                              {availableMembers.length - pickerMembers.length} person(s) already
+                              taken by another instruction (remove them from the other instruction to
+                              get them back).
                             </p>
                           )}
                           {picked.length > 0 && (
                             <p className="text-[10px] text-slate-400 mt-1">
-                              Les personnes choisies seront mises dans l'équipe de cette consigne ;
-                              le nombre saisi complète avec les membres restants.
+                              The chosen people will be placed in this instruction's team;
+                              the entered number fills in with the remaining members.
                             </p>
                           )}
                         </div>
@@ -794,7 +794,7 @@ export default function Equipes() {
                 if (!merged.length) return null
                 return (
                   <div className="mb-3 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5">
-                    <strong>Fusion automatique</strong> (personnes en commun) :{' '}
+                    <strong>Automatic merge</strong> (shared people):{' '}
                     {merged.map((g) => g.join(' + ')).join('  |  ')}
                   </div>
                 )
@@ -802,7 +802,7 @@ export default function Equipes() {
 
               <div className="flex flex-wrap items-end gap-3">
                 <label className="text-sm font-medium text-slate-700">
-                  Appliquer à toutes
+                  Apply to all
                   <input
                     type="number"
                     min="0"
@@ -813,32 +813,32 @@ export default function Equipes() {
                       applyToAll(e.target.value)
                     }}
                     className="ml-2 w-24 border border-slate-300 rounded-md px-2 py-1.5 text-sm"
-                    title="Applique le même nombre de membres à toutes les consignes cochées (total plafonné)"
+                    title="Applies the same number of members to all checked instructions (capped total)"
                   />
                 </label>
                 <button
                   onClick={createTeamsFromSelection}
                   disabled={pickedConsignes.length === 0}
                   className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
-                  title="Crée une équipe par consigne cochée, avec la répartition automatique des membres"
+                  title="Creates one team per checked instruction, with automatic member distribution"
                 >
-                  Créer {pickedConsignes.length} équipe{pickedConsignes.length > 1 ? 's' : ''}
+                  Create {pickedConsignes.length} team{pickedConsignes.length > 1 ? 's' : ''}
                   {pickedConsignes.length > 0
-                    ? ` (${totalCounts} membre${totalCounts > 1 ? 's' : ''} au total)`
+                    ? ` (${totalCounts} member${totalCounts > 1 ? 's' : ''} in total)`
                     : ''}
                 </button>
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-end gap-3">
                 <label className="text-sm font-medium text-slate-700 flex-1 min-w-[240px]">
-                  Fusionner la sélection en une seule équipe
+                  Merge the selection into a single team
                   <input
                     value={mergedName}
                     onChange={(e) => {
                       setMergedNameTouched(true)
                       setMergedName(e.target.value)
                     }}
-                    placeholder="Nom de l'équipe fusionnée"
+                    placeholder="Merged team name"
                     className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
                   />
                 </label>
@@ -846,18 +846,18 @@ export default function Equipes() {
                   onClick={createMergedTeam}
                   disabled={!mergedName.trim() || pickedConsignes.length === 0}
                   className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:opacity-50 text-sm font-semibold"
-                  title="Une seule équipe avec toutes les consignes cochées (membres cumulés)"
+                  title="A single team with all checked instructions (cumulative members)"
                 >
-                  Créer l'équipe fusionnée ({totalCounts} membre{totalCounts > 1 ? 's' : ''})
+                  Create merged team ({totalCounts} member{totalCounts > 1 ? 's' : ''})
                 </button>
               </div>
               <p className="text-[11px] text-slate-400 mt-2">
-                Pour chaque consigne : mets un <strong>nombre de membres</strong> (réparti
-                automatiquement) et/ou clique <strong>👥 Choisir</strong> pour affecter une ou
-                plusieurs personnes précises de l'effectif du jour. Les personnes choisies sont
-                mises dans l'équipe, le nombre complète avec les membres restants. Répartition en
-                tourniquet (ex. 6 personnes / 3 consignes = 2 par équipe) ; les membres masqués ou
-                restants s'ajoutent à la main (« + Ajouter à cette équipe »).
+                For each instruction: enter a <strong>number of members</strong> (distributed
+                automatically) and/or click <strong>👥 Choose</strong> to assign one or
+                more specific people from the day's staff. The chosen people are
+                placed in the team, the number fills in with the remaining members. Round-robin
+                distribution (e.g. 6 people / 3 instructions = 2 per team); hidden or
+                remaining members are added manually ("+ Add to this team").
               </p>
             </>
           )}
@@ -867,7 +867,7 @@ export default function Equipes() {
       {teams.length === 0 && !showAdd && (
         <div className="bg-white rounded-xl shadow p-10 text-center text-slate-500">
           <Users className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-          Aucune équipe pour l'instant. Créez votre première équipe.
+          No teams yet. Create your first team.
         </div>
       )}
 
@@ -883,20 +883,20 @@ export default function Equipes() {
                 <h3 className="font-bold flex items-center gap-1.5">
                   {team.locked && <Lock className="h-3.5 w-3.5 text-amber-300" />}
                   {team.name}
-                  {team.locked && <span className="text-[10px] font-semibold text-amber-200">verrouillée</span>}
+                  {team.locked && <span className="text-[10px] font-semibold text-amber-200">locked</span>}
                 </h3>
               </div>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => {
-                    const next = window.prompt("Nouveau nom de l'équipe :", team.name)
+                    const next = window.prompt("New team name:", team.name)
                     if (next === null) return
                     const name = String(next).trim()
                     if (!name) return
                     updateTeam(team.id, { name })
                   }}
                   className="text-white/80 hover:text-white p-1.5 rounded"
-                  title="Renommer l'équipe"
+                  title="Rename team"
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
@@ -905,8 +905,8 @@ export default function Equipes() {
                   className="text-white/80 hover:text-white p-1.5 rounded"
                   title={
                     team.locked
-                      ? 'Déverrouiller cette équipe (elle pourra recevoir des tâches à la répartition automatique)'
-                      : 'Verrouiller cette équipe (elle ne recevra plus de tâches à la répartition automatique)'
+                      ? 'Unlock this team (it will be able to receive tasks in automatic distribution)'
+                      : 'Lock this team (it will no longer receive tasks in automatic distribution)'
                   }
                 >
                   {team.locked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
@@ -915,7 +915,7 @@ export default function Equipes() {
                   onClick={async () => {
                     if (
                       window.confirm(
-                        `Supprimer l'équipe « ${team.name} » ?\n\nLa charge envoyée à un agent pour cette équipe sera retirée (elle reste dans l'historique de l'agent).`
+                        `Delete team "${team.name}"?\n\nThe workload sent to an agent for this team will be removed (it remains in the agent's history).`
                       )
                     ) {
                       await clearAgentChargesByTeam(team.name)
@@ -923,7 +923,7 @@ export default function Equipes() {
                     }
                   }}
                   className="text-white/80 hover:text-white"
-                  title="Supprimer l'équipe (retire aussi la charge envoyée à l'agent)"
+                  title="Delete team (also removes the workload sent to the agent)"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -932,30 +932,30 @@ export default function Equipes() {
             <div className="p-5">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-slate-600">
-                  <span className="font-semibold">{team.members.length}</span> membre(s)
+                  <span className="font-semibold">{team.members.length}</span> member(s)
                 </span>
                 <span className="flex items-center gap-2 text-sm text-slate-600">
                   <span>
-                    <span className="font-semibold">{taskCountByTeam(team.id)}</span> tâche(s)
-                    assignée(s)
+                    <span className="font-semibold">{taskCountByTeam(team.id)}</span> task(s)
+                    assigned
                   </span>
                   {taskCountByTeam(team.id) > 0 && (
                     <button
                       onClick={() => {
                         if (
                           window.confirm(
-                            `Vider la charge de l'équipe « ${team.name} » (${taskCountByTeam(
+                            `Clear the workload of team "${team.name}" (${taskCountByTeam(
                               team.id
-                            )} tâche(s)) ?\n\nLes lignes seront désassignées (elles restent dans les tâches) et la charge envoyée à l'agent sera retirée.`
+                            )} task(s))?\n\nThe lines will be unassigned (they remain in the tasks) and the workload sent to the agent will be removed.`
                           )
                         ) {
                           clearTeamCharge(team.id)
                         }
                       }}
                       className="text-slate-400 hover:text-red-600"
-                      title={`Vider la charge de l'équipe (désassigner ses ${taskCountByTeam(
+                      title={`Clear the team's workload (unassign its ${taskCountByTeam(
                         team.id
-                      )} tâche(s))`}
+                      )} task(s))`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -964,9 +964,9 @@ export default function Equipes() {
                     <button
                       onClick={() => setSendTeam(team)}
                       className="inline-flex items-center gap-1 text-xs font-semibold text-sky-700 border border-sky-200 hover:bg-sky-50 rounded-full px-2.5 py-1"
-                      title="Envoyer la charge de cette équipe à un profil agent (date + avion + consignes du jour)"
+                      title="Send this team's workload to an agent profile (date + aircraft + day's instructions)"
                     >
-                      <Send className="h-3.5 w-3.5" /> Envoyer à un agent
+                      <Send className="h-3.5 w-3.5" /> Send to an agent
                     </button>
                   )}
                 </span>
@@ -974,7 +974,7 @@ export default function Equipes() {
 
               <ul className="space-y-1 mb-4">
                 {team.members.length === 0 && (
-                  <li className="text-sm text-slate-400 italic">Aucun membre</li>
+                  <li className="text-sm text-slate-400 italic">No members</li>
                 )}
                 {team.members.map((member, i) => (
                   <li
@@ -997,14 +997,14 @@ export default function Equipes() {
                   <button
                     onClick={() => toggleAddMember(team.id)}
                     className="flex items-center gap-1.5 text-xs font-semibold text-sky-700 hover:text-sky-900"
-                    title="Afficher/masquer la liste des membres à ajouter"
+                    title="Show/hide the list of members to add"
                   >
                     {openAddMember.includes(team.id) ? (
                       <ChevronDown className="h-3.5 w-3.5" />
                     ) : (
                       <ChevronRight className="h-3.5 w-3.5" />
                     )}
-                    Ajouter des membres ({availableForTeam().length})
+                    Add members ({availableForTeam().length})
                   </button>
                   {openAddMember.includes(team.id) && (
                     <div className="mt-2">
@@ -1018,7 +1018,7 @@ export default function Equipes() {
                               [team.id]: e.target.value,
                             }))
                           }
-                          placeholder="Rechercher un nom…"
+                          placeholder="Search a name…"
                           className="w-full border border-slate-300 rounded-md pl-8 pr-2 py-1.5 text-xs"
                         />
                       </div>
@@ -1031,7 +1031,7 @@ export default function Equipes() {
                           if (list.length === 0) {
                             return (
                               <p className="text-xs text-slate-400 italic px-1">
-                                Aucun nom ne correspond.
+                                No name matches.
                               </p>
                             )
                           }

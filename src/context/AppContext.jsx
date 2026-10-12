@@ -344,13 +344,13 @@ export function AppProvider({ children }) {
         if (cancelled) return
         if (profile?.locked) {
           // Verrouillage anti force brute : on refuse l'accès sans utiliser le cache
-          setError('Trop de tentatives de connexion : réessayez dans 15 minutes.')
+          setError('Too many sign-in attempts: try again in 15 minutes.')
           setLoaded(false)
           setIsAdmin(false)
           return
         }
         if (profile?.pending) {
-          setError('Votre compte est en attente de validation par un administrateur. Réessayez plus tard.')
+          setError('Your account is awaiting validation by an administrator. Try again later.')
           setLoaded(false)
           setIsAdmin(false)
           return
@@ -400,7 +400,7 @@ export function AppProvider({ children }) {
           setLoaded(true)
           setSaveState('offline')
         } else {
-          setError('Impossible de se connecter : ' + (err.message || 'erreur réseau'))
+          setError('Unable to sign in: ' + (err.message || 'network error'))
           setIsAdmin(false)
           setLoaded(false)
         }
@@ -454,11 +454,11 @@ export function AppProvider({ children }) {
   const connectProfile = useCallback(async (profileIdentifiant, profileCode) => {
     const ident = String(profileIdentifiant || '').trim().toLowerCase()
     const c = String(profileCode || '').trim()
-    if (!ident || !c) return { ok: false, error: 'Saisissez votre identifiant et votre code.' }
+    if (!ident || !c) return { ok: false, error: 'Enter your username and your code.' }
     const exists = await profileStore.profileExists(ident, c)
-    if (exists?.locked) return { ok: false, error: 'Trop de tentatives de connexion : réessayez dans 15 minutes.' }
-    if (exists?.pending) return { ok: false, error: 'Ce compte est en attente de validation par un administrateur.' }
-    if (!exists?.ok) return { ok: false, error: 'Identifiant ou code incorrect.' }
+    if (exists?.locked) return { ok: false, error: 'Too many sign-in attempts: try again in 15 minutes.' }
+    if (exists?.pending) return { ok: false, error: 'This account is awaiting validation by an administrator.' }
+    if (!exists?.ok) return { ok: false, error: 'Incorrect username or code.' }
     localStorage.setItem(ACTIVE_CODE_KEY, c)
     localStorage.setItem(ACTIVE_IDENT_KEY, ident)
     localStorage.setItem(ACTIVE_AT_KEY, String(Date.now()))
@@ -477,8 +477,8 @@ export function AppProvider({ children }) {
     async ({ identifiant: profileIdentifiant, code: profileCode, name, aircraft, type }) => {
       const ident = String(profileIdentifiant || '').trim().toLowerCase()
       const c = String(profileCode || '').trim()
-      if (!c) return { ok: false, error: 'Le code est obligatoire.' }
-      if (!name || !String(name).trim()) return { ok: false, error: 'Le nom du profil est obligatoire.' }
+      if (!c) return { ok: false, error: 'The code is required.' }
+      if (!name || !String(name).trim()) return { ok: false, error: 'The profile name is required.' }
       try {
         const res = await profileStore.createProfile(
           ident,
@@ -496,15 +496,15 @@ export function AppProvider({ children }) {
         return { ok: true, identifiant: finalIdent }
       } catch (err) {
         if (err.message === 'code_exists') {
-          return { ok: false, error: 'Ce code est déjà utilisé. Choisissez un autre code.' }
+          return { ok: false, error: 'This code is already in use. Choose another code.' }
         }
         if (err.message === 'code_too_short') {
-          return { ok: false, error: 'Le code doit contenir au moins 8 caractères.' }
+          return { ok: false, error: 'The code must contain at least 8 characters.' }
         }
         if (err.message === 'identifiant_indisponible') {
-          return { ok: false, error: 'Cet identifiant est déjà utilisé. Choisissez-en un autre.' }
+          return { ok: false, error: 'This username is already in use. Choose another one.' }
         }
-        return { ok: false, error: 'Échec de la création : ' + (err.message || 'erreur réseau') }
+        return { ok: false, error: 'Failed to create: ' + (err.message || 'network error') }
       }
     },
     []
@@ -523,50 +523,50 @@ export function AppProvider({ children }) {
         res?.error === 'code_reserve' ||
         res?.error === 'code_indisponible'
       )
-        return { ok: false, error: 'Ce code est déjà utilisé. Choisissez-en un autre.' }
+        return { ok: false, error: 'This code is already in use. Choose another one.' }
       if (res?.error === 'identifiant_indisponible')
-        return { ok: false, error: 'Cet identifiant est déjà utilisé. Choisissez-en un autre.' }
+        return { ok: false, error: 'This username is already in use. Choose another one.' }
       if (res?.error === 'identifiant_court')
-        return { ok: false, error: "L'identifiant doit contenir au moins 3 caractères." }
+        return { ok: false, error: 'The username must contain at least 3 characters.' }
       if (res?.error === 'trop_de_tentatives')
         return {
           ok: false,
-          error: "Trop de tentatives d'inscription. Réessayez dans 15 minutes.",
+          error: 'Too many sign-up attempts. Try again in 15 minutes.',
         }
       if (res?.error === 'code_too_short')
-        return { ok: false, error: 'Le code doit contenir au moins 8 caractères.' }
+        return { ok: false, error: 'The code must contain at least 8 characters.' }
       if (res?.error === 'nom_requis')
-        return { ok: false, error: 'Le nom est obligatoire.' }
+        return { ok: false, error: 'The name is required.' }
       if (res?.error === 'manager_requis')
-        return { ok: false, error: 'Sélectionnez votre manager dans la liste.' }
+        return { ok: false, error: 'Select your manager from the list.' }
       if (res?.ok) return { ok: true }
-      return { ok: false, error: "Échec de l'envoi de la demande : " + (res?.error || 'erreur') }
+      return { ok: false, error: 'Failed to send the request: ' + (res?.error || 'error') }
     } catch (err) {
-      return { ok: false, error: "Échec de l'envoi de la demande : " + (err.message || 'erreur réseau') }
+      return { ok: false, error: 'Failed to send the request: ' + (err.message || 'network error') }
     }
   }, [])
 
   const changeAdminCode = useCallback(async (oldCode, newCode) => {
     try {
       const res = await profileStore.setAdminCode(oldCode, newCode)
-      if (res?.error === 'bad_old') return { ok: false, error: "L'ancien code administrateur est incorrect." }
-      if (res?.error === 'code_too_short') return { ok: false, error: 'Le nouveau code doit contenir au moins 8 caractères.' }
-      if (res?.error === 'locked') return { ok: false, error: 'Trop de tentatives : réessayez dans 15 minutes.' }
-      if (res?.ok !== true) return { ok: false, error: 'Échec du changement de code.' }
+      if (res?.error === 'bad_old') return { ok: false, error: 'The old administrator code is incorrect.' }
+      if (res?.error === 'code_too_short') return { ok: false, error: 'The new code must contain at least 8 characters.' }
+      if (res?.error === 'locked') return { ok: false, error: 'Too many attempts: try again in 15 minutes.' }
+      if (res?.ok !== true) return { ok: false, error: 'Failed to change the code.' }
       return { ok: true }
     } catch (err) {
-      return { ok: false, error: 'Échec du changement de code : ' + (err.message || 'erreur réseau') }
+      return { ok: false, error: 'Failed to change the code: ' + (err.message || 'network error') }
     }
   }, [])
 
   const updateOwnProfile = useCallback(async ({ name, aircraft }) => {
     try {
       const res = await profileStore.updateProfileMeta(codeRef.current, name, aircraft)
-      if (res?.error === 'not_found') return { ok: false, error: 'Profil introuvable.' }
+      if (res?.error === 'not_found') return { ok: false, error: 'Profile not found.' }
       setActiveProfile((prev) => (prev ? { ...prev, name, aircraft } : prev))
       return { ok: true }
     } catch (err) {
-      return { ok: false, error: 'Échec de la mise à jour : ' + (err.message || 'erreur réseau') }
+      return { ok: false, error: 'Failed to update: ' + (err.message || 'network error') }
     }
   }, [])
 
@@ -789,6 +789,6 @@ const value = {
 
 export function useApp() {
   const ctx = useContext(AppContext)
-  if (!ctx) throw new Error('useApp doit être utilisé dans AppProvider')
+  if (!ctx) throw new Error('useApp must be used within AppProvider')
   return ctx
 }

@@ -3,7 +3,7 @@ import { assignmentTeams, isAssignedTo, priorityToken, cleanShortValue } from '.
 
 export function exportToExcel({ tasks, teams, assignments }) {
   const wsData = [
-    ['N°', 'Tâche', 'Priorité', 'Zone', 'Bloc', 'Skills', 'TRFX', 'Heures prévues', 'Statut', 'Appareil', 'Équipe(s)', 'Membres'],
+    ['No.', 'Task', 'Priority', 'Zone', 'Block', 'Skills', 'TRFX', 'Planned hours', 'Status', 'Aircraft', 'Team(s)', 'Members'],
   ]
 
   const sorted = [...tasks].sort((a, b) => {
@@ -31,7 +31,7 @@ export function exportToExcel({ tasks, teams, assignments }) {
       task.scheduledHours ?? '',
       task.mtxStatus ?? '',
       task.registration ?? '',
-      taskTeams.map((tm) => tm.name).join(', ') || 'Non assignée',
+      taskTeams.map((tm) => tm.name).join(', ') || 'Unassigned',
       [...new Set(taskTeams.flatMap((tm) => tm.members || []))].join(', '),
     ])
   })
@@ -41,19 +41,19 @@ export function exportToExcel({ tasks, teams, assignments }) {
   ws['!cols'] = colWidths.map((wch) => ({ wch }))
 
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Affectations')
+  XLSX.utils.book_append_sheet(wb, ws, 'Assignments')
 
   const date = new Date().toISOString().slice(0, 10)
-  XLSX.writeFile(wb, `affectations-${date}.xlsx`)
+  XLSX.writeFile(wb, `assignments-${date}.xlsx`)
 }
 
 export function exportTeamsJSON({ teams, assignments, tasks }) {
-  const zonesSorted = [...new Set(tasks.map((t) => t.workArea || 'Autre'))].sort()
+  const zonesSorted = [...new Set(tasks.map((t) => t.workArea || 'Other'))].sort()
   const data = {
     zones: zonesSorted.map((zone) => ({
       zone,
       tasks: tasks
-        .filter((t) => (t.workArea || 'Autre') === zone)
+        .filter((t) => (t.workArea || 'Other') === zone)
         .map((t) => ({
           seq: t.seq,
           description: t.description,

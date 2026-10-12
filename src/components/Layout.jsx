@@ -5,40 +5,40 @@ import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
 
 const navItems = [
-  { to: '/', label: 'Tableau de bord', end: true, ordre: 5 },
+  { to: '/', label: 'Dashboard', end: true, ordre: 5 },
   { to: '/import', label: 'Import Victory', ordre: 1 },
-  { to: '/taches', label: 'Tâches', ordre: 2 },
-  { to: '/equipes', label: 'Équipes', ordre: 3 },
-  { to: '/affectation', label: 'Affectation', ordre: 4 },
+  { to: '/taches', label: 'Tasks', ordre: 2 },
+  { to: '/equipes', label: 'Teams', ordre: 3 },
+  { to: '/affectation', label: 'Assignment', ordre: 4 },
   { to: '/export', label: 'Export/Reset' },
-  { to: '/preparation', label: 'Préparation vac suivante' },
+  { to: '/preparation', label: 'Next vacation preparation' },
   {
     to: '/notes',
-    label: 'Bloc-notes & Messagerie',
+    label: 'Notepad & Messages',
     submenu: true,
     messages: true,
     children: [
-      { to: '/notes', label: 'Bloc-notes' },
-      { to: '/messagerie', label: 'Messagerie', messages: true },
+      { to: '/notes', label: 'Notepad' },
+      { to: '/messagerie', label: 'Messages', messages: true },
     ],
   },
   {
     to: '/consignes',
-    label: 'Consignes',
+    label: 'Instructions',
     submenu: true,
     children: [
-      { to: '/consignes', label: 'Consignes' },
-      { to: '/import-consignes', label: 'Import consignes', adminOnly: true },
+      { to: '/consignes', label: 'Instructions' },
+      { to: '/import-consignes', label: 'Import instructions', adminOnly: true },
     ],
   },
 ]
 
 // Navigation réduite des profils agents (charge reçue d'un leader)
 const agentNavItems = [
-  { to: '/ma-charge', label: 'Ma charge', end: true },
-  { to: '/notes', label: 'Bloc-notes' },
-  { to: '/consignes', label: 'Consignes' },
-  { to: '/messagerie', label: 'Messagerie', messages: true },
+  { to: '/ma-charge', label: 'My workload', end: true },
+  { to: '/notes', label: 'Notepad' },
+  { to: '/consignes', label: 'Instructions' },
+  { to: '/messagerie', label: 'Messages', messages: true },
 ]
 
 export default function Layout({ children }) {
@@ -154,7 +154,7 @@ export default function Layout({ children }) {
   }, [openSubmenu])
 
   const switchProfile = () => {
-    if (window.confirm(`Quitter le profil « ${activeProfile?.name} » ? (les données sont sauvegardées dans le cloud)`)) {
+    if (window.confirm(`Sign out of profile "${activeProfile?.name}"? (data is saved in the cloud)`)) {
       disconnect()
       navigate('/')
     }
@@ -184,33 +184,33 @@ export default function Layout({ children }) {
                 to="/"
                 end
                 className="flex items-center gap-1.5 text-white hover:bg-white/10 text-xs font-bold bg-white/10 border border-white/40 rounded-full px-3 py-1.5"
-                title={`${consignesCount} consigne(s) de l'avion — voir le tableau de bord`}
+                title={`${consignesCount} aircraft instruction(s) — see the dashboard`}
               >
                 <ClipboardList className="h-4 w-4" /> {consignesCount}
               </NavLink>
             )}
             <div className="text-right leading-tight">
-              <p className="text-[10px] sm:text-xs text-slate-400">Profil</p>
+              <p className="text-[10px] sm:text-xs text-slate-400">Profile</p>
               <p className="text-xs sm:text-sm font-semibold text-sky-300 max-w-[30vw] sm:max-w-[200px] truncate">{activeProfile?.name}</p>
               {activeProfile?.aircraft && (
                 <p className="text-[10px] sm:text-xs text-slate-400 truncate max-w-[30vw] sm:max-w-[200px]">✈ {activeProfile.aircraft}</p>
               )}
               {saveState === 'saving' && (
-                <p className="text-[10px] sm:text-xs text-[#92c5ed] animate-pulse">Sauvegarde…</p>
+                <p className="text-[10px] sm:text-xs text-[#92c5ed] animate-pulse">Saving…</p>
               )}
               {saveState === 'offline' && (
                 <p
                   className="text-[10px] sm:text-xs text-[#ff0000] font-semibold"
-                  title="La sauvegarde a échoué : nouvelle tentative automatique toutes les 30 secondes. Vérifiez la connexion et restez sur cette page."
+                  title="Save failed: automatic retry every 30 seconds. Check your connection and stay on this page."
                 >
-                  Hors ligne ⚠
+                  Offline ⚠
                 </p>
               )}
             </div>
             <button
               onClick={switchProfile}
               className="text-slate-300 hover:text-white hover:bg-slate-800 p-2 rounded-md"
-              title="Changer de profil"
+              title="Switch profile"
             >
               <LogOut className="h-5 w-5" />
             </button>
@@ -219,24 +219,24 @@ export default function Layout({ children }) {
         {saveState === 'conflict' && (
           <div className="mx-auto max-w-[1700px] px-4 py-2 flex flex-wrap items-center justify-between gap-3 bg-amber-500 text-white text-sm">
             <span className="font-semibold">
-              ⚠ Conflit de sauvegarde : vos modifications locales et celles enregistrées par un autre appareil divergent.
+              ⚠ Save conflict: your local changes and those saved by another device diverge.
             </span>
             <div className="flex gap-2">
               <button
                 onClick={() => resolveConflict('reload')}
                 className="bg-white text-amber-700 px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-amber-50"
               >
-                Recharger depuis le serveur
+                Reload from server
               </button>
               <button
                 onClick={() => {
-                  if (window.confirm('Écraser les données du serveur avec celles de cet appareil ? Cette action est irréversible.')) {
+                  if (window.confirm('Overwrite the server data with those of this device? This action is irreversible.')) {
                     resolveConflict('overwrite')
                   }
                 }}
                 className="bg-amber-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-amber-800"
               >
-                Écraser avec mes données
+                Overwrite with my data
               </button>
             </div>
           </div>
@@ -259,7 +259,7 @@ export default function Layout({ children }) {
                   }
                 >
                   {item.ordre && (
-                    <span className="inline-flex items-center justify-center h-4 w-4 mr-1.5 rounded-full bg-white text-[10px] font-bold text-[#051039] align-middle" title={`Étape ${item.ordre} — ordre d'utilisation`}>
+                    <span className="inline-flex items-center justify-center h-4 w-4 mr-1.5 rounded-full bg-white text-[10px] font-bold text-[#051039] align-middle" title={`Step ${item.ordre} — order of use`}>
                       {item.ordre}
                     </span>
                   )}
@@ -338,7 +338,7 @@ export default function Layout({ children }) {
                     ? 'bg-sky-500 text-white'
                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
-                title="Administration et Primes"
+                title="Administration and Bonuses"
               >
                 Administration
                 <ChevronDown
@@ -379,7 +379,7 @@ export default function Layout({ children }) {
                       }`
                     }
                   >
-                    <span>Primes</span>
+                    <span>Bonuses</span>
                     {primesPending > 0 && (
                       <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff0000] text-white text-[10px] font-bold">
                         {primesPending}

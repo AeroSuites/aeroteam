@@ -8,7 +8,7 @@ export function groupTasksTree(list) {
   const blocks = {}
   list.forEach((t) => {
     const b = t.taskType || 'AUTRE'
-    const z = t.workArea || 'Autre'
+    const z = t.workArea || 'Other'
     if (!blocks[b]) blocks[b] = {}
     if (!blocks[b][z]) blocks[b][z] = []
     blocks[b][z].push(t)
@@ -147,7 +147,7 @@ export default function TaskTreeSelect({
                       </span>
                       {doneMap && doneMap[task.id] && (
                         <span className="shrink-0 text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 rounded-full px-1.5 py-0.5 whitespace-nowrap">
-                          déjà faite (COMPLETE)
+                          already done (COMPLETE)
                         </span>
                       )}
                       <span className="shrink-0 text-xs text-slate-400">

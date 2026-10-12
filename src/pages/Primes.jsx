@@ -68,7 +68,7 @@ const primeDay = (d) =>
 
 const formatDay = (iso) => {
   if (!iso) return '—'
-  const label = new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', {
+  const label = new Date(`${iso}T12:00:00`).toLocaleDateString('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -80,7 +80,7 @@ const formatDay = (iso) => {
 const formatMonth = (ym) => {
   if (!ym) return '—'
   const [y, m] = ym.split('-')
-  const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('fr-FR', {
+  const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-GB', {
     month: 'long',
     year: 'numeric',
   })
@@ -143,13 +143,13 @@ export default function Primes() {
     const n = orphanCount(linkNom)
     if (n === 0) {
       setLinkMsg(
-        'Aucune déclaration à rattacher pour ce nom (déjà liées à un compte, ou aucune déclaration).'
+        'No declaration to link for this name (already linked to an account, or no declaration).'
       )
       return
     }
     if (
       !window.confirm(
-        `Rattacher ${n} déclaration(s) de « ${linkNom} » au compte AeroPrimes ${linkIdentifiant} ?\n\nLa personne retrouvera tout son historique de primes.`
+        `Link ${n} declaration(s) from "${linkNom}" to the AeroPrimes account ${linkIdentifiant} ?\n\nThe person will get back their full bonus history.`
       )
     )
       return
@@ -164,12 +164,12 @@ export default function Primes() {
       if (res?.error) {
         setLinkMsg(
           res.error === 'agent_inconnu'
-            ? 'Compte AeroPrimes introuvable.'
-            : 'Échec du rattachement.'
+            ? 'AeroPrimes account not found.'
+            : 'Failed to link.'
         )
       } else {
         setLinkMsg(
-          `${res?.count ?? n} déclaration(s) rattachée(s) au compte ${
+          `${res?.count ?? n} declaration(s) linked to the account ${
             res?.identifiant || linkIdentifiant
           }.`
         )
@@ -179,7 +179,7 @@ export default function Primes() {
         await loadAgents()
       }
     } catch {
-      setLinkMsg('Échec du rattachement.')
+      setLinkMsg('Failed to link.')
     }
     setLinkBusy(false)
   }
@@ -203,10 +203,10 @@ export default function Primes() {
     if (!activeProfile?.code) return
     try {
       const res = await profileStore.adminListDeclarations(activeProfile.code, '')
-      if (res?.error) setError('Impossible de charger les demandes.')
+      if (res?.error) setError('Unable to load the requests.')
       else setDeclarations(res.declarations || [])
     } catch {
-      setError('Impossible de charger les demandes.')
+      setError('Unable to load the requests.')
     }
   }
 
@@ -214,10 +214,10 @@ export default function Primes() {
     if (!activeProfile?.code) return
     try {
       const res = await profileStore.adminListAgents(activeProfile.code)
-      if (res?.error) setAgentsError('Impossible de charger les comptes agents.')
+      if (res?.error) setAgentsError('Unable to load the agent accounts.')
       else setAgents(res.agents || [])
     } catch {
-      setAgentsError('Impossible de charger les comptes agents.')
+      setAgentsError('Unable to load the agent accounts.')
     }
   }
 
@@ -226,10 +226,10 @@ export default function Primes() {
     profileStore
       .adminListDeclarations(activeProfile.code, '')
       .then((res) => {
-        if (res?.error) setError('Impossible de charger les demandes.')
+        if (res?.error) setError('Unable to load the requests.')
         else setDeclarations(res.declarations || [])
       })
-      .catch(() => setError('Impossible de charger les demandes.'))
+      .catch(() => setError('Unable to load the requests.'))
   }, [activeProfile])
 
   useEffect(() => {
@@ -237,10 +237,10 @@ export default function Primes() {
     profileStore
       .adminListAgents(activeProfile.code)
       .then((res) => {
-        if (res?.error) setAgentsError('Impossible de charger les comptes agents.')
+        if (res?.error) setAgentsError('Unable to load the agent accounts.')
         else setAgents(res.agents || [])
       })
-      .catch(() => setAgentsError('Impossible de charger les comptes agents.'))
+      .catch(() => setAgentsError('Unable to load the agent accounts.'))
   }, [activeProfile])
 
   useEffect(() => {
@@ -287,15 +287,15 @@ export default function Primes() {
     setNotifyError('')
     try {
       const res = await profileStore.adminSetMyEmail(activeProfile?.code, notifyEmail)
-      if (res?.error === 'email_invalide') setNotifyError('Adresse email invalide.')
-      else if (res?.error) setNotifyError("Échec de l'enregistrement.")
+      if (res?.error === 'email_invalide') setNotifyError('Invalid email address.')
+      else if (res?.error) setNotifyError("Failed to save.")
       else {
-        setNotifyMsg('Adresse enregistrée.')
+        setNotifyMsg('Address saved.')
         setSavedEmail(res.email || notifyEmail)
         setNotifyEmail(res.email || notifyEmail)
       }
     } catch (err) {
-      setNotifyError(`Échec de l'enregistrement : ${err?.message || 'hors ligne ?'}`)
+      setNotifyError(`Failed to save: ${err?.message || 'offline?'}`)
     }
     setNotifyBusy(false)
   }
@@ -312,14 +312,14 @@ export default function Primes() {
         notifyPublicKey,
         notifyPrivateKey
       )
-      if (res?.error) setNotifyError("Échec de l'enregistrement.")
+      if (res?.error) setNotifyError("Failed to save.")
       else {
-        setNotifyMsg('Configuration enregistrée.')
+        setNotifyMsg('Configuration saved.')
         setNotifyPrivateKey('')
         await refreshNotifyInfo()
       }
     } catch (err) {
-      setNotifyError(`Échec de l'enregistrement : ${err?.message || 'hors ligne ?'}`)
+      setNotifyError(`Failed to save: ${err?.message || 'offline?'}`)
     }
     setNotifyBusy(false)
   }
@@ -331,14 +331,14 @@ export default function Primes() {
     try {
       const res = await profileStore.adminTestEmail(activeProfile?.code)
       if (res?.error === 'email_requis')
-        setNotifyError("Renseignez d'abord votre adresse email ci-dessus.")
+        setNotifyError("First enter your email address above.")
       else if (res?.error === 'config_manquante')
-        setNotifyError("Configuration d'envoi incomplète (clé Brevo + adresse expéditrice).")
-      else if (res?.error) setNotifyError("Échec de l'envoi du test.")
+        setNotifyError("Incomplete sending configuration (Brevo key + sender address).")
+      else if (res?.error) setNotifyError("Failed to send the test.")
       else
-        setNotifyMsg('Email de test envoyé — vérifiez votre boîte (et les indésirables).')
+        setNotifyMsg('Test email sent — check your inbox (and spam).')
     } catch (err) {
-      setNotifyError(`Échec de l'envoi du test : ${err?.message || 'hors ligne ?'}`)
+      setNotifyError(`Failed to send the test: ${err?.message || 'hors ligne ?'}`)
     }
     setNotifyBusy(false)
   }
@@ -350,15 +350,15 @@ export default function Primes() {
     try {
       const res = await profileStore.adminSendPrimesRecapNow(activeProfile?.code)
       if (res?.error === 'aucun_destinataire')
-        setNotifyError("Renseignez d'abord votre adresse email ci-dessus (adresse manager).")
-      else if (res?.error) setNotifyError(`Échec du récap : ${res.error}`)
+        setNotifyError("First enter your email address above (manager address).")
+      else if (res?.error) setNotifyError(`Failed recap: ${res.error}`)
       else if (res?.ok)
         setNotifyMsg(
-          `Récap « ${res.label} » envoyé à ${res.recipients} adresse(s) : ${res.agents} agent(s), ${res.total} déclaration(s).`
+          `Recap "${res.label}" sent to ${res.recipients} address(es): ${res.agents} agent(s), ${res.total} declaration(s).`
         )
-      else setNotifyError("Échec de l'envoi du récap.")
+      else setNotifyError("Failed to send the recap.")
     } catch (err) {
-      setNotifyError(`Échec de l'envoi du récap : ${err?.message || 'hors ligne ?'}`)
+      setNotifyError(`Failed to send the recap: ${err?.message || 'hors ligne ?'}`)
     }
     setNotifyBusy(false)
   }
@@ -378,11 +378,11 @@ export default function Primes() {
         id,
         categorie
       )
-      if (res?.error === 'categorie_invalide') setError('Catégorie invalide.')
-      else if (res?.error) setError('Échec de la validation.')
+      if (res?.error === 'categorie_invalide') setError('Invalid category.')
+      else if (res?.error) setError('Failed to approve.')
       else afterDecision()
     } catch {
-      setError('Échec de la validation.')
+      setError('Failed to approve.')
     }
     setBusyId(null)
   }
@@ -398,11 +398,11 @@ export default function Primes() {
         id,
         motif.trim()
       )
-      if (res?.error === 'motif_requis') setError('Le motif est obligatoire.')
-      else if (res?.error) setError('Échec du refus.')
+      if (res?.error === 'motif_requis') setError('The reason is required.')
+      else if (res?.error) setError('Failed to refuse.')
       else afterDecision()
     } catch {
-      setError('Échec du refus.')
+      setError('Failed to refuse.')
     }
     setBusyId(null)
   }
@@ -410,8 +410,8 @@ export default function Primes() {
   const handleDeleteDeclaration = async (d) => {
     if (
       !window.confirm(
-        `Supprimer cette demande de prime ?\n\n${d.avion || '—'} · ${d.element || '—'}\n${
-          d.agent_identifiant ? `Si « ${d.agent_nom || d.agent_identifiant} » a un compte AeroPrimes, elle disparaîtra seulement de votre vue : la personne conservera ses déclarations dans son historique.` : 'Cette action est irréversible.'
+        `Delete this bonus request?\n\n${d.avion || '—'} · ${d.element || '—'}\n${
+          d.agent_identifiant ? `If "${d.agent_nom || d.agent_identifiant}" has an AeroPrimes account, it will only disappear from your view: the person keeps their declarations in their history.` : 'This action is irreversible.'
         }`
       )
     )
@@ -421,15 +421,15 @@ export default function Primes() {
     setInfo('')
     try {
       const res = await profileStore.adminDeleteDeclaration(activeProfile?.code, d.id)
-      if (res?.error) setError('Échec de la suppression.')
+      if (res?.error) setError('Failed to delete.')
       else if (res?.hidden) {
         setInfo(
-          `Retirée de votre vue manager — la personne conserve ses déclarations dans son historique AeroPrimes.`
+          `Removed from your manager view — the person keeps their declarations in their AeroPrimes history.`
         )
         afterDecision()
       } else afterDecision()
     } catch {
-      setError('Échec de la suppression (hors ligne ?).')
+      setError('Failed to delete (offline?).')
     }
     setBusyId(null)
   }
@@ -438,10 +438,10 @@ export default function Primes() {
     if (!detailAgent) return
     if (
       !window.confirm(
-        `Supprimer TOUT l'historique de primes de « ${detailInfo?.nom || detailAgent} » ?\n\n${
+        `Delete the ENTIRE bonus history of "${detailInfo?.nom || detailAgent}" ?\n\n${
           detailInfo?.identifiant
-            ? "Comme cette personne a un compte AeroPrimes, l'historique disparaîtra seulement de votre vue : elle conservera tout dans AeroPrimes."
-            : 'Cette action est irréversible.'
+            ? "As this person has an AeroPrimes account, the history will only disappear from your view: they keep everything in AeroPrimes."
+            : 'This action is irreversible.'
         }`
       )
     )
@@ -454,18 +454,18 @@ export default function Primes() {
         activeProfile?.code,
         detailInfo?.nom || detailInfo?.identifiant || detailAgent
       )
-      if (res?.error) setError('Échec de la suppression.')
+      if (res?.error) setError('Failed to delete.')
       else {
         if (res?.hidden) {
           setInfo(
-            'Historique retiré de votre vue manager — la personne conserve ses déclarations dans AeroPrimes.'
+            'History removed from your manager view — the person keeps their declarations in AeroPrimes.'
           )
         }
         setDetailAgent(null)
         afterDecision()
       }
     } catch {
-      setError('Échec de la suppression (hors ligne ?).')
+      setError('Failed to delete (offline?).')
     }
     setBusyId(null)
   }
@@ -479,10 +479,10 @@ export default function Primes() {
         agent.identifiant,
         !agent.actif
       )
-      if (res?.error) setAgentsError('Échec de la modification du compte.')
+      if (res?.error) setAgentsError('Failed to update the account.')
       else await loadAgents()
     } catch {
-      setAgentsError('Échec de la modification du compte.')
+      setAgentsError('Failed to update the account.')
     }
     setAgentBusy(null)
   }
@@ -490,7 +490,7 @@ export default function Primes() {
   const handleDeleteAgent = async (agent) => {
     if (
       !window.confirm(
-        `Supprimer définitivement le compte « ${agent.identifiant} » ?\n\nL'agent ne pourra plus se connecter. Ses déclarations restent dans l'historique.`
+        `Permanently delete the account "${agent.identifiant}" ?\n\nThe agent will no longer be able to sign in. Their declarations remain in the history.`
       )
     )
       return
@@ -501,10 +501,10 @@ export default function Primes() {
         activeProfile?.code,
         agent.identifiant
       )
-      if (res?.error) setAgentsError('Échec de la suppression.')
+      if (res?.error) setAgentsError('Failed to delete.')
       else await loadAgents()
     } catch {
-      setAgentsError('Échec de la suppression.')
+      setAgentsError('Failed to delete.')
     }
     setAgentBusy(null)
   }
@@ -519,7 +519,7 @@ export default function Primes() {
         assignValue || null
       )
       if (res?.error === 'manager_inconnu') setAgentsError('Manager inconnu.')
-      else if (res?.error) setAgentsError("Échec de l'affectation.")
+      else if (res?.error) setAgentsError("Failed to assign.")
       else {
         setAssignId(null)
         setAssignValue('')
@@ -528,7 +528,7 @@ export default function Primes() {
         window.dispatchEvent(new Event('primes-updated'))
       }
     } catch {
-      setAgentsError("Échec de l'affectation.")
+      setAgentsError("Failed to assign.")
     }
     setAgentBusy(null)
   }
@@ -651,14 +651,14 @@ export default function Primes() {
       a.total,
     ])
     const wsSynth = XLSX.utils.aoa_to_sheet([
-      ['Agent', 'Toilette T1 (V034)', 'Toilette T2 (V035)', 'Total déclarées'],
+      ['Agent', 'Toilet T1 (V034)', 'Toilet T2 (V035)', 'Total declared'],
       ...synth,
     ])
     wsSynth['!cols'] = [22, 17, 17, 14].map((wch) => ({ wch }))
 
     // Feuille 2 : détail complet
     const rows = sorted.map((d) => [
-      d.created_at ? new Date(d.created_at).toLocaleDateString('fr-FR') : '',
+      d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : '',
       d.agent_nom || '',
       d.agent_identifiant || '',
       d.date_intervention || '',
@@ -668,21 +668,21 @@ export default function Primes() {
       catLabel(d.categorie),
       d.statut || '',
       d.motif_refus || '',
-      d.decided_at ? new Date(d.decided_at).toLocaleDateString('fr-FR') : '',
+      d.decided_at ? new Date(d.decided_at).toLocaleDateString('en-GB') : '',
     ])
     const wsDetail = XLSX.utils.aoa_to_sheet([
       [
-        'Date envoi',
+        'Sent date',
         'Agent',
         'Identifiant',
-        'Date intervention',
-        'Avion',
-        'Élément',
+        'Intervention date',
+        'Aircraft',
+        'Item',
         'Description',
-        'Catégorie',
+        'Category',
         'Statut',
         'Motif refus',
-        'Décidé le',
+        'Decided on',
       ],
       ...rows,
     ])
@@ -691,8 +691,8 @@ export default function Primes() {
     }))
 
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, wsSynth, 'Synthèse')
-    XLSX.utils.book_append_sheet(wb, wsDetail, 'Détail')
+    XLSX.utils.book_append_sheet(wb, wsSynth, 'Summary')
+    XLSX.utils.book_append_sheet(wb, wsDetail, 'Detail')
     XLSX.writeFile(wb, `primes-${new Date().toISOString().slice(0, 10)}.xlsx`)
   }
 
@@ -712,7 +712,7 @@ export default function Primes() {
             onClick={exportExcel}
             disabled={sorted.length === 0}
             className="flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 disabled:opacity-50 text-sm font-semibold"
-            title="Exporter les demandes affichées en Excel"
+            title="Export the displayed requests to Excel"
           >
             <FileSpreadsheet className="h-4 w-4" /> Exporter Excel
           </button>
@@ -724,9 +724,9 @@ export default function Primes() {
           {info}
         </p>
       )}
-        {declarations === null && <p className="text-sm text-slate-400">Chargement…</p>}
+        {declarations === null && <p className="text-sm text-slate-400">Loading…</p>}
         {declarations && declarations.length === 0 && (
-          <p className="text-sm text-slate-400 italic">Aucune demande pour le moment.</p>
+          <p className="text-sm text-slate-400 italic">No request for now.</p>
         )}
         {declarations && declarations.length > 0 && (
           <div className="overflow-x-auto">
@@ -734,14 +734,14 @@ export default function Primes() {
               <thead>
                 <tr className="text-left bg-slate-50">
                   <th className="px-3 py-2 font-semibold text-slate-700">Agent</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700 text-center">En attente</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700 text-center">Pending</th>
                   <th className="px-3 py-2 font-semibold text-slate-700 text-center">
                     Toilette T1 (V034)
                   </th>
                   <th className="px-3 py-2 font-semibold text-slate-700 text-center">
                     Toilette T2 (V035)
                   </th>
-                  <th className="px-3 py-2 font-semibold text-slate-700 text-center">Refusées</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700 text-center">Refused</th>
                   <th className="px-3 py-2 font-semibold text-slate-700 text-center">Total</th>
                   <th className="px-3 py-2"></th>
                 </tr>
@@ -763,9 +763,9 @@ export default function Primes() {
                               ? 'bg-amber-300 text-amber-900'
                               : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
                           }`}
-                          title="Afficher / masquer les primes à valider"
+                          title="Show / hide the bonuses to approve"
                         >
-                          {a.pending} à valider
+                          {a.pending} to approve
                         </button>
                       ) : (
                         <span className="text-slate-300">—</span>
@@ -783,9 +783,9 @@ export default function Primes() {
                         <button
                           onClick={() => setDetailAgent(a.key)}
                           className="text-sky-600 hover:underline text-xs font-semibold"
-                          title="Voir l'historique complet et valider"
+                          title="View the full history and approve"
                         >
-                          Détail
+                          Detail
                         </button>
                       </td>
                   </tr>
@@ -811,8 +811,8 @@ export default function Primes() {
                                 {d.date_intervention
                                   ? new Date(
                                       `${d.date_intervention}T12:00:00`
-                                    ).toLocaleDateString('fr-FR')
-                                  : new Date(d.created_at).toLocaleDateString('fr-FR')}
+                                    ).toLocaleDateString('en-GB')
+                                  : new Date(d.created_at).toLocaleDateString('en-GB')}
                               </span>
                               <span
                                 className="flex-1 min-w-[140px] truncate text-xs text-slate-600"
@@ -828,14 +828,14 @@ export default function Primes() {
                                     <button
                                       onClick={() => handleValidate(d.id, 'V034')}
                                       className="rounded-full px-2.5 py-1 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700"
-                                      title="Valider en Toilette T1 (V034)"
+                                      title="Approve as Toilet T1 (V034)"
                                     >
                                       T1 (V034)
                                     </button>
                                     <button
                                       onClick={() => handleValidate(d.id, 'V035')}
                                       className="rounded-full px-2.5 py-1 text-xs font-bold bg-teal-600 text-white hover:bg-teal-700"
-                                      title="Valider en Toilette T2 (V035)"
+                                      title="Approve as Toilet T2 (V035)"
                                     >
                                       T2 (V035)
                                     </button>
@@ -843,12 +843,12 @@ export default function Primes() {
                                       onClick={() => handleRefuse(d.id)}
                                       className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold border border-red-300 text-red-600 hover:bg-red-50"
                                     >
-                                      <X className="h-3.5 w-3.5" /> Refuser
+                                      <X className="h-3.5 w-3.5" /> Refuse
                                     </button>
                                     <button
                                       onClick={() => handleDeleteDeclaration(d)}
                                       className="rounded-full p-1 text-slate-400 hover:text-red-600"
-                                      title="Supprimer cette demande"
+                                      title="Delete this request"
                                     >
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </button>
@@ -873,13 +873,13 @@ export default function Primes() {
       {nameOptions.length > 0 && agents && agents.length > 0 && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6 border-l-4 border-l-amber-500">
           <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-1">
-            <Link2 className="h-5 w-5 text-amber-500" /> Rattacher des déclarations à un compte
-            AeroPrimes
+            <Link2 className="h-5 w-5 text-amber-500" /> Link declarations to an
+            AeroPrimes account
           </h2>
           <p className="text-xs text-slate-400 mb-3">
-            Choisissez une personne puis son compte AeroPrimes : toutes ses déclarations passeront
-            sous son identifiant et elle les retrouvera dans son historique. Les personnes « non
-            rattachées » sont signalées (utile quand le nom saisi diffère du compte).
+            Choose a person then their AeroPrimes account: all their declarations will move
+            under their username and they will find them in their history. People “not
+            linked” are flagged (useful when the name entered differs from the account).
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <select
@@ -887,11 +887,11 @@ export default function Primes() {
               onChange={(e) => setLinkNom(e.target.value)}
               className="border border-slate-300 rounded-md px-3 py-2 text-sm bg-white min-w-[220px]"
             >
-              <option value="">— Personne —</option>
+              <option value="">— Person —</option>
               {nameOptions.map((n) => (
                 <option key={n.key} value={n.label}>
-                  {n.label} ({n.count} décl.
-                  {n.orphan > 0 ? ` · ${n.orphan} non rattachée(s)` : ' · rattachée'})
+                  {n.label} ({n.count} decl.
+                  {n.orphan > 0 ? ` · ${n.orphan} not linked` : ' · linked'})
                 </option>
               ))}
             </select>
@@ -914,7 +914,7 @@ export default function Primes() {
               className="flex items-center gap-2 bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700 disabled:opacity-50 text-sm font-semibold"
             >
               <Link2 className="h-4 w-4" />
-              {linkBusy ? 'Rattachement…' : 'Rattacher'}
+              {linkBusy ? 'Linking…' : 'Link'}
             </button>
           </div>
           {linkMsg && <p className="text-sm text-emerald-700 mt-2">{linkMsg}</p>}
@@ -923,20 +923,20 @@ export default function Primes() {
 
       <div className="bg-white rounded-xl shadow p-4 sm:p-6">
         <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-1">
-          <Users className="h-5 w-5 text-sky-500" /> Comptes agents
+          <Users className="h-5 w-5 text-sky-500" /> Agent accounts
           {agents && (
             <span className="text-sm font-normal text-slate-400">({agents.length})</span>
           )}
         </h2>
         <p className="text-xs text-slate-400 mb-3">
-          Désactivez un compte pour bloquer sa connexion, ou supprimez-le — ses déclarations
-          restent dans l'historique. « Assigner » rattache l'agent à un manager (les primes en
-          attente suivent le nouveau manager).
+          Deactivate an account to block its sign-in, or delete it — its declarations
+          remain in the history. “Assign” links the agent to a manager (pending
+          bonuses follow the new manager).
         </p>
         {agentsError && <p className="text-sm text-red-600 mb-3">{agentsError}</p>}
-        {agents === null && <p className="text-sm text-slate-400">Chargement…</p>}
+        {agents === null && <p className="text-sm text-slate-400">Loading…</p>}
         {agents && agents.length === 0 && (
-          <p className="text-sm text-slate-400 italic">Aucun compte agent pour le moment.</p>
+          <p className="text-sm text-slate-400 italic">No agent account for now.</p>
         )}
         {agents && agents.length > 0 && (
           <div className="overflow-x-auto">
@@ -946,9 +946,9 @@ export default function Primes() {
                   <th className="px-3 py-2 font-semibold text-slate-700">Identifiant</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Nom</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Manager</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Inscrit le</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">En attente</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Validées</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Registered on</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Pending</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Approved</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Total</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Statut</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Actions</th>
@@ -965,12 +965,12 @@ export default function Primes() {
                       {a.manager_nom ? (
                         <span className="text-slate-700">{a.manager_nom}</span>
                       ) : (
-                        <span className="text-xs italic text-slate-400">Non assigné</span>
+                        <span className="text-xs italic text-slate-400">Not assigned</span>
                       )}
                     </td>
                     <td className="px-3 py-2 text-slate-500">
                       {a.created_at
-                        ? new Date(a.created_at).toLocaleDateString('fr-FR')
+                        ? new Date(a.created_at).toLocaleDateString('en-GB')
                         : '—'}
                     </td>
                     <td className="px-3 py-2">
@@ -997,7 +997,7 @@ export default function Primes() {
                             onChange={(e) => setAssignValue(e.target.value)}
                             className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white"
                           >
-                            <option value="">— Non assigné —</option>
+                            <option value="">— Not assigned —</option>
                             {(managersList || []).map((m) => (
                               <option key={m.id} value={m.id}>
                                 {m.name}
@@ -1017,7 +1017,7 @@ export default function Primes() {
                               setAssignValue('')
                             }}
                             className="rounded-full p-1 text-slate-400 hover:text-slate-700"
-                            title="Annuler"
+                            title="Cancel"
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
@@ -1031,7 +1031,7 @@ export default function Primes() {
                             }}
                             disabled={agentBusy === a.identifiant}
                             className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold border border-sky-300 text-sky-700 hover:bg-sky-50 disabled:opacity-50"
-                            title="Rattacher ou changer de manager — les primes en attente suivent"
+                            title="Link or change manager — pending bonuses follow"
                           >
                             <UserCog className="h-3.5 w-3.5" /> Assigner
                           </button>
@@ -1046,11 +1046,11 @@ export default function Primes() {
                           >
                             {a.actif ? (
                               <>
-                                <UserX className="h-3.5 w-3.5" /> Désactiver
+                                <UserX className="h-3.5 w-3.5" /> Deactivate
                               </>
                             ) : (
                               <>
-                                <UserCheck className="h-3.5 w-3.5" /> Réactiver
+                                <UserCheck className="h-3.5 w-3.5" /> Reactivate
                               </>
                             )}
                           </button>
@@ -1059,7 +1059,7 @@ export default function Primes() {
                             disabled={agentBusy === a.identifiant}
                             className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
                           >
-                            <Trash2 className="h-3.5 w-3.5" /> Supprimer
+                            <Trash2 className="h-3.5 w-3.5" /> Delete
                           </button>
                         </div>
                       )}
@@ -1078,13 +1078,13 @@ export default function Primes() {
           <Mail className="h-5 w-5 text-sky-500" /> Notifications email
           {notifyConfigured && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-              ENVOI ACTIF
+              SENDING ACTIVE
             </span>
           )}
         </h2>
         <p className="text-xs text-slate-400 mb-3">
-          Recevez un email dès qu'une déclaration est soumise par un de vos agents. Chaque
-          manager enregistre sa propre adresse ici.
+          You receive an email as soon as a declaration is submitted by one of your agents. Each
+          manager saves their own address here.
         </p>
         <div className="grid gap-2 sm:grid-cols-[1fr_auto] max-w-2xl">
           <input
@@ -1099,18 +1099,18 @@ export default function Primes() {
             disabled={notifyBusy}
             className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
           >
-            Enregistrer
+            Save
           </button>
         </div>
         <p className="text-xs mt-2">
           {savedEmail ? (
             <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
-              <Check className="h-3.5 w-3.5" /> Email de notification enregistré :{' '}
+              <Check className="h-3.5 w-3.5" /> Notification email saved:{' '}
               {savedEmail}
             </span>
           ) : (
             <span className="text-amber-700 font-semibold">
-              Aucun email de notification enregistré pour le moment.
+              No notification email saved for now.
             </span>
           )}
         </p>
@@ -1119,15 +1119,15 @@ export default function Primes() {
           disabled={notifyBusy}
           className="mt-2 text-sky-600 hover:underline text-xs disabled:opacity-50"
         >
-          Envoyer un email de test
+          Send a test email
         </button>
         <button
           onClick={sendRecapTest}
           disabled={notifyBusy}
           className="mt-2 ml-4 text-sky-600 hover:underline text-xs disabled:opacity-50"
-          title="Envoie maintenant le récap du mois dernier (le vrai part automatiquement le 1er de chaque mois)"
+          title="Send last month’s recap now (the real one goes out automatically on the 1st of each month)"
         >
-          Envoyer le récap du mois dernier (test)
+          Send last month’s recap (test)
         </button>
         {(notifyMsg || notifyError) && (
           <p className={`text-sm mt-2 ${notifyError ? 'text-red-600' : 'text-emerald-700'}`}>
@@ -1137,32 +1137,32 @@ export default function Primes() {
 
         <details className="mt-4">
           <summary className="cursor-pointer text-xs font-medium text-slate-500">
-            Configuration de l'envoi (EmailJS, gratuit) — à remplir une seule fois
+            Sending configuration (EmailJS, free) — to fill in once
           </summary>
           <div className="grid gap-2 mt-3 max-w-2xl">
             <input
               value={notifyServiceId}
               onChange={(e) => setNotifyServiceId(e.target.value)}
-              placeholder="Service ID (ex : service_xxxxxxx)"
+              placeholder="Service ID (e.g. service_xxxxxxx)"
               className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
             />
             <input
               value={notifyTemplateId}
               onChange={(e) => setNotifyTemplateId(e.target.value)}
-              placeholder="Template ID (ex : template_xxxxxxx)"
+              placeholder="Template ID (e.g. template_xxxxxxx)"
               className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
             />
             <input
               value={notifyPublicKey}
               onChange={(e) => setNotifyPublicKey(e.target.value)}
-              placeholder="Clé publique (user_id)"
+              placeholder="Public key (user_id)"
               className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
             />
             <input
               type="password"
               value={notifyPrivateKey}
               onChange={(e) => setNotifyPrivateKey(e.target.value)}
-              placeholder="Clé privée (secret)"
+              placeholder="Private key (secret)"
               className="border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
             />
             <button
@@ -1170,11 +1170,11 @@ export default function Primes() {
               disabled={notifyBusy}
               className="bg-slate-800 text-white px-4 py-2 rounded-md hover:bg-slate-900 disabled:opacity-50 text-sm font-semibold w-fit"
             >
-              Enregistrer la configuration
+              Save the configuration
             </button>
             <p className="text-[11px] text-slate-400">
-              Un champ vide ne remplace pas la valeur enregistrée. La clé privée n'est jamais
-              réaffichée. Expéditeur = votre adresse Gmail dédiée (service EmailJS).
+              An empty field does not replace the saved value. The private key is never
+              shown again. Sender = your dedicated Gmail address (EmailJS service).
             </p>
           </div>
         </details>
@@ -1212,7 +1212,7 @@ export default function Primes() {
                     onClick={handleDeleteAgentHistory}
                     disabled={busyId === 'all'}
                     className="inline-flex items-center gap-1 text-red-200 border border-red-400/40 hover:bg-red-500/20 rounded-full px-2.5 py-1 font-bold disabled:opacity-50"
-                    title="Supprimer tout l'historique de primes de cet agent"
+                    title="Delete this agent’s entire bonus history"
                   >
                     <Trash2 className="h-3.5 w-3.5" /> Tout supprimer
                   </button>
@@ -1220,7 +1220,7 @@ export default function Primes() {
                 <button
                   onClick={() => setDetailAgent(null)}
                   className="text-slate-400 hover:text-white p-1"
-                  title="Fermer"
+                  title="Close"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -1230,7 +1230,7 @@ export default function Primes() {
               {detailPending.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-amber-700 mb-2">
-                    À valider ({detailPending.length})
+                    To approve ({detailPending.length})
                   </h3>
                   <div className="space-y-2">
                     {detailPending.map((d) => (
@@ -1253,7 +1253,7 @@ export default function Primes() {
                               ? new Date(`${d.date_intervention}T12:00:00`).toLocaleDateString(
                                   'fr-FR'
                                 )
-                              : new Date(d.created_at).toLocaleDateString('fr-FR')}
+                              : new Date(d.created_at).toLocaleDateString('en-GB')}
                           </span>
                         </div>
                         <p className="text-xs text-slate-600 mt-1">{d.description}</p>
@@ -1266,14 +1266,14 @@ export default function Primes() {
                                 <button
                                   onClick={() => handleValidate(d.id, 'V034')}
                                   className="rounded-full px-2.5 py-1 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700"
-                                  title="Valider en Toilette T1 (V034)"
+                                  title="Approve as Toilet T1 (V034)"
                                 >
                                   T1 (V034)
                                 </button>
                                 <button
                                   onClick={() => handleValidate(d.id, 'V035')}
                                   className="rounded-full px-2.5 py-1 text-xs font-bold bg-teal-600 text-white hover:bg-teal-700"
-                                  title="Valider en Toilette T2 (V035)"
+                                  title="Approve as Toilet T2 (V035)"
                                 >
                                   T2 (V035)
                                 </button>
@@ -1281,12 +1281,12 @@ export default function Primes() {
                                   onClick={() => handleRefuse(d.id)}
                                   className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold border border-red-300 text-red-600 hover:bg-red-50"
                                 >
-                                  <X className="h-3.5 w-3.5" /> Refuser
+                                  <X className="h-3.5 w-3.5" /> Refuse
                                 </button>
                                 <button
                                   onClick={() => handleDeleteDeclaration(d)}
                                   className="rounded-full p-1 text-slate-400 hover:text-red-600"
-                                  title="Supprimer cette demande"
+                                  title="Delete this request"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </button>
@@ -1303,7 +1303,7 @@ export default function Primes() {
               <div>
                 <h3 className="font-semibold text-slate-700 mb-2">Historique</h3>
                 {detailMonths.length === 0 && (
-                  <p className="text-sm text-slate-400 italic">Aucun historique pour le moment.</p>
+                  <p className="text-sm text-slate-400 italic">No history for now.</p>
                 )}
                 {detailMonths.length > 0 && (
                   <table className="w-full text-sm">
@@ -1311,9 +1311,9 @@ export default function Primes() {
                       <tr className="text-left bg-slate-50">
                         <th className="px-3 py-2 font-semibold text-slate-700">Avion</th>
                         <th className="px-3 py-2 font-semibold text-slate-700 text-center">TRFX</th>
-                        <th className="px-3 py-2 font-semibold text-slate-700">Élément</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700">Item</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">Description</th>
-                        <th className="px-3 py-2 font-semibold text-slate-700">Catégorie</th>
+                        <th className="px-3 py-2 font-semibold text-slate-700">Category</th>
                         <th className="px-3 py-2 font-semibold text-slate-700">Statut</th>
                         <th className="px-3 py-2"></th>
                       </tr>
@@ -1327,7 +1327,7 @@ export default function Primes() {
                             <tr
                               className="bg-slate-100 cursor-pointer hover:bg-slate-200"
                               onClick={() => toggleDetailMonth(m.key)}
-                              title={open ? 'Replier ce mois' : 'Déplier ce mois'}
+                              title={open ? 'Collapse this month' : 'Expand this month'}
                             >
                               <td colSpan={7} className="px-3 py-1.5">
                                 <span className="flex items-center gap-2 font-bold text-slate-700 text-[13px] uppercase tracking-wide">
@@ -1342,7 +1342,7 @@ export default function Primes() {
                                   </span>
                                   {m.valid > 0 && (
                                     <span className="text-[11px] font-bold normal-case bg-emerald-100 text-emerald-800 rounded-full px-2 py-0.5">
-                                      {m.valid} validée{m.valid > 1 ? 's' : ''}
+                                      {m.valid} approved
                                     </span>
                                   )}
                                 </span>
@@ -1394,9 +1394,9 @@ export default function Primes() {
                                           )}`}
                                         >
                                           {d.statut === 'validee'
-                                            ? 'Validée'
+                                            ? 'Approved'
                                             : d.statut === 'refusee'
-                                            ? 'Refusée'
+                                            ? 'Refused'
                                             : 'Soumise'}
                                         </span>
                                         {d.statut === 'refusee' && d.motif_refus && (
@@ -1412,7 +1412,7 @@ export default function Primes() {
                                 <button
                                   onClick={() => handleDeleteDeclaration(d)}
                                   className="text-slate-400 hover:text-red-600"
-                                  title="Supprimer cette demande"
+                                  title="Delete this request"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </button>

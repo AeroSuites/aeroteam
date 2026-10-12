@@ -50,24 +50,24 @@ export default function Admin() {
   // Promotion d'un profil en administrateur — par sélection (aucun code à saisir)
   const handleAddAdmin = async () => {
     if (!addAdminProfileId) {
-      setAdminMsg('Choisissez le profil à promouvoir.')
+      setAdminMsg('Choose the profile to promote.')
       return
     }
     setAdminBusy(true)
     setAdminMsg('')
     try {
       const res = await profileStore.adminAddAdminById(activeProfile?.code, addAdminProfileId)
-      if (res?.error === 'deja_admin') setAdminMsg('Ce profil est déjà administrateur.')
-      else if (res?.error === 'profil_introuvable') setAdminMsg('Profil introuvable.')
-      else if (res?.error === 'not_admin') setAdminMsg("Votre code administrateur n'est plus valide.")
+      if (res?.error === 'deja_admin') setAdminMsg('This profile is already an administrator.')
+      else if (res?.error === 'profil_introuvable') setAdminMsg('Profile not found.')
+      else if (res?.error === 'not_admin') setAdminMsg("Your administrator code is no longer valid.")
       else if (res?.ok) {
         const prof = (profiles || []).find((p) => p.id === addAdminProfileId)
-        setAdminMsg(`Profil « ${prof?.name || ''} » promu administrateur.`)
+        setAdminMsg(`Profile « ${prof?.name || ''} » promoted to administrator.`)
         setAddAdminProfileId('')
         loadAdmins()
-      } else setAdminMsg('Échec de l’ajout.')
+      } else setAdminMsg('Failed to add.')
     } catch {
-      setAdminMsg('Échec de l’ajout (hors ligne ?).')
+      setAdminMsg('Failed to add (offline?).')
     }
     setAdminBusy(false)
   }
@@ -82,11 +82,11 @@ export default function Admin() {
         !entry.listable
       )
       if (res?.error === 'dernier_visible')
-        setAdminMsg("Impossible de masquer le dernier manager visible à l'inscription.")
-      else if (res?.error) setAdminMsg('Échec de la modification.')
+        setAdminMsg("Unable to hide the last manager visible at sign-up.")
+      else if (res?.error) setAdminMsg('Failed to update.')
       else loadAdmins()
     } catch {
-      setAdminMsg('Échec de la modification (hors ligne ?).')
+      setAdminMsg('Failed to update (offline?).')
     }
     setAdminBusy(false)
   }
@@ -95,21 +95,21 @@ export default function Admin() {
     if (!entry?.id) return
     if (
       !window.confirm(
-        `Retirer l'administrateur « ${entry.name} » ?\n\nAucun code n'est nécessaire : la promotion/le retrait se font par sélection du profil.`
+        `Remove administrator « ${entry.name} »?\n\nNo code is needed: promotion/removal is done by selecting the profile.`
       )
     )
       return
     setAdminMsg('')
     try {
       const res = await profileStore.adminRemoveAdminById(activeProfile?.code, entry.id)
-      if (res?.error === 'dernier_admin') setAdminMsg('Impossible de retirer le dernier administrateur.')
-      else if (res?.error === 'not_found') setAdminMsg('Administrateur introuvable.')
+      if (res?.error === 'dernier_admin') setAdminMsg('Unable to remove the last administrator.')
+      else if (res?.error === 'not_found') setAdminMsg('Administrator not found.')
       else if (res?.ok) {
-        setAdminMsg(`Administrateur « ${entry.name} » retiré.`)
+        setAdminMsg(`Administrator « ${entry.name} » removed.`)
         loadAdmins()
       }
     } catch {
-      setAdminMsg('Échec du retrait (hors ligne ?).')
+      setAdminMsg('Failed to remove (offline?).')
     }
   }
 
@@ -152,7 +152,7 @@ export default function Admin() {
   const saveEditProfile = async (profile) => {
     const name = editName.trim()
     if (!name) {
-      setEditError('Le nom est obligatoire.')
+      setEditError('The name is required.')
       return
     }
     setEditSaving(true)
@@ -170,11 +170,11 @@ export default function Admin() {
           editAircraft.trim()
         )
       } catch {
-res = { ok: false, error: 'Échec de la mise à jour : erreur réseau.' }
+res = { ok: false, error: 'Failed to update: network error.' }
       }
     }
     if (!res.ok) {
-setEditError(res.error || 'Échec de la mise à jour.')
+setEditError(res.error || 'Failed to update.')
     } else {
       setProfiles((prev) =>
         prev.map((p) =>
@@ -201,13 +201,13 @@ setEditError(res.error || 'Échec de la mise à jour.')
         .filter(Boolean)
       e.target.value = ''
       if (!names.length) {
-        setMembersError(`Fichier vide : aucun membre trouvé pour « ${profile.name} ».`)
+        setMembersError(`Empty file: no member found for « ${profile.name} ».`)
         return
       }
       try {
         const fresh = await profileStore.adminGetProfileData(activeProfile?.code, profile.id)
         if (fresh?.error || !fresh?.profile) {
-          setMembersError(`Lecture impossible du profil « ${profile.name} ».`)
+          setMembersError(`Unable to read profile « ${profile.name} ».`)
           return
         }
         const d = fresh.profile.data || {}
@@ -221,19 +221,19 @@ setEditError(res.error || 'Échec de la mise à jour.')
         )
         if (saved?.error === 'conflict') {
           setMembersError(
-            `Le profil « ${profile.name} » a été modifié entre-temps. Réessayez.`
+            `Profile « ${profile.name} » was modified in the meantime. Try again.`
           )
           return
         }
         if (saved?.error) {
-          setMembersError(`Échec du chargement des membres pour « ${profile.name} ».`)
+          setMembersError(`Failed to load members for « ${profile.name} ».`)
           return
         }
         setMembersMsg(
-          `${merged.length - current.length} membre(s) permanent(s) ajouté(s) au profil « ${profile.name} » (total : ${merged.length}).`
+          `${merged.length - current.length} permanent member(s) added to profile « ${profile.name} » (total: ${merged.length}).`
         )
       } catch {
-        setMembersError('Échec du chargement (hors ligne ?).')
+        setMembersError('Failed to load (offline?).')
       }
     }
     reader.readAsText(file)
@@ -249,11 +249,11 @@ setEditError(res.error || 'Échec de la mise à jour.')
       .listProfiles(activeProfile.code)
       .then((res) => {
         if (cancelled) return
-        if (res?.error) setProfilesError("Impossible de charger la liste des profils.")
+        if (res?.error) setProfilesError("Unable to load the profile list.")
         else setProfiles(res.profiles || [])
       })
       .catch(() => {
-        if (!cancelled) setProfilesError('Impossible de charger la liste des profils.')
+        if (!cancelled) setProfilesError('Unable to load the profile list.')
       })
     return () => {
       cancelled = true
@@ -265,10 +265,10 @@ setEditError(res.error || 'Échec de la mise à jour.')
     profileStore
       .adminListPendingProfiles(activeProfile.code)
       .then((res) => {
-        if (res?.error) setPendingMsg('Impossible de charger les demandes.')
+        if (res?.error) setPendingMsg('Unable to load access requests.')
         else setPendingProfiles(res.pending || [])
       })
-      .catch(() => setPendingMsg('Impossible de charger les demandes.'))
+      .catch(() => setPendingMsg('Unable to load access requests.'))
   }, [activeProfile?.code, profilesTick])
 
   useEffect(() => {
@@ -287,17 +287,17 @@ setEditError(res.error || 'Échec de la mise à jour.')
         profile.id,
         transferManagerId || null
       )
-      if (res?.error === 'manager_inconnu') setProfilesError('Manager inconnu.')
+      if (res?.error === 'manager_inconnu') setProfilesError('Unknown manager.')
       else if (res?.error === 'not_found')
-        setProfilesError('Transfert impossible (profil hors de votre périmètre).')
-      else if (res?.error) setProfilesError('Échec du transfert.')
+        setProfilesError('Unable to transfer (profile outside your scope).')
+      else if (res?.error) setProfilesError('Failed to transfer.')
       else {
         setTransferProfileId(null)
         setTransferManagerId('')
         setProfilesTick((t) => t + 1)
       }
     } catch {
-      setProfilesError('Échec du transfert (hors ligne ?).')
+      setProfilesError('Failed to transfer (offline?).')
     }
     setTransferBusy(false)
   }
@@ -311,32 +311,32 @@ setEditError(res.error || 'Échec de la mise à jour.')
         profileCode,
         pendingRole[profileCode] || 'leader'
       )
-      if (res?.error) setPendingMsg('Échec de la validation.')
+      if (res?.error) setPendingMsg('Failed to approve.')
       else {
         setPendingProfiles((prev) => (prev || []).filter((p) => p.code !== profileCode))
         setProfilesTick((t) => t + 1)
         window.dispatchEvent(new Event('admin-updated'))
       }
     } catch {
-      setPendingMsg('Échec de la validation.')
+      setPendingMsg('Failed to approve.')
     }
     setPendingBusy(null)
   }
 
   const handleRefusePending = async (profileCode) => {
-    if (!window.confirm('Refuser et supprimer cette demande ? Le profil ne sera pas créé.'))
+    if (!window.confirm('Reject and delete this request? The profile will not be created.'))
       return
     setPendingBusy(profileCode)
     setPendingMsg('')
     try {
       const res = await profileStore.adminRefuseProfile(activeProfile?.code, profileCode)
-      if (res?.error) setPendingMsg('Échec du refus.')
+      if (res?.error) setPendingMsg('Failed to reject.')
       else {
         setPendingProfiles((prev) => (prev || []).filter((p) => p.code !== profileCode))
         window.dispatchEvent(new Event('admin-updated'))
       }
     } catch {
-      setPendingMsg('Échec du refus.')
+      setPendingMsg('Failed to reject.')
     }
     setPendingBusy(null)
   }
@@ -345,7 +345,7 @@ setEditError(res.error || 'Échec de la mise à jour.')
     if (!activeProfile?.code) return
     if (
       !window.confirm(
-        `Supprimer définitivement le profil « ${profile.name} » ?\n\nToutes ses données (tâches, équipes, affectations, notes…) seront effacées. Cette action est IRREVERSIBLE.`
+        `Permanently delete profile « ${profile.name} »?\n\nAll its data (tasks, teams, assignments, notes…) will be erased. This action is IRREVERSIBLE.`
       )
     ) {
       return
@@ -354,13 +354,13 @@ setEditError(res.error || 'Échec de la mise à jour.')
     setProfilesError('')
     try {
       const res = await profileStore.adminDeleteProfile(activeProfile.code, profile.id)
-if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus.")
-      else if (res?.error === 'not_admin') setProfilesError("Le code administrateur n'est plus valide.")
+if (res?.error === 'not_found') setProfilesError("This profile no longer exists.")
+      else if (res?.error === 'not_admin') setProfilesError("The administrator code is no longer valid.")
       else if (res?.ok) {
         setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
       }
     } catch {
-      setProfilesError('Échec de la suppression du profil.')
+      setProfilesError('Failed to delete the profile.')
     }
     setDeleting(null)
   }
@@ -373,13 +373,13 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
         profile.id,
         type
       )
-      if (res?.error) setProfilesError('Échec du changement de rôle.')
+      if (res?.error) setProfilesError('Failed to change the role.')
       else
         setProfiles((prev) =>
           (prev || []).map((p) => (p.id === profile.id ? { ...p, type } : p))
         )
     } catch {
-      setProfilesError('Échec du changement de rôle (hors ligne ?).')
+      setProfilesError('Failed to change the role (offline?).')
     }
   }
 
@@ -408,9 +408,9 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
         }
       }
       setSuccess(
-        `Profil « ${newName} » créé avec succès${
-          makeAdmin ? ' et promu administrateur.' : '.'
-        } Identifiant de connexion : ${res.identifiant || newIdentifiant || '—'}`
+        `Profile « ${newName} » created successfully${
+          makeAdmin ? ' and promoted to administrator.' : '.'
+        } Login username: ${res.identifiant || newIdentifiant || '—'}`
       )
       setNewName('')
       setNewIdentifiant('')
@@ -425,12 +425,12 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Administration</h1>
-        <p className="text-slate-600 mt-1">Création des profils (réservé à l'administrateur)</p>
+        <p className="text-slate-600 mt-1">Profile creation (administrator only)</p>
       </div>
 
       <div className="bg-white rounded-xl shadow p-4 sm:p-6 max-w-xl border-l-4 border-l-amber-400">
         <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-1">
-          <UserCog className="h-5 w-5 text-amber-500" /> Demandes d'accès
+          <UserCog className="h-5 w-5 text-amber-500" /> Access requests
           {pendingProfiles && pendingProfiles.length > 0 && (
             <span className="text-xs font-bold bg-amber-100 text-amber-800 rounded-full px-2 py-0.5">
               {pendingProfiles.length}
@@ -438,13 +438,13 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
           )}
         </h2>
         <p className="text-xs text-slate-400 mb-3">
-          Inscriptions de votre effectif en attente de validation. Validez pour activer le compte
-          (la personne pourra alors se connecter), ou refusez pour supprimer la demande.
+          Sign-ups from your staff pending approval. Approve to activate the account
+          (the person will then be able to log in), or reject to delete the request.
         </p>
         {pendingMsg && <p className="text-sm text-red-600 mb-2">{pendingMsg}</p>}
-        {pendingProfiles === null && <p className="text-sm text-slate-400">Chargement…</p>}
+        {pendingProfiles === null && <p className="text-sm text-slate-400">Loading…</p>}
         {pendingProfiles && pendingProfiles.length === 0 && (
-          <p className="text-sm text-slate-400 italic">Aucune demande en attente.</p>
+          <p className="text-sm text-slate-400 italic">No pending requests.</p>
         )}
         {pendingProfiles && pendingProfiles.length > 0 && (
           <ul className="divide-y divide-slate-100">
@@ -457,7 +457,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                   <span className="font-medium text-slate-800">{p.name}</span>
                   <span className="block text-[11px] text-slate-400">
                     {p.created_at
-                      ? `demandé le ${new Date(p.created_at).toLocaleDateString('fr-FR')}`
+                      ? `requested on ${new Date(p.created_at).toLocaleDateString('en-GB')}`
                       : ''}
                   </span>
                 </div>
@@ -469,7 +469,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                     }
                     disabled={pendingBusy === p.code}
                     className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white"
-                    title="Rôle attribué à ce profil à la validation"
+                    title="Role assigned to this profile on approval"
                   >
                     <option value="leader">Leader</option>
                     <option value="agent">Agent</option>
@@ -479,14 +479,14 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                     disabled={pendingBusy === p.code}
                     className="flex items-center gap-1 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 rounded-full px-3 py-1 disabled:opacity-50"
                   >
-                    <Check className="h-3.5 w-3.5" /> Valider
+                    <Check className="h-3.5 w-3.5" /> Approve
                   </button>
                   <button
                     onClick={() => handleRefusePending(p.code)}
                     disabled={pendingBusy === p.code}
                     className="flex items-center gap-1 text-xs font-semibold text-red-600 border border-red-300 hover:bg-red-50 rounded-full px-3 py-1 disabled:opacity-50"
                   >
-                    <X className="h-3.5 w-3.5" /> Refuser
+                    <X className="h-3.5 w-3.5" /> Reject
                   </button>
                 </div>
               </li>
@@ -497,38 +497,38 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
 
       <div className="bg-white rounded-xl shadow p-4 sm:p-6 max-w-xl">
         <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-4">
-          <UserPlus className="h-5 w-5 text-sky-500" /> Créer un nouveau profil
+          <UserPlus className="h-5 w-5 text-sky-500" /> Create a new profile
         </h2>
         <div className="space-y-3">
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Nom du profil (ex: Leader 1)"
+            placeholder="Profile name (e.g. Leader 1)"
             className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
           />
           <input
             value={newIdentifiant}
             onChange={(e) => setNewIdentifiant(e.target.value)}
-            placeholder="Identifiant de connexion (optionnel — généré depuis le nom si vide)"
+            placeholder="Login username (optional — generated from the name if empty)"
             className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
           />
           <input
             value={newCode}
             onChange={(e) => setNewCode(e.target.value)}
-            placeholder="Code personnel (ex: LEADER-123)"
+            placeholder="Personal code (e.g. LEADER-123)"
             className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
           />
           <p className="text-xs text-slate-500">
-            Ce code est la clé d'accès du profil (avec l'identifiant à la connexion).
-            Remettez-les aux leaders concernés.
+            This code is the profile's access key (together with the username at login).
+            Give them to the relevant leaders.
           </p>
           <label className="flex items-center gap-2 text-sm text-slate-700">
-            Rôle du profil
+            Profile role
             <select
               value={newRole}
               onChange={(e) => setNewRole(e.target.value)}
               className="border border-slate-300 rounded-md px-2 py-1.5 text-sm bg-white"
-              title="Leader : organise la charge. Agent : reçoit sa charge d'un leader."
+              title="Leader: organises the workload. Agent: receives their workload from a leader."
             >
               <option value="leader">Leader</option>
               <option value="agent">Agent</option>
@@ -541,7 +541,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
               onChange={(e) => setMakeAdmin(e.target.checked)}
               className="h-4 w-4 accent-sky-600"
             />
-            Faire de ce profil un <strong>administrateur</strong>
+            Make this profile an <strong>administrator</strong>
           </label>
           {createError && <p className="text-sm text-red-600">{createError}</p>}
           {success && <p className="text-sm text-green-600">{success}</p>}
@@ -550,37 +550,37 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
             disabled={creating || !newName.trim() || !newCode.trim()}
             className="flex items-center justify-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold w-full"
           >
-            <Plus className="h-4 w-4" /> {creating ? 'Création…' : 'Créer le profil'}
+            <Plus className="h-4 w-4" /> {creating ? 'Creating…' : 'Create profile'}
           </button>
         </div>
       </div>
 
       <div className="bg-white rounded-xl shadow p-4 sm:p-6 max-w-xl">
         <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-4">
-          <Users className="h-5 w-5 text-sky-500" /> Profils existants
+          <Users className="h-5 w-5 text-sky-500" /> Existing profiles
           {profiles && <span className="text-sm font-normal text-slate-400">({profiles.length})</span>}
         </h2>
         <p className="text-xs text-slate-500 mb-3">
-          Les codes de connexion ne sont jamais affichés par sécurité.
+          Login codes are never shown for security.
         </p>
         {profilesError && <p className="text-sm text-red-600 mb-3">{profilesError}</p>}
         {membersMsg && <p className="text-sm text-green-600 mb-3">{membersMsg}</p>}
         {membersError && <p className="text-sm text-red-600 mb-3">{membersError}</p>}
         {profiles === null && !profilesError && (
-          <p className="text-sm text-slate-400">Chargement…</p>
+          <p className="text-sm text-slate-400">Loading…</p>
         )}
         {profiles && profiles.length === 0 && (
-          <p className="text-sm text-slate-400">Aucun profil pour le moment.</p>
+          <p className="text-sm text-slate-400">No profiles yet.</p>
         )}
         {profiles && profiles.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left bg-slate-50 border-b">
-                  <th className="px-3 py-2 font-semibold text-slate-700">Nom</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Avion</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Name</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Aircraft</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Manager</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Créé le</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Created on</th>
                   <th className="px-3 py-2"></th>
                 </tr>
               </thead>
@@ -596,14 +596,14 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                             <input
                               value={editName}
                               onChange={(e) => setEditName(e.target.value)}
-                              placeholder="Nom du profil"
+                              placeholder="Profile name"
                               className="flex-1 min-w-[140px] border border-slate-300 rounded-md px-2 py-1 text-sm"
                               autoFocus
                             />
                             <input
                               value={editAircraft}
                               onChange={(e) => setEditAircraft(e.target.value)}
-                              placeholder="Avion / immatriculation"
+                              placeholder="Aircraft / registration"
                               className="flex-1 min-w-[140px] border border-slate-300 rounded-md px-2 py-1 text-sm"
                             />
                             {editError && <span className="text-xs text-red-600">{editError}</span>}
@@ -612,12 +612,12 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                               disabled={editSaving}
                               className="flex items-center gap-1 bg-sky-600 text-white px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-sky-700 disabled:opacity-50"
                             >
-                              <Check className="h-3.5 w-3.5" /> {editSaving ? 'Enregistrement…' : 'OK'}
+                              <Check className="h-3.5 w-3.5" /> {editSaving ? 'Saving…' : 'OK'}
                             </button>
                             <button
                               onClick={cancelEditProfile}
                               className="text-slate-500 hover:text-slate-800 p-1"
-                              title="Annuler"
+                              title="Cancel"
                             >
                               <X className="h-4 w-4" />
                             </button>
@@ -637,7 +637,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                         )}
                         {isSelf && (
                           <span className="ml-2 text-[10px] font-semibold text-sky-600 bg-sky-50 border border-sky-200 rounded-full px-2 py-0.5">
-                            votre profil
+                            your profile
                           </span>
                         )}
                       </td>
@@ -650,7 +650,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                               onChange={(e) => setTransferManagerId(e.target.value)}
                               className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white"
                             >
-                              <option value="">— Non assigné —</option>
+                              <option value="">— Unassigned —</option>
                               {managersList.map((m) => (
                                 <option key={m.id} value={m.id}>
                                   {m.name}
@@ -670,7 +670,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                                 setTransferManagerId('')
                               }}
                               className="text-slate-400 hover:text-slate-700 p-1"
-                              title="Annuler"
+                              title="Cancel"
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>
@@ -681,7 +681,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                               <span>{profile.manager_nom}</span>
                             ) : (
                               <span className="text-xs italic text-slate-400">
-                                Non assigné
+                                Unassigned
                               </span>
                             )}
                             <button
@@ -690,7 +690,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                                 setTransferManagerId(profile.manager_id || '')
                               }}
                               className="text-slate-400 hover:text-sky-600 p-0.5"
-                              title="Transférer la gestion de ce profil à un autre manager"
+                              title="Transfer management of this profile to another manager"
                             >
                               <ArrowRightLeft className="h-3.5 w-3.5" />
                             </button>
@@ -699,7 +699,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                       </td>
                       <td className="px-3 py-2 text-slate-500">
                         {profile.created_at
-                          ? new Date(profile.created_at).toLocaleDateString('fr-FR')
+                          ? new Date(profile.created_at).toLocaleDateString('en-GB')
                           : '»”'}
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
@@ -711,7 +711,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                               ? 'border-emerald-300 text-emerald-700 bg-emerald-50'
                               : 'border-slate-300 text-slate-600 bg-white'
                           }`}
-                          title="Rôle du profil (Leader / Agent)"
+                          title="Profile role (Leader / Agent)"
                         >
                           <option value="leader">Leader</option>
                           <option value="agent">Agent</option>
@@ -719,20 +719,20 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                         <button
                           onClick={() => setViewProfile(profile)}
                           className="text-slate-400 hover:text-sky-600 p-1"
-                          title={`Voir les équipes du profil « ${profile.name} »`}
+                          title={`Show the teams of profile « ${profile.name} »`}
                         >
                           <UserCog className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => startEditProfile(profile)}
                           className="text-slate-400 hover:text-sky-600 p-1"
-                          title={`Modifier le profil « ${profile.name} »`}
+                          title={`Edit profile « ${profile.name} »`}
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <label
                           className="inline-flex text-slate-400 hover:text-sky-600 p-1 cursor-pointer"
-                          title={`Charger les membres permanents depuis un fichier (.txt, .csv) pour « ${profile.name} »`}
+                          title={`Load permanent members from a file (.txt, .csv) for « ${profile.name} »`}
                         >
                           <Upload className="h-4 w-4" />
                           <input
@@ -743,13 +743,13 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                           />
                         </label>
                         {isSelf ? (
-                          <span className="text-xs text-slate-300 italic ml-1">non supprimable</span>
+                          <span className="text-xs text-slate-300 italic ml-1">not deletable</span>
                         ) : (
                           <button
                             onClick={() => handleDeleteProfile(profile)}
                             disabled={deleting === profile.id}
                             className="text-slate-400 hover:text-red-600 disabled:opacity-50 ml-1"
-                            title={`Supprimer le profil « ${profile.name} »`}
+                            title={`Delete profile « ${profile.name} »`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -775,14 +775,14 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
       {admins && (admins.length > 0 || addAdminProfileId || adminMsg) && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6 max-w-xl">
           <h2 className="flex items-center gap-2 font-semibold text-slate-800 mb-4">
-            <KeyRound className="h-5 w-5 text-sky-500" /> Administrateurs
+            <KeyRound className="h-5 w-5 text-sky-500" /> Administrators
             <span className="text-sm font-normal text-slate-400">({admins.length})</span>
           </h2>
           <p className="text-xs text-slate-500 mb-3">
-            Un administrateur est un profil promu ici (vérifié côté serveur —{' '}
-            <strong>aucun code personnel n'est demandé ni affiché</strong>). Le dernier
-            administrateur ne peut pas être retiré. Le bouton <strong>Inscription / Masqué</strong>{' '}
-            choisit les administrateurs proposés comme managers lors des inscriptions (AeroTeam et
+            An administrator is a profile promoted here (verified server-side —{' '}
+            <strong>no personal code is requested or displayed</strong>). The last
+            administrator cannot be removed. The <strong>Sign-up / Hidden</strong> button{' '}
+            chooses the administrators offered as managers during sign-ups (AeroTeam and
             AeroPrimes).
           </p>
           {admins.length > 0 && (
@@ -807,8 +807,8 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                           }`}
                           title={
                             entry.listable
-                              ? "Visible dans la liste des managers à l'inscription — cliquer pour masquer"
-                              : "Masqué à l'inscription — cliquer pour rendre visible"
+                              ? "Visible in the managers list at sign-up — click to hide"
+                              : "Hidden at sign-up — click to make visible"
                           }
                         >
                           {entry.listable ? (
@@ -816,7 +816,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                           ) : (
                             <EyeOff className="h-3.5 w-3.5" />
                           )}
-                          {entry.listable ? 'Inscription' : 'Masqué'}
+                          {entry.listable ? 'Sign-up' : 'Hidden'}
                         </button>
                       )}
                       <button
@@ -825,8 +825,8 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
                         className="text-slate-400 hover:text-red-600 disabled:opacity-40"
                         title={
                           admins.length <= 1
-                            ? 'Impossible de retirer le dernier administrateur'
-                            : `Retirer « ${entry.name} »`
+                            ? 'Unable to remove the last administrator'
+                            : `Remove « ${entry.name} »`
                         }
                       >
                         <Trash2 className="h-4 w-4" />
@@ -843,7 +843,7 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
               onChange={(e) => setAddAdminProfileId(e.target.value)}
               className="border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
             >
-              <option value="">— Choisir un profil à promouvoir —</option>
+              <option value="">— Choose a profile to promote —</option>
               {(profiles || []).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -856,19 +856,19 @@ if (res?.error === 'not_found') setProfilesError("Ce profil n'existe déjà plus
               disabled={adminBusy || !addAdminProfileId}
               className="flex items-center justify-center gap-1.5 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
             >
-              <UserPlus className="h-4 w-4" /> Promouvoir
+              <UserPlus className="h-4 w-4" /> Promote
             </button>
           </div>
           <p className="text-[11px] text-slate-400 mt-1">
-            Aucun code n'est demandé : le profil est promu par sélection (créez-le d'abord dans
-            « Créer un nouveau profil » si besoin).
+            No code is requested: the profile is promoted by selection (create it first in
+            « Create a new profile » if needed).
           </p>
           {adminMsg && <p className="text-sm text-sky-700 mt-2">{adminMsg}</p>}
         </div>
       )}
 
       <p className="text-xs text-slate-400 flex items-center gap-1.5">
-        <ShieldCheck className="h-4 w-4" /> Connecté en tant qu'administrateur : {activeProfile?.name}
+        <ShieldCheck className="h-4 w-4" /> Logged in as administrator: {activeProfile?.name}
       </p>
     </div>
   )

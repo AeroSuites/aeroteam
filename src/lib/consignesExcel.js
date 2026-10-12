@@ -303,7 +303,7 @@ export function parseConsignesWorkbook(workbook) {
     try {
       results[name] = parseConsignesSheet(workbook.Sheets[name])
     } catch {
-      results[name] = { date: '', effectif: [], blocks: [], error: 'Feuille illisible' }
+      results[name] = { date: '', effectif: [], blocks: [], error: 'Unreadable sheet' }
     }
   })
   // Les feuilles jour portent toutes la MÊME « Date » (celle du fichier) : la

@@ -66,7 +66,7 @@ export default function Taches() {
     const map = {}
     followTasks.forEach((t) => {
       const b = t.taskType || 'AUTRE'
-      const z = t.workArea || 'Autre'
+      const z = t.workArea || 'Other'
       if (!map[b]) map[b] = {}
       if (!map[b][z]) map[b][z] = []
       map[b][z].push(t)
@@ -110,7 +110,7 @@ export default function Taches() {
       const next = { ...prev }
       tasks
         .filter((t) => {
-          if ((t.workArea || 'Autre') !== zone) return false
+          if ((t.workArea || 'Other') !== zone) return false
           const blk = t.taskType || 'AUTRE'
           if (block) return blk === block
           return blk !== 'CORR'
@@ -125,13 +125,13 @@ export default function Taches() {
   // Renomme une sous-tâche (zone) : uniquement les lignes du bloc visé
   // (bloc précis pour le Found Fault, sinon tous les blocs de la zone sauf CORR)
   const renameZone = (oldZone, block) => {
-    const next = window.prompt('Nouveau nom de la sous-tâche :', oldZone)
+    const next = window.prompt('New sub-task name:', oldZone)
     if (next === null) return
     const name = String(next).trim()
     if (!name || name === oldZone) return
     tasks
       .filter((t) => {
-        if ((t.workArea || 'Autre') !== oldZone) return false
+        if ((t.workArea || 'Other') !== oldZone) return false
         const blk = t.taskType || 'AUTRE'
         if (block) return blk === block
         return blk !== 'CORR'
@@ -161,9 +161,9 @@ export default function Taches() {
     // Transfert = déplacement : les lignes quittent Tâches
     if (toSend.length) removeTasksByIds(toSend.map((t) => t.id))
     setTransferMsg(
-      `${toSend.length} ligne(s) transférée(s) vers Préparation vac suivante${
-        ignored ? ` · ${ignored} déjà présente(s) (mise en commun)` : ''
-      }${doneCount ? ` · ${doneCount} COMPLETE ignorée(s)` : ''}.`
+      `${toSend.length} line(s) transferred to Next vacation preparation${
+        ignored ? ` · ${ignored} already present (merged)` : ''
+      }${doneCount ? ` · ${doneCount} COMPLETE ignored` : ''}.`
     )
     setFollowSelected({})
   }
@@ -254,7 +254,7 @@ export default function Taches() {
     const groups = {}
     filtered.forEach((t) => {
       const isFF = (t.taskType || '') === 'CORR'
-      const key = isFF ? '__FOUND_FAULT__' : t.workArea || 'Autre'
+      const key = isFF ? '__FOUND_FAULT__' : t.workArea || 'Other'
       if (!groups[key]) {
         groups[key] = {
           key,
@@ -263,7 +263,7 @@ export default function Taches() {
           zones: {},
         }
       }
-      const sub = t.workArea || 'Sans sous-tâche'
+      const sub = t.workArea || 'No sub-task'
       if (!groups[key].zones[sub]) groups[key].zones[sub] = []
       groups[key].zones[sub].push(t)
     })
@@ -275,15 +275,15 @@ export default function Taches() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Tâches par zone</h1>
-        <p className="text-slate-600 mt-1">{filtered.length} tâches — groupées par zone de travail</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Tasks by zone</h1>
+        <p className="text-slate-600 mt-1">{filtered.length} tasks — grouped by work zone</p>
         <p className="text-xs text-slate-400 mt-1">
-          Case <strong>« à suivre »</strong> : prépare la vacation suivante (transfert vers
-          Préparation) — le bouton <strong>+ à suivre</strong> d'un bloc l'ajoute en entier. Un{' '}
+          Checkbox <strong>“to follow”</strong>: prepares the next vacation (transfer to
+          Preparation) — the <strong>+ to follow</strong> button on a block adds it in full. A green check{' '}
           <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-emerald-100 text-emerald-700 align-middle">
             <Check className="h-2.5 w-2.5" />
           </span>{' '}
-          vert signale une ligne déjà transférée.
+          marks a line already transferred.
         </p>
       </div>
 
@@ -291,7 +291,7 @@ export default function Taches() {
       <div className="bg-white rounded-xl shadow p-4 border-l-4 border-l-sky-600">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-            <ListChecks className="h-4 w-4 text-sky-500" /> À suivre
+            <ListChecks className="h-4 w-4 text-sky-500" /> To follow
             <span className="text-xs font-normal text-slate-400">({followTasks.length})</span>
           </h2>
           {followTasks.length > 0 && (
@@ -299,9 +299,9 @@ export default function Taches() {
               <button
                 onClick={transferToPrep}
                 className="bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 text-xs font-semibold"
-                title="Ajouter ces lignes à la préparation de la vac suivante (classement et notes conservés, doublons ignorés)"
+                title="Add these lines to the next vacation preparation (classification and notes kept, duplicates ignored)"
               >
-                Transférer vers Préparation ({followTasks.length})
+                Transfer to Preparation ({followTasks.length})
               </button>
               <button
                 onClick={() => {
@@ -312,33 +312,33 @@ export default function Taches() {
                   setEditMoveZone(first?.workArea || '')
                 }}
                 className="bg-white text-slate-700 border border-slate-300 px-3 py-1.5 rounded-md hover:bg-slate-50 text-xs font-semibold"
-                title="Déplacer toutes les lignes cochées vers un autre bloc / une autre sous-tâche"
+                title="Move all checked lines to another block / sub-task"
               >
-                Déplacer les lignes cochées ({followTasks.length})
+                Move checked lines ({followTasks.length})
               </button>
               <button
                 onClick={() => {
                   if (
                     window.confirm(
-                      `Supprimer définitivement les ${followTasks.length} ligne(s) cochée(s) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
+                      `Delete the ${followTasks.length} checked line(s) permanently?\n\nThese tasks will disappear everywhere (including assignments).`
                     )
                   ) {
                     removeTasksByIds(followTasks.map((t) => t.id))
                     setFollowSelected({})
-                    setTransferMsg(`${followTasks.length} ligne(s) supprimée(s).`)
+                    setTransferMsg(`${followTasks.length} line(s) deleted.`)
                   }
                 }}
                 className="bg-white text-red-600 border border-red-200 px-3 py-1.5 rounded-md hover:bg-red-50 text-xs font-semibold"
-                title="Supprimer toutes les lignes cochées"
+                title="Delete all checked lines"
               >
-                Supprimer les lignes cochées ({followTasks.length})
+                Delete checked lines ({followTasks.length})
               </button>
               <button
                 onClick={() => setFollowSelected({})}
                 className="text-xs text-slate-500 hover:text-red-600 border border-slate-200 rounded-md px-2 py-1.5"
-                title="Vider la sélection"
+                title="Clear selection"
               >
-                Vider
+                Clear
               </button>
             </div>
           )}
@@ -346,8 +346,8 @@ export default function Taches() {
         {transferMsg && <p className="text-[11px] text-emerald-700 mt-2">{transferMsg}</p>}
         {followTasks.length === 0 ? (
           <p className="text-xs text-slate-400 italic mt-2">
-            Cochez des lignes — ou le <strong>+ à suivre</strong> d'un bloc — pour préparer la
-            vacation suivante.
+            Check lines — or a block's <strong>+ to follow</strong> — to prepare the next
+            vacation.
           </p>
         ) : (
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3 mt-2">
@@ -375,14 +375,14 @@ export default function Taches() {
                             {t.description}
                           </span>
                           {t.note && (
-                            <span className="shrink-0 text-amber-600" title={`Note : ${t.note}`}>
+                            <span className="shrink-0 text-amber-600" title={`Note: ${t.note}`}>
                               ✎
                             </span>
                           )}
                           <button
                             onClick={() => toggleFollow(t.id)}
                             className="shrink-0 text-slate-300 hover:text-red-600"
-                            title="Retirer de la liste"
+                            title="Remove from list"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -402,9 +402,9 @@ export default function Taches() {
         <div className="bg-[#ff0000]/10 border border-[#ff0000]/40 text-[#ff0000] rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <span>
-            Attention : la charge contient plusieurs immatriculations ({taskRegs.join(', ')}) —
-            vérifiez l'import (pensez à effacer l'ancienne charge dans Export/Reset avant d'importer
-            un nouveau fichier).
+            Warning: the workload contains several registrations ({taskRegs.join(', ')}) —
+            check the import (remember to clear the old workload in Export/Reset before importing
+            a new file).
           </span>
         </div>
       )}
@@ -412,7 +412,7 @@ export default function Taches() {
       {/* Ajout manuel — bien visible */}
       <div className="bg-white rounded-xl shadow p-3 flex flex-wrap items-center justify-between gap-2 border-l-4 border-l-sky-600">
         <div>
-          <p className="text-sm font-semibold text-slate-800">Ajouter une ligne manuellement</p>
+          <p className="text-sm font-semibold text-slate-800">Add a line manually</p>
         </div>
         <ManualTaskForm
           onAdd={(list) => {
@@ -423,7 +423,7 @@ export default function Taches() {
                 ...list.map((t) =>
                   (t.taskType || '') === 'CORR'
                     ? getCategoryLabel('CORR')
-                    : t.workArea || 'Sans zone'
+                    : t.workArea || 'No zone'
                 ),
               ]),
             ])
@@ -441,12 +441,12 @@ export default function Taches() {
             <input
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="Rechercher (tâche, N°, TRFX…)"
+              placeholder="Search (task, No., TRFX…)"
               className="border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm w-40 sm:w-52"
             />
           </div>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm">
-            <option value="all">Tous statuts</option>
+            <option value="all">All statuses</option>
             {statuses.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
@@ -465,7 +465,7 @@ export default function Taches() {
                     ? 'bg-[#ff0000] border-[#ff0000] text-white'
                     : 'bg-white border-[#ff0000] text-[#ff0000] hover:bg-[#ff0000]/10'
                 }`}
-                title={`Afficher les lignes ${tok} (cumulable avec les autres filtres)`}
+                title={`Show ${tok} lines (can be combined with other filters)`}
               >
                 {tok} ({prioCounts[tok]})
               </button>
@@ -475,7 +475,7 @@ export default function Taches() {
                 onClick={() => setPrioFilter([])}
                 className="text-xs text-sky-600 hover:underline"
               >
-                Tout réafficher
+                Show all
               </button>
             )}
           </div>
@@ -486,11 +486,11 @@ export default function Taches() {
       {blocks.length > 0 && (
         <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-slate-700">Filtrer par bloc</h2>
+            <h2 className="text-sm font-semibold text-slate-700">Filter by block</h2>
             <div className="flex gap-2 text-xs">
-              <button onClick={selectAll} className="text-sky-600 hover:underline">Tout afficher</button>
+              <button onClick={selectAll} className="text-sky-600 hover:underline">Show all</button>
               <span className="text-slate-300">|</span>
-              <button onClick={selectNone} className="text-slate-500 hover:underline">Tout masquer</button>
+              <button onClick={selectNone} className="text-slate-500 hover:underline">Hide all</button>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -517,21 +517,21 @@ export default function Taches() {
                   </button>
                   <button
                     onClick={() => {
-                      if (window.confirm(`Supprimer tout le bloc ${getCategoryLabel(block)} (${count} tâches) ?`)) {
+                      if (window.confirm(`Delete the whole ${getCategoryLabel(block)} block (${count} tasks)?`)) {
                         removeTasksByBlock(block)
                       }
                     }}
                     className="text-slate-400 hover:text-red-600 transition-colors"
-                    title={`Supprimer le bloc ${getCategoryLabel(block)}`}
+                    title={`Delete the ${getCategoryLabel(block)} block`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => addBlockToFollow(block)}
                     className="inline-flex items-center gap-0.5 text-[10px] font-bold text-sky-700 border border-sky-300 hover:bg-sky-50 rounded-full px-1.5 py-0.5"
-                    title={`Ajouter tout le bloc ${getCategoryLabel(block)} à suivre (préparation vac suivante)`}
+                    title={`Add the whole ${getCategoryLabel(block)} block to follow (next vacation preparation)`}
                   >
-                    <Plus className="h-3 w-3" /> à suivre
+                    <Plus className="h-3 w-3" /> to follow
                   </button>
                   <button
                     onClick={() => applyStatus(blockList, blockAllComplete ? 'ACTV' : 'COMPLETE')}
@@ -542,8 +542,8 @@ export default function Taches() {
                     }`}
                     title={
                       blockAllComplete
-                        ? `Rétablir tout le bloc ${getCategoryLabel(block)} en ACTV`
-                        : `Marquer tout le bloc ${getCategoryLabel(block)} COMPLETE`
+                        ? `Restore the whole ${getCategoryLabel(block)} block to ACTV`
+                        : `Mark the whole ${getCategoryLabel(block)} block COMPLETE`
                     }
                   >
                     {blockAllComplete ? (
@@ -558,7 +558,7 @@ export default function Taches() {
             })}
             {selectedBlocks.length > 0 && (
               <span className="text-xs text-slate-400 self-center">
-                Affichage : {filtered.length} tâches
+                Showing: {filtered.length} tasks
               </span>
             )}
           </div>
@@ -567,7 +567,7 @@ export default function Taches() {
 
       {zoneGroups.length === 0 && (
         <div className="bg-white rounded-xl shadow p-10 text-center text-slate-500">
-          Aucune tâche trouvée pour les critères sélectionnés.
+          No tasks found for the selected criteria.
         </div>
       )}
 
@@ -594,7 +594,7 @@ export default function Taches() {
                 className="px-3 sm:px-5 py-2 flex items-center justify-between flex-wrap gap-2 cursor-pointer"
                 style={{ backgroundColor: zoneColor }}
                 onClick={() => toggleZone(zone)}
-                title={expanded ? 'Replier cette zone' : 'Déplier cette zone'}
+                title={expanded ? 'Collapse this zone' : 'Expand this zone'}
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   {expanded ? (
@@ -609,9 +609,9 @@ export default function Taches() {
                   {memberNames.length > 0 && (
                     <span
                       className="text-white/90 text-xs font-semibold truncate"
-                      title={`Membres : ${memberNames.join(', ')}`}
+                      title={`Members: ${memberNames.join(', ')}`}
                     >
-                      Membres : {memberNames.join(', ')}
+                      Members: {memberNames.join(', ')}
                     </span>
                   )}
                 </div>
@@ -619,9 +619,9 @@ export default function Taches() {
                   {transferredCount > 0 && (
                     <span
                       className="bg-emerald-500/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white whitespace-nowrap self-center"
-                      title="Lignes de cette zone déjà transférées vers Préparation vac suivante"
+                      title="Lines in this zone already transferred to Next vacation preparation"
                     >
-                      ✓ {transferredCount} transférée{transferredCount > 1 ? 's' : ''}
+                      ✓ {transferredCount} transferred line{transferredCount > 1 ? 's' : ''}
                     </span>
                   )}
                   {[...new Set(zoneTasks.map((t) => t.taskType).filter(Boolean))].map((blk) => {
@@ -630,7 +630,7 @@ export default function Taches() {
                       <span
                         key={blk}
                         className="bg-white/25 px-2 py-0.5 rounded-full text-xs font-semibold text-white whitespace-nowrap"
-                        title={`Bloc ${getCategoryLabel(blk)} : ${n} tâche(s) dans cette zone`}
+                        title={`Block ${getCategoryLabel(blk)}: ${n} task(s) in this zone`}
                       >
                         {getCategoryLabel(blk)} · {n}
                       </span>
@@ -642,8 +642,8 @@ export default function Taches() {
                       className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5 self-center"
                       title={
                         allComplete
-                          ? `Rétablir toute la sous-tâche ${zone} en ACTV`
-                          : `Marquer toute la sous-tâche ${zone} COMPLETE`
+                          ? `Restore the whole sub-task ${zone} to ACTV`
+                          : `Mark the whole sub-task ${zone} COMPLETE`
                       }
                     >
                       {allComplete ? (
@@ -660,10 +660,10 @@ export default function Taches() {
                     <button
                       onClick={() => addBlockToFollow('CORR')}
                       className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5 self-center"
-                      title="Ajouter tout le bloc Found Fault à suivre (préparation vac suivante)"
+                      title="Add the whole Found Fault block to follow (next vacation preparation)"
                     >
                       <Plus className="h-3 w-3" />
-                      <span className="text-[10px] font-bold whitespace-nowrap">à suivre</span>
+                      <span className="text-[10px] font-bold whitespace-nowrap">to follow</span>
                     </button>
                   )}
                   {!group.isFF && (
@@ -671,15 +671,15 @@ export default function Taches() {
                       <button
                         onClick={() => addZoneToFollow(zone)}
                         className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5"
-                        title={`Ajouter toute la sous-tâche ${zone} à suivre (préparation vac suivante)`}
+                        title={`Add the whole sub-task ${zone} to follow (next vacation preparation)`}
                       >
                         <Plus className="h-3 w-3" />
-                        <span className="text-[10px] font-bold whitespace-nowrap">à suivre</span>
+                        <span className="text-[10px] font-bold whitespace-nowrap">to follow</span>
                       </button>
                       <button
                         onClick={() => renameZone(zone)}
                         className="bg-white/20 hover:bg-white/40 text-white p-1 rounded-full"
-                        title={`Renommer la sous-tâche ${zone} (toutes ses lignes)`}
+                        title={`Rename sub-task ${zone} (all its lines)`}
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
@@ -687,7 +687,7 @@ export default function Taches() {
                         onClick={() => {
                           if (
                             window.confirm(
-                              `Supprimer toute la sous-tâche ${zone} (${zoneTasks.length} tâche(s)) ?\n\nCes tâches disparaîtront partout (affectations comprises). Le bloc Found Fault n'est pas concerné.`
+                              `Delete the whole sub-task ${zone} (${zoneTasks.length} task(s))?\n\nThese tasks will disappear everywhere (including assignments). The Found Fault block is not affected.`
                             )
                           ) {
                             ;[...new Set(zoneTasks.map((t) => t.taskType || 'AUTRE'))]
@@ -696,7 +696,7 @@ export default function Taches() {
                           }
                         }}
                         className="bg-white/20 hover:bg-white/40 text-white p-1 rounded-full"
-                        title={`Supprimer toute la sous-tâche ${zone} (hors Found Fault)`}
+                        title={`Delete the whole sub-task ${zone} (excluding Found Fault)`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -709,16 +709,16 @@ export default function Taches() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left bg-slate-50">
-                      <th className="px-1 py-2 border-b text-[11px] text-slate-700 font-bold whitespace-nowrap" title="Cocher pour préparer la vacation suivante (transfert vers Préparation)">à suivre</th>
-                      <th className="px-2 py-2 border-b whitespace-nowrap">N°</th>
-                      <th className="px-2 py-2 border-b whitespace-nowrap">Tâche</th>
-                      <th className="px-0.5 py-2 border-b whitespace-nowrap">Bloc</th>
+                      <th className="px-1 py-2 border-b text-[11px] text-slate-700 font-bold whitespace-nowrap" title="Check to prepare the next vacation (transfer to Preparation)">to follow</th>
+                      <th className="px-2 py-2 border-b whitespace-nowrap">No.</th>
+                      <th className="px-2 py-2 border-b whitespace-nowrap">Task</th>
+                      <th className="px-0.5 py-2 border-b whitespace-nowrap">Block</th>
                       <th className="hidden lg:table-cell px-0.5 py-2 border-b whitespace-nowrap">Skills</th>
                       <th className="px-0.5 py-2 border-b whitespace-nowrap font-bold text-black">TRFX</th>
-                      <th className="px-0.5 py-2 border-b whitespace-nowrap">Statut</th>
-                      <th className="hidden md:table-cell px-0.5 py-2 border-b whitespace-nowrap">Appareil</th>
+                      <th className="px-0.5 py-2 border-b whitespace-nowrap">Status</th>
+                      <th className="hidden md:table-cell px-0.5 py-2 border-b whitespace-nowrap">Aircraft</th>
                       <th className="px-0.5 py-2 border-b whitespace-nowrap">Note</th>
-                      <th className="px-0.5 py-2 border-b whitespace-nowrap">Équipe</th>
+                      <th className="px-0.5 py-2 border-b whitespace-nowrap">Team</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap"></th>
                     </tr>
                   </thead>
@@ -737,7 +737,7 @@ export default function Taches() {
                               <tr
                                 className="border-b border-slate-100 cursor-pointer hover:brightness-110"
                                 onClick={() => toggleSubZone(`${group.key}::${subZone}`)}
-                                title={subOpen ? 'Replier cette sous-tâche' : 'Déplier cette sous-tâche'}
+                                title={subOpen ? 'Collapse this sub-task' : 'Expand this sub-task'}
                               >
                                 <td colSpan={11} className="px-2 py-0.5">
                                   <span
@@ -757,10 +757,10 @@ export default function Taches() {
                                         addZoneToFollow(subZone, 'CORR')
                                       }}
                                       className="ml-auto inline-flex items-center gap-0.5 rounded-full bg-white/20 hover:bg-white/40 px-1.5 py-0.5 text-white"
-                                      title={`Ajouter toute la sous-tâche ${subZone} à suivre (préparation vac suivante)`}
+                                      title={`Add the whole sub-task ${subZone} to follow (next vacation preparation)`}
                                     >
                                       <Plus className="h-3 w-3" />
-                                      <span className="text-[10px] font-bold whitespace-nowrap">à suivre</span>
+                                      <span className="text-[10px] font-bold whitespace-nowrap">to follow</span>
                                     </button>
                                 <button
                                   onClick={(e) => {
@@ -768,7 +768,7 @@ export default function Taches() {
                                     renameZone(subZone, 'CORR')
                                   }}
                                   className="text-white/80 hover:text-white"
-                                  title={`Renommer la sous-tâche ${subZone} (toutes ses lignes)`}
+                                  title={`Rename sub-task ${subZone} (all its lines)`}
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </button>
@@ -777,14 +777,14 @@ export default function Taches() {
                                     e.stopPropagation()
                                     if (
                                       window.confirm(
-                                        `Supprimer toute la sous-tâche ${subZone} du bloc Found Fault (${subTasks.length} tâche(s)) ?\n\nCes tâches disparaîtront partout (affectations comprises).`
+                                        `Delete the whole sub-task ${subZone} from the Found Fault block (${subTasks.length} task(s))?\n\nThese tasks will disappear everywhere (including assignments).`
                                       )
                                     ) {
                                       removeTasksByZone(subZone, 'CORR')
                                     }
                                   }}
                                       className="text-white/80 hover:text-white"
-                                      title={`Supprimer toute la sous-tâche ${subZone} (Found Fault)`}
+                                      title={`Delete the whole sub-task ${subZone} (Found Fault)`}
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </button>
@@ -813,7 +813,7 @@ export default function Taches() {
                             {isTransferred(task) ? (
                               <span
                                 className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-emerald-100 text-emerald-700"
-                                title="Déjà transférée vers Préparation vac suivante"
+                                title="Already transferred to Next vacation preparation"
                               >
                                 <Check className="h-3 w-3" />
                               </span>
@@ -823,7 +823,7 @@ export default function Taches() {
                                 checked={!!followSelected[task.id]}
                                 onChange={() => toggleFollow(task.id)}
                                 className="h-3.5 w-3.5 accent-sky-600"
-                                title="Cocher pour préparer la vacation suivante"
+                                title="Check to prepare the next vacation"
                               />
                             )}
                           </td>
@@ -846,7 +846,7 @@ export default function Taches() {
                                 <button
                                   onClick={() => setDescTask(task)}
                                   className="shrink-0 text-sky-600 hover:text-sky-800"
-                                  title="Voir la description détaillée et les étapes (Task_Description / Task_Steps)"
+                                  title="View the detailed description and steps (Task_Description / Task_Steps)"
                                 >
                                   <FileText className="h-3.5 w-3.5" />
                                 </button>
@@ -854,7 +854,7 @@ export default function Taches() {
                               {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
                                 <span
                                   className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff0000]/10 text-[#ff0000] border border-[#ff0000]/40 whitespace-nowrap"
-                                  title="Ligne prioritaire (MEL / EXMP)"
+                                  title="Priority line (MEL / EXMP)"
                                 >
                                   {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`)}
                                 </span>
@@ -886,7 +886,7 @@ export default function Taches() {
                               <button
                                 onClick={() => applyStatus([task], 'COMPLETE')}
                                 className="text-slate-300 hover:text-green-600 ml-1"
-                                title="Marquer la tâche COMPLETE"
+                                title="Mark the task COMPLETE"
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5" />
                               </button>
@@ -894,7 +894,7 @@ export default function Taches() {
                               <button
                                 onClick={() => applyStatus([task], 'ACTV')}
                                 className="text-slate-300 hover:text-sky-600 ml-1"
-                                title="Rétablir la tâche ACTV"
+                                title="Restore the task ACTV"
                               >
                                 <RotateCcw className="h-3.5 w-3.5" />
                               </button>
@@ -903,7 +903,7 @@ export default function Taches() {
                               <button
                                 onClick={() => applyStatus([task], 'PAUSE')}
                                 className="text-slate-300 hover:text-amber-600 ml-1"
-                                title="Mettre la tâche en PAUSE"
+                                title="Set the task to PAUSE"
                               >
                                 <Pause className="h-3.5 w-3.5" />
                               </button>
@@ -911,7 +911,7 @@ export default function Taches() {
                               <button
                                 onClick={() => applyStatus([task], 'ACTV')}
                                 className="text-slate-300 hover:text-green-600 ml-1"
-                                title="Reprendre la tâche (ACTV)"
+                                title="Resume the task (ACTV)"
                               >
                                 <Play className="h-3.5 w-3.5" />
                               </button>
@@ -938,7 +938,7 @@ export default function Taches() {
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-slate-400 text-xs">Non assignée</span>
+                              <span className="text-slate-400 text-xs">Unassigned</span>
                             )}
                           </td>
                           <td className="px-2 py-2">
@@ -951,18 +951,18 @@ export default function Taches() {
                                   setEditMoveZone(task.workArea || '')
                                 }}
                                 className="text-slate-400 hover:text-sky-600"
-                                title="Modifier le bloc / la sous-tâche (déplacer la ligne)"
+                                title="Edit the block / sub-task (move the line)"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => {
-                                  if (window.confirm('Supprimer cette tâche ?')) {
+                                  if (window.confirm('Delete this task?')) {
                                     removeTask(task.id)
                                   }
                                 }}
                                 className="text-slate-400 hover:text-red-600"
-                                title="Supprimer la tâche"
+                                title="Delete the task"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -994,14 +994,14 @@ export default function Taches() {
             <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
               <div className="min-w-0">
                 <h2 className="font-bold truncate">
-                  Déplacer {editMoveIds.length} ligne{editMoveIds.length > 1 ? 's' : ''}
+                  Move {editMoveIds.length} line{editMoveIds.length > 1 ? 's' : ''}
                 </h2>
                 <p className="text-xs text-slate-300 truncate">
                   {(() => {
                     const first = tasks.find((t) => t.id === editMoveIds[0])
                     return first
                       ? `N° ${first.seq || '—'} · ${first.description}${
-                          editMoveIds.length > 1 ? ` (+${editMoveIds.length - 1} autre(s))` : ''
+                          editMoveIds.length > 1 ? ` (+${editMoveIds.length - 1} more)` : ''
                         }`
                       : ''
                   })()}
@@ -1010,14 +1010,14 @@ export default function Taches() {
               <button
                 onClick={() => setEditMoveIds(null)}
                 className="text-slate-300 hover:text-white shrink-0"
-                title="Fermer"
+                title="Close"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="p-5 space-y-4">
               <label className="block text-sm font-medium text-slate-700">
-                Bloc
+                Block
                 <select
                   value={editMoveBlk}
                   onChange={(e) => setEditMoveBlk(e.target.value)}
@@ -1031,7 +1031,7 @@ export default function Taches() {
                 </select>
               </label>
               <label className="block text-sm font-medium text-slate-700">
-                Sous-tâche / zone
+                Sub-task / zone
                 <select
                   value={editMoveZoneNew ? '__new__' : editMoveZone}
                   onChange={(e) => {
@@ -1046,23 +1046,23 @@ export default function Taches() {
                   }}
                   className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
                 >
-                  <option value="">— Choisir une sous-tâche —</option>
+                  <option value="">— Choose a sub-task —</option>
                   {zones.map((z) => (
                     <option key={z} value={z}>
                       {z}
                     </option>
                   ))}
-                  <option value="__new__">➕ Nouvelle sous-tâche…</option>
+                  <option value="__new__">➕ New sub-task…</option>
                 </select>
               </label>
               {editMoveZoneNew && (
                 <label className="block text-sm font-medium text-slate-700">
-                  Nom de la nouvelle sous-tâche
+                  New sub-task name
                   <input
                     autoFocus
                     value={editMoveZone}
                     onChange={(e) => setEditMoveZone(e.target.value)}
-                    placeholder="Ex : CAB SECURITY"
+                    placeholder="E.g. CAB SECURITY"
                     className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
                   />
                 </label>
@@ -1072,7 +1072,7 @@ export default function Taches() {
                   onClick={() => setEditMoveIds(null)}
                   className="px-4 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-100"
                 >
-                  Annuler
+                  Cancel
                 </button>
                 <button
                   onClick={() => {
@@ -1086,7 +1086,7 @@ export default function Taches() {
                   }}
                   className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
                 >
-                  Enregistrer {editMoveIds.length > 1 ? `(${editMoveIds.length} lignes)` : ''}
+                  Save {editMoveIds.length > 1 ? `(${editMoveIds.length} lines)` : ''}
                 </button>
               </div>
             </div>
@@ -1106,7 +1106,7 @@ export default function Taches() {
             <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
               <div className="min-w-0">
                 <h2 className="font-bold truncate">
-                  N° {descTask.seq || '—'} · {descTask.description}
+                  No. {descTask.seq || '—'} · {descTask.description}
                 </h2>
                 <p className="text-xs text-slate-300 truncate">
                   {[
@@ -1121,7 +1121,7 @@ export default function Taches() {
               <button
                 onClick={() => setDescTask(null)}
                 className="text-slate-300 hover:text-white shrink-0"
-                title="Fermer"
+                title="Close"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1132,7 +1132,7 @@ export default function Taches() {
                   <div className="px-3 py-2 bg-slate-100 border-b border-slate-200 flex items-center gap-2">
                     <FileText className="h-4 w-4 text-sky-600" />
                     <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
-                      Description détaillée
+                      Detailed description
                     </p>
                   </div>
                   <p className="p-3 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
@@ -1145,7 +1145,7 @@ export default function Taches() {
                   <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-200 flex items-center gap-2">
                     <ListChecks className="h-4 w-4 text-emerald-600" />
                     <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wide">
-                      Étapes (Task Steps)
+                      Steps (Task Steps)
                     </p>
                   </div>
                   <p className="p-3 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">

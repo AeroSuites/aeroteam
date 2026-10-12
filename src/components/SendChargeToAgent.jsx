@@ -88,19 +88,19 @@ export default function SendChargeToAgent({ team, onClose }) {
       })
       if (res?.error === 'pas_un_agent')
         setError(
-          "Ce profil n'a pas le rôle Agent — changez son rôle dans Administration → Profils existants."
+          'This profile does not have the Agent role — change its role in Administration → Existing profiles.'
         )
       else if (res?.error === 'agent_introuvable')
-        setError('Profil agent introuvable (migration SQL exécutée ?).')
-      else if (res?.error) setError("Échec de l'envoi.")
+        setError('Agent profile not found (SQL migration executed?).')
+      else if (res?.error) setError('Failed to send.')
       else {
         setMsg(
-          `Charge envoyée à ${agent.name} : ${chargeTasks.length} ligne(s) + ${consignes.length} consigne(s).`
+          `Workload sent to ${agent.name}: ${chargeTasks.length} line(s) + ${consignes.length} instruction(s).`
         )
         setPick('')
       }
     } catch {
-      setError("Échec de l'envoi (migration SQL exécutée ? hors ligne ?).")
+      setError('Failed to send (SQL migration executed? offline?).')
     }
     setBusy(false)
   }
@@ -116,21 +116,21 @@ export default function SendChargeToAgent({ team, onClose }) {
       >
         <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
           <div className="min-w-0">
-            <h2 className="font-bold truncate">Envoyer la charge · {team.name}</h2>
+            <h2 className="font-bold truncate">Send workload · {team.name}</h2>
             <p className="text-xs text-slate-300">
-              {teamTasks.length} tâche(s) ·{' '}
-              {logicalToday().toLocaleDateString('fr-FR', {
+              {teamTasks.length} task(s) ·{' '}
+              {logicalToday().toLocaleDateString('en-GB', {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
               })}{' '}
-              · ✈ {aircraft || 'aucun avion'}
+              · ✈ {aircraft || 'no aircraft'}
             </p>
           </div>
           <button
             onClick={onClose}
             className="text-slate-300 hover:text-white shrink-0"
-            title="Fermer"
+            title="Close"
           >
             <X className="h-5 w-5" />
           </button>
@@ -138,22 +138,22 @@ export default function SendChargeToAgent({ team, onClose }) {
         <div className="p-4 overflow-y-auto space-y-2">
           {!aircraft && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-              Aucune immatriculation trouvée (ni dans la colonne Appareil des tâches, ni sur votre
-              profil) : la charge partira sans avion.
+              No registration found (neither in the tasks' Aircraft column nor on your
+              profile): the workload will be sent without an aircraft.
             </p>
           )}
           {agents === null && (
-            <p className="text-sm text-slate-400">Chargement des agents…</p>
+            <p className="text-sm text-slate-400">Loading agents…</p>
           )}
           {agents && agents.length === 0 && (
             <p className="text-sm text-slate-500">
-              Aucun profil agent. L'administrateur doit créer ou valider des profils avec le rôle
-              « Agent ».
+              No agent profile. The administrator must create or validate profiles with the
+              "Agent" role.
             </p>
           )}
           {agents && agents.length > 0 && team.members.length === 0 && (
             <p className="text-sm text-slate-500">
-              Cette équipe n'a pas de membres : ajoutez des membres puis réessayez.
+              This team has no members: add members and try again.
             </p>
           )}
           {agents &&
@@ -176,7 +176,7 @@ export default function SendChargeToAgent({ team, onClose }) {
                 >
                   <span className="font-medium">{member}</span>
                   <span className="text-xs text-slate-500">
-                    {agent ? `agent : ${agent.name}` : 'aucun profil agent correspondant'}
+                    {agent ? `agent: ${agent.name}` : 'no matching agent profile'}
                   </span>
                 </button>
               )
@@ -188,13 +188,13 @@ export default function SendChargeToAgent({ team, onClose }) {
             disabled={!pick || busy}
             className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
           >
-            {busy ? 'Envoi…' : 'Envoyer la charge'}
+            {busy ? 'Sending…' : 'Send workload'}
           </button>
           <button
             onClick={onClose}
             className="text-slate-500 hover:text-slate-800 px-3 py-2 text-sm"
           >
-            Fermer
+            Close
           </button>
           {msg && <span className="text-xs text-emerald-700">{msg}</span>}
           {error && <span className="text-xs text-red-600">{error}</span>}

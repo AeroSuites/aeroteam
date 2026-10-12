@@ -65,7 +65,7 @@ export default function ConsignesAvions({ scope = 'affectation' }) {
         )
       )
     } catch (err) {
-      setConError(err?.message || 'Erreur de chargement des consignes')
+      setConError(err?.message || 'Unable to load instructions')
       setConList([])
     }
     setConLoading(false)
@@ -99,7 +99,7 @@ export default function ConsignesAvions({ scope = 'affectation' }) {
     <div className="bg-white rounded-xl shadow p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-          <ClipboardList className="h-4 w-4 text-amber-500" /> Consignes des avions
+          <ClipboardList className="h-4 w-4 text-amber-500" /> Aircraft instructions
         </h2>
         <div className="flex flex-wrap items-center gap-2">
           <select
@@ -135,25 +135,25 @@ export default function ConsignesAvions({ scope = 'affectation' }) {
             disabled={conLoading}
             className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1 disabled:opacity-50"
           >
-            {conLoading ? 'Chargement…' : 'Actualiser'}
+            {conLoading ? 'Loading…' : 'Refresh'}
           </button>
           {Object.keys(conChecks).length > 0 && (
             <button
               onClick={clearChecks}
               className="text-xs text-slate-500 hover:text-red-600 border border-slate-200 rounded-full px-3 py-1"
-              title="Décocher toutes les consignes cochées"
+              title="Uncheck all checked instructions"
             >
-              Décocher tout
+              Uncheck all
             </button>
           )}
         </div>
       </div>
       {conError && <p className="text-xs text-red-600 mt-2">{conError}</p>}
       {conList === null ? (
-        <p className="text-xs text-slate-400 mt-3">Chargement…</p>
+        <p className="text-xs text-slate-400 mt-3">Loading…</p>
       ) : conList.length === 0 ? (
         <p className="text-xs text-slate-400 mt-3 italic">
-          Aucune consigne transmise pour{' '}
+          No instructions sent for{' '}
           {conDay.charAt(0) + conDay.slice(1).toLowerCase()} {conShift}.
         </p>
       ) : (
@@ -176,7 +176,7 @@ export default function ConsignesAvions({ scope = 'affectation' }) {
                     const badge = tok ? (
                       <span
                         className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff0000]/10 text-[#ff0000] border border-[#ff0000]/40 whitespace-nowrap"
-                        title="Ligne prioritaire (MEL / EXMP)"
+                        title="Priority line (MEL / EXMP)"
                       >
                         {tok}
                       </span>
@@ -198,7 +198,7 @@ export default function ConsignesAvions({ scope = 'affectation' }) {
                       <label
                         key={li}
                         className="flex items-start gap-2 cursor-pointer rounded px-1 -mx-1 hover:bg-amber-100/60"
-                        title={checked ? 'Décocher' : 'Cocher cette consigne'}
+                        title={checked ? 'Uncheck' : 'Check this instruction'}
                       >
                         <span
                           className={`text-xs leading-relaxed flex-1 ${

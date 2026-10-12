@@ -11,9 +11,9 @@ export default function Export() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Export & Sauvegarde</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Export & Backup</h1>
         <p className="text-slate-600 mt-1">
-          Téléchargez votre planning, gérez vos données.
+          Download your schedule, manage your data.
         </p>
       </div>
 
@@ -22,46 +22,46 @@ export default function Export() {
           <div className="inline-flex p-2 rounded-lg bg-green-50 text-green-600 mb-3">
             <FileSpreadsheet className="h-6 w-6" />
           </div>
-          <h2 className="text-xl font-semibold mb-2">Exporter en Excel</h2>
+          <h2 className="text-xl font-semibold mb-2">Export to Excel</h2>
           <p className="text-sm text-slate-600 mb-4">
-            Génère un fichier Excel avec toutes les tâches et leurs affectations.
+            Generates an Excel file with all tasks and their assignments.
           </p>
           <button
             onClick={() => exportToExcel({ tasks, teams, assignments })}
             disabled={tasks.length === 0}
             className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            <Download className="h-4 w-4" /> Télécharger la charge (.xlsx)
+            <Download className="h-4 w-4" /> Download the workload (.xlsx)
           </button>
         </div>
       </div>
 
       {/* Résumé avant export */}
       <div className="bg-white rounded-xl shadow p-4 sm:p-6">
-        <h2 className="text-xl font-semibold mb-4">Résumé du planning</h2>
+        <h2 className="text-xl font-semibold mb-4">Schedule summary</h2>
         <div className="grid gap-4 grid-cols-2 md:grid-cols-5">
-          <Summary label="Tâches" value={tasks.length} />
-          <Summary label="Assignées" value={assigned} />
-          <Summary label="Non assignées" value={unassigned} />
-          <Summary label="Équipes" value={teams.length} />
-          <Summary label="Membres" value={teams.reduce((a, t) => a + t.members.length, 0)} />
+          <Summary label="Tasks" value={tasks.length} />
+          <Summary label="Assigned" value={assigned} />
+          <Summary label="Unassigned" value={unassigned} />
+          <Summary label="Teams" value={teams.length} />
+          <Summary label="Members" value={teams.reduce((a, t) => a + t.members.length, 0)} />
         </div>
       </div>
 
       {/* Danger zone */}
       <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-red-700 mb-2">Zone danger</h2>
+        <h2 className="text-lg font-semibold text-red-700 mb-2">Danger zone</h2>
         <p className="text-sm text-red-600 mb-4">
-          Réinitialise toutes les données de travail (tâches, équipes, affectations,
-          préparation, consignes et membres assignés à l'avion du jour) et retire l'avion
-          associé au profil. Les membres permanents et les notes du Bloc-notes sont conservés.
-          Cette action est irréversible.
+          Resets all work data (tasks, teams, assignments, preparation, instructions
+          and members assigned to the day's aircraft) and removes the aircraft
+          linked to the profile. Permanent members and Notepad notes are kept.
+          This action is irreversible.
         </p>
         <button
           onClick={async () => {
             if (
               window.confirm(
-                'Êtes-vous sûr de vouloir réinitialiser toutes les données de travail ? (membres permanents et notes du Bloc-notes conservés, avion retiré)'
+                'Are you sure you want to reset all work data? (permanent members and Notepad notes are kept, aircraft removed)'
               )
             ) {
               try {
@@ -77,7 +77,7 @@ export default function Export() {
           }}
           className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 flex items-center gap-2"
         >
-          <Trash2 className="h-4 w-4" /> Tout réinitialiser
+          <Trash2 className="h-4 w-4" /> Reset all
         </button>
       </div>
     </div>

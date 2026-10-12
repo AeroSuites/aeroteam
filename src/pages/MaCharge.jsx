@@ -27,7 +27,7 @@ const formatChargeDate = (iso) => {
   if (!iso) return ''
   const d = new Date(`${iso}T12:00:00`)
   if (isNaN(d)) return iso
-  const s = d.toLocaleDateString('fr-FR', {
+  const s = d.toLocaleDateString('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -61,7 +61,7 @@ export default function MaCharge() {
     const byBlock = {}
     tasks.forEach((t) => {
       const b = t.taskType || 'AUTRE'
-      const z = t.workArea || 'Autre'
+      const z = t.workArea || 'Other'
       if (!byBlock[b]) byBlock[b] = {}
       if (!byBlock[b][z]) byBlock[b][z] = []
       byBlock[b][z].push(t)
@@ -112,16 +112,16 @@ export default function MaCharge() {
     <div className="bg-white rounded-xl shadow overflow-hidden">
       <div className="px-4 sm:px-5 py-4 border-b bg-slate-50/50">
         <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-          <History className="h-4 w-4 text-slate-500" /> Charges précédentes (
+          <History className="h-4 w-4 text-slate-500" /> Previous workloads (
           {chargeHistory.length})
         </h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          Les 10 dernières charges retirées ou remplacées — clique pour voir les lignes.
+          The last 10 removed or replaced workloads — click to view the lines.
         </p>
       </div>
       {chargeHistory.length === 0 && (
         <p className="px-4 sm:px-5 py-4 text-sm text-slate-400 italic">
-          Aucune charge précédente pour le moment.
+          No previous workloads yet.
         </p>
       )}
       <ul className="divide-y divide-slate-100">
@@ -192,14 +192,14 @@ export default function MaCharge() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Ma charge</h1>
-          <p className="text-slate-600 mt-1">Charge de travail envoyée par votre leader</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">My workload</h1>
+          <p className="text-slate-600 mt-1">Workload sent by your leader</p>
         </div>
         <div className="bg-white rounded-xl shadow p-10 text-center text-slate-500">
           <ClipboardList className="h-10 w-10 mx-auto text-slate-300 mb-3" />
-          <p>Aucune charge reçue pour le moment.</p>
+          <p>No workload received yet.</p>
           <p className="text-sm text-slate-400 mt-1">
-            Votre leader vous enverra votre charge de travail (date, avion, tâches).
+            Your leader will send you your workload (date, aircraft, tasks).
           </p>
         </div>
         {historySection}
@@ -210,10 +210,10 @@ export default function MaCharge() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Ma charge</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">My workload</h1>
         <p className="text-slate-600 mt-1">
-          Envoyée par {charge.leaderName || 'votre leader'}
-          {charge.teamName ? ` · équipe ${charge.teamName}` : ''}
+          Sent by {charge.leaderName || 'your leader'}
+          {charge.teamName ? ` · team ${charge.teamName}` : ''}
         </p>
       </div>
 
@@ -231,11 +231,11 @@ export default function MaCharge() {
           </div>
           <div className="text-right">
             <p className="text-sm font-semibold text-slate-700">
-              {done} / {tasks.length} faite{tasks.length > 1 ? 's' : ''}
-              {paused > 0 ? ` · ${paused} en pause` : ''}
+              {done} / {tasks.length} done
+              {paused > 0 ? ` · ${paused} paused` : ''}
             </p>
             <p className="text-xs text-slate-400">
-              {pct}% {charge.sentAt ? `· reçue le ${charge.sentAt.slice(0, 10)}` : ''}
+              {pct}% {charge.sentAt ? `· received on ${charge.sentAt.slice(0, 10)}` : ''}
             </p>
           </div>
         </div>
@@ -251,7 +251,7 @@ export default function MaCharge() {
       {(charge.consignes || []).length > 0 && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-5">
           <h2 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-3">
-            <ClipboardList className="h-4 w-4 text-amber-500" /> Consignes du jour
+            <ClipboardList className="h-4 w-4 text-amber-500" /> Instructions of the day
           </h2>
           <div className="grid gap-3 md:grid-cols-2">
             {(charge.consignes || []).map((c, i) => (
@@ -298,7 +298,7 @@ export default function MaCharge() {
                   applyStatus(all, allDone ? 'ACTV' : 'COMPLETE')
                 }}
                 className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5"
-                title="Marquer tout le bloc COMPLETE (ou rétablir ACTV)"
+                title="Mark the whole block COMPLETE (or restore ACTV)"
               >
                 <CheckCircle2 className="h-3 w-3" />
                 <span className="text-[10px] font-bold whitespace-nowrap">COMPLETE</span>
@@ -329,8 +329,8 @@ export default function MaCharge() {
                     }`}
                     title={
                       zoneAllDone
-                        ? 'Rétablir toute la sous-tâche en ACTV'
-                        : 'Marquer toute la sous-tâche COMPLETE'
+                        ? 'Restore the whole sub-task to ACTV'
+                        : 'Mark the whole sub-task COMPLETE'
                     }
                   >
                     {zoneAllDone ? (
@@ -384,7 +384,7 @@ export default function MaCharge() {
                                 ? 'bg-amber-200 border-amber-400 text-amber-900'
                                 : 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100'
                             }`}
-                            title="Note enregistrée — afficher / masquer l'éditeur"
+                            title="Saved note — show / hide the editor"
                           >
                             <StickyNote className="h-3.5 w-3.5 shrink-0" />
                             {openNoteId === t.id ? (
@@ -401,7 +401,7 @@ export default function MaCharge() {
                                 ? 'bg-amber-100 border-amber-300 text-amber-800'
                                 : 'text-slate-300 border-transparent hover:text-amber-700'
                             }`}
-                            title="Ajouter une note"
+                            title="Add a note"
                           >
                             <StickyNote className="h-3.5 w-3.5" />
                           </button>
@@ -418,7 +418,7 @@ export default function MaCharge() {
                             <button
                               onClick={() => updateChargeTask(t.id, { mtxStatus: 'COMPLETE' })}
                               className="text-slate-300 hover:text-green-600"
-                              title="Marquer COMPLETE"
+                              title="Mark COMPLETE"
                             >
                               <CheckCircle2 className="h-4 w-4" />
                             </button>
@@ -426,7 +426,7 @@ export default function MaCharge() {
                             <button
                               onClick={() => updateChargeTask(t.id, { mtxStatus: 'ACTV' })}
                               className="text-slate-300 hover:text-sky-600"
-                              title="Rétablir ACTV"
+                              title="Restore ACTV"
                             >
                               <RotateCcw className="h-4 w-4" />
                             </button>
@@ -435,7 +435,7 @@ export default function MaCharge() {
                             <button
                               onClick={() => updateChargeTask(t.id, { mtxStatus: 'PAUSE' })}
                               className="text-slate-300 hover:text-amber-600"
-                              title="Mettre en PAUSE"
+                              title="Set to PAUSE"
                             >
                               <Pause className="h-4 w-4" />
                             </button>
@@ -443,7 +443,7 @@ export default function MaCharge() {
                             <button
                               onClick={() => updateChargeTask(t.id, { mtxStatus: 'ACTV' })}
                               className="text-slate-300 hover:text-green-600"
-                              title="Reprendre (ACTV)"
+                              title="Resume (ACTV)"
                             >
                               <Play className="h-4 w-4" />
                             </button>
@@ -457,7 +457,7 @@ export default function MaCharge() {
                               value={noteDraft}
                               onChange={(e) => setNoteDraft(e.target.value)}
                               rows={3}
-                              placeholder="Note pour le leader (avancement, pièce manquante, remarque…)"
+                              placeholder="Note for the leader (progress, missing part, remark…)"
                               className="w-full border border-amber-300 rounded-md px-3 py-2 text-sm resize-y"
                             />
                             <div className="flex items-center gap-2 mt-2">
@@ -465,15 +465,15 @@ export default function MaCharge() {
                                 onClick={() => saveNote(t.id)}
                                 className="bg-amber-500 text-white px-3 py-1.5 rounded-md hover:bg-amber-600 text-xs font-semibold"
                               >
-                                Enregistrer
+                                Save
                               </button>
                               {t.note && (
                                 <button
                                   onClick={() => removeNote(t.id)}
                                   className="text-red-600 border border-red-200 hover:bg-red-50 rounded-md px-3 py-1.5 text-xs"
-                                >
-                                  Supprimer
-                                </button>
+                                  >
+                                    Delete
+                                  </button>
                               )}
                               <button
                                 onClick={() => {
@@ -481,9 +481,9 @@ export default function MaCharge() {
                                   setNoteDraft('')
                                 }}
                                 className="text-slate-500 hover:text-slate-800 px-2 py-1.5 text-xs"
-                              >
-                                Fermer
-                              </button>
+                                >
+                                  Close
+                                </button>
                             </div>
                           </div>
                         )}
@@ -512,7 +512,7 @@ export default function MaCharge() {
             <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
               <div className="min-w-0">
                 <h2 className="font-bold truncate">
-                  N° {cleanShortValue(descTask.seq) || '—'} · {descTask.description}
+                  No. {cleanShortValue(descTask.seq) || '—'} · {descTask.description}
                 </h2>
                 <p className="text-xs text-slate-300 truncate">
                   {[
@@ -527,7 +527,7 @@ export default function MaCharge() {
               <button
                 onClick={() => setDescTask(null)}
                 className="text-slate-300 hover:text-white shrink-0"
-                title="Fermer"
+                title="Close"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -538,7 +538,7 @@ export default function MaCharge() {
                   <div className="px-3 py-2 bg-slate-100 border-b border-slate-200 flex items-center gap-2">
                     <FileText className="h-4 w-4 text-sky-600" />
                     <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
-                      Description détaillée
+                      Detailed description
                     </p>
                   </div>
                   <p className="p-3 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">
@@ -551,7 +551,7 @@ export default function MaCharge() {
                   <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-200 flex items-center gap-2">
                     <ListChecks className="h-4 w-4 text-emerald-600" />
                     <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wide">
-                      Étapes (Task Steps)
+                      Steps (Task Steps)
                     </p>
                   </div>
                   <p className="p-3 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed">

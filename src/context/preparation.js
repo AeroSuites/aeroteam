@@ -29,7 +29,7 @@ export function prepActions({ setPrepTasks, setPockets }) {
   const removePrepTasksByZone = (zone, block) => {
     setPrepTasks((prev) => {
       const match = (t) =>
-        (t.workArea || 'Autre') === zone &&
+        (t.workArea || 'Other') === zone &&
         (!block || (t.taskType || 'AUTRE') === block)
       const removedIds = prev.filter(match).map((t) => t.id)
       setPockets((prevPockets) =>

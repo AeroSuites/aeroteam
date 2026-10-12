@@ -62,7 +62,7 @@ export function taskActions({ tasks, setTasks, setAssignments }) {
   // (ex. Found Fault > CAB WASTE sans toucher au JIC > CAB WASTE).
   const removeTasksByZone = (zone, block) => {
     const match = (t) =>
-      (t.workArea || 'Autre') === zone &&
+      (t.workArea || 'Other') === zone &&
       (!block || (t.taskType || 'AUTRE') === block)
     const idsToRemove = tasks.filter(match).map((t) => t.id)
     setTasks((prev) => prev.filter((t) => !match(t)))

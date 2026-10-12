@@ -25,16 +25,16 @@ function infosHeader(infos) {
   const header = []
   const entre = [frDate(infos.dateEntree), infos.heureEntree].filter(Boolean).join(' ')
   const sortie = [frDate(infos.dateSortie), infos.heureSortie].filter(Boolean).join(' ')
-  if (infos.typeVisite) header.push(`Type de visite : ${infos.typeVisite}`)
-  if (entre) header.push(`Date d'entrée : ${entre}`)
+  if (infos.typeVisite) header.push(`Visit type: ${infos.typeVisite}`)
+  if (entre) header.push(`Entry date: ${entre}`)
   if (infos.osm || infos.config || infos.position) {
     header.push(
-      `OSM : ${infos.osm || '—'} · Config : ${infos.config || '—'} · Position : ${
+      `OSM: ${infos.osm || '—'} · Config: ${infos.config || '—'} · Position: ${
         infos.position || '—'
       }`
     )
   }
-  if (sortie) header.push(`Date de sortie : ${sortie}`)
+  if (sortie) header.push(`Exit date: ${sortie}`)
   if (header.length > 0) header.push('')
   return header
 }
@@ -120,5 +120,5 @@ export function buildProfileData(existing, aircraftInfo, scope) {
 }
 
 export function aircraftProfileLabel(immat) {
-  return `Équipe ${immat}`
+  return `Team ${immat}`
 }

@@ -41,23 +41,23 @@ export default function ProfileSelector() {
     setRegError('')
     setRegOk(false)
     if (!regIdent.trim() || regIdent.trim().length < 3) {
-      setRegError("L'identifiant doit contenir au moins 3 caractères.")
+      setRegError('The username must contain at least 3 characters.')
       return
     }
     if (!regName.trim()) {
-      setRegError('Le nom est obligatoire.')
+      setRegError('The name is required.')
       return
     }
     if (!managerId) {
-      setRegError('Sélectionnez votre manager dans la liste.')
+      setRegError('Select your manager from the list.')
       return
     }
     if (!regCode || regCode.length < 8) {
-      setRegError('Le code doit contenir au moins 8 caractères.')
+      setRegError('The code must contain at least 8 characters.')
       return
     }
     if (regCode !== regCode2) {
-      setRegError('Les deux codes ne correspondent pas.')
+      setRegError('The two codes do not match.')
       return
     }
     setRegBusy(true)
@@ -87,19 +87,19 @@ export default function ProfileSelector() {
         {mode === 'login' ? (
           <>
             <p className="text-slate-500 mb-6">
-              Entrez votre <strong className="text-slate-700">identifiant</strong> et votre{' '}
-              <strong className="text-slate-700">code personnel</strong> pour retrouver votre
-              profil et vos données, sur n'importe quel appareil.
+              Enter your <strong className="text-slate-700">username</strong> and your{' '}
+              <strong className="text-slate-700">personal code</strong> to retrieve your
+              profile and your data, on any device.
             </p>
 
             <div className="border border-slate-200 rounded-xl p-4 space-y-3">
               <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-                <KeyRound className="h-4 w-4 text-sky-500" /> Se connecter à mon profil
+                <KeyRound className="h-4 w-4 text-sky-500" /> Sign in to my profile
               </h2>
               <input
                 value={loginIdent}
                 onChange={(e) => setLoginIdent(e.target.value)}
-                  placeholder="Votre identifiant de connexion"
+                  placeholder="Your sign-in username"
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
                 autoFocus
               />
@@ -108,7 +108,7 @@ export default function ProfileSelector() {
                 onChange={(e) => setCode(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
                 type="password"
-                placeholder="Votre code personnel"
+                placeholder="Your personal code"
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
               />
               {connectError && <p className="text-sm text-red-600">{connectError}</p>}
@@ -118,12 +118,12 @@ export default function ProfileSelector() {
                 disabled={connecting || !code.trim() || !loginIdent.trim()}
                 className="w-full bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold flex items-center justify-center gap-2"
               >
-                <LogIn className="h-4 w-4" /> {connecting ? 'Connexion…' : 'Se connecter'}
+                <LogIn className="h-4 w-4" /> {connecting ? 'Signing in…' : 'Sign in'}
               </button>
             </div>
 
             <p className="text-center text-sm text-slate-500 mt-4">
-              Pas encore de compte ?{' '}
+              No account yet?{' '}
               <button
                 onClick={() => {
                   setMode('register')
@@ -131,32 +131,32 @@ export default function ProfileSelector() {
                 }}
                 className="text-sky-600 hover:underline font-semibold"
               >
-                Créer mon compte
+                Create my account
               </button>
             </p>
           </>
         ) : (
           <>
             <p className="text-slate-500 mb-6">
-              Créez votre profil : <strong className="text-slate-700">identifiant + nom + code personnel</strong>
-              . Un administrateur devra valider votre demande avant votre première connexion.
+              Create your profile: <strong className="text-slate-700">username + name + personal code</strong>
+              . An administrator will have to validate your request before your first sign-in.
             </p>
 
             <div className="border border-slate-200 rounded-xl p-4 space-y-3">
               <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-                <UserPlus className="h-4 w-4 text-sky-500" /> Demande de création de profil
+                <UserPlus className="h-4 w-4 text-sky-500" /> Profile creation request
               </h2>
               <input
                 value={regIdent}
                 onChange={(e) => setRegIdent(e.target.value)}
-                placeholder="Identifiant : ce sera votre identifiant de connexion"
+                placeholder="Username: this will be your sign-in username"
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
                 autoFocus
               />
               <input
                 value={regName}
                 onChange={(e) => setRegName(e.target.value)}
-                placeholder="Nom complet"
+                placeholder="Full name"
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
               />
               <select
@@ -165,7 +165,7 @@ export default function ProfileSelector() {
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
               >
                 <option value="">
-                  {managers === null ? 'Chargement des managers…' : '— Choisir mon manager —'}
+                  {managers === null ? 'Loading managers…' : '— Choose my manager —'}
                 </option>
                 {(managers || []).map((m) => (
                   <option key={m.id} value={m.id}>
@@ -175,29 +175,29 @@ export default function ProfileSelector() {
               </select>
               {managers && managers.length === 0 && (
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                  Aucun manager disponible pour le moment. Contactez votre responsable avant de
-                  créer un compte.
+                  No manager available at the moment. Contact your manager before
+                  creating an account.
                 </p>
               )}
               <input
                 value={regCode}
                 onChange={(e) => setRegCode(e.target.value)}
                 type="password"
-                placeholder="Code personnel (8 caractères minimum)"
+                placeholder="Personal code (minimum 8 characters)"
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
               />
               <input
                 value={regCode2}
                 onChange={(e) => setRegCode2(e.target.value)}
                 type="password"
-                placeholder="Confirmer le code"
+                placeholder="Confirm the code"
                 onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
               />
               {regOk && (
                 <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
-                  Demande envoyée ! Votre manager doit valider votre compte — vous pourrez vous
-                  connecter une fois validé.
+                  Request sent! Your manager must validate your account — you will be able to
+                  sign in once validated.
                 </p>
               )}
               {regError && <p className="text-sm text-red-600">{regError}</p>}
@@ -206,7 +206,7 @@ export default function ProfileSelector() {
                 disabled={regBusy || !managers || managers.length === 0}
                 className="w-full bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold flex items-center justify-center gap-2"
               >
-                <UserPlus className="h-4 w-4" /> {regBusy ? 'Envoi…' : 'Envoyer ma demande'}
+                <UserPlus className="h-4 w-4" /> {regBusy ? 'Sending…' : 'Send my request'}
               </button>
             </div>
 
@@ -215,7 +215,7 @@ export default function ProfileSelector() {
                 onClick={() => setMode('login')}
                 className="text-sky-600 hover:underline font-semibold"
               >
-                J'ai déjà un compte — me connecter
+                I already have an account — sign in
               </button>
             </p>
           </>

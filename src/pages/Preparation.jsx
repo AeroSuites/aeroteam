@@ -111,7 +111,7 @@ export default function Preparation() {
   const transferPocket = async (p) => {
     const target = transferProfiles.find((tp) => tp.id === transferTargetCode)
     if (!target || !activeProfile?.code) {
-      setTransferError('Choisissez un profil destinataire.')
+      setTransferError('Choose a recipient profile.')
       return
     }
     setTransferring(true)
@@ -129,16 +129,16 @@ export default function Preparation() {
         copiedTasks
       )
       if (res?.error === 'cible_invalide') {
-        setTransferError('Profil destinataire invalide.')
+        setTransferError('Invalid recipient profile.')
       } else if (res?.error) {
-        setTransferError('Échec de la copie.')
+        setTransferError('Failed to copy.')
       } else {
-        setTransferMsg(`Pochette « ${p.name} » copiée vers « ${target.name} ».`)
+        setTransferMsg(`Pocket “${p.name}” copied to “${target.name}”.`)
         setTransferPocketId(null)
         setTransferTargetCode('')
       }
     } catch {
-      setTransferError('Échec du transfert (hors ligne ?).')
+      setTransferError('Failed to transfer (offline?).')
     }
     setTransferring(false)
   }
@@ -154,12 +154,12 @@ export default function Preparation() {
         const sheet = workbook.Sheets[workbook.SheetNames[0]]
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 })
         if (!rows || rows.length < 2) {
-          setError('Le fichier est vide ou ne contient pas assez de lignes.')
+          setError('The file is empty or does not contain enough lines.')
           return
         }
         const detected = detectColumns(rows[0])
         if (detected.description === undefined) {
-          setError('Colonne "Task_Name" introuvable. Vérifiez le format du fichier.')
+          setError('Column "Task_Name" not found. Check the file format.')
           return
         }
         const parsed = parseExcelRows(rows.slice(1), detected)
@@ -176,7 +176,7 @@ export default function Preparation() {
         setPreviewExpandedBlocks([])
         setPreviewExpandedZones([])
       } catch (err) {
-        setError(`Erreur lors de la lecture du fichier: ${err.message}`)
+        setError(`Failed to read the file: ${err.message}`)
       }
     }
     reader.readAsArrayBuffer(file)
@@ -198,9 +198,9 @@ export default function Preparation() {
     const ignored = list.length - fresh.length
     if (fresh.length) addPrepTasks(fresh)
     setImportMsg(
-      `${fresh.length} ligne(s) ajoutée(s)${
-        ignored ? ` · ${ignored} déjà présente(s) ignorée(s)` : ''
-      }${ignoredDone ? ` · ${ignoredDone} faite(s) (COMPLETE) ignorée(s)` : ''}.`
+      `${fresh.length} line(s) added${
+        ignored ? ` · ${ignored} already present ignored` : ''
+      }${ignoredDone ? ` · ${ignoredDone} done (COMPLETE) ignored` : ''}.`
     )
     setPreview([])
     setPreviewSelected({})
@@ -287,7 +287,7 @@ export default function Preparation() {
     const groups = {}
     filteredPrepTasks.forEach((t) => {
       const isFF = (t.taskType || '') === 'CORR'
-      const key = isFF ? '__FOUND_FAULT__' : t.workArea || 'Sans zone'
+      const key = isFF ? '__FOUND_FAULT__' : t.workArea || 'No zone'
       if (!groups[key]) {
         groups[key] = {
           key,
@@ -296,7 +296,7 @@ export default function Preparation() {
           zones: {},
         }
       }
-      const sub = t.workArea || 'Sans sous-tâche'
+      const sub = t.workArea || 'No sub-task'
       if (!groups[key].zones[sub]) groups[key].zones[sub] = []
       groups[key].zones[sub].push(t)
     })
@@ -449,7 +449,7 @@ export default function Preparation() {
       0
     )
     doc.text(
-      `${printTasks.length} / ${pocketTaskIds(printPocket).length} ligne(s) sélectionnée(s) · ${hours.toFixed(1)} h · ${new Date().toLocaleDateString('fr-FR')}`,
+      `${printTasks.length} / ${pocketTaskIds(printPocket).length} line(s) selected · ${hours.toFixed(1)} h · ${new Date().toLocaleDateString('en-GB')}`,
       margin,
       21
     )
@@ -458,7 +458,7 @@ export default function Preparation() {
     const blockNames = Object.keys(printByBlock)
 
     if (blockNames.length === 0) {
-      doc.text('Aucune tâche sélectionnée.', margin, y + 4)
+      doc.text('No tasks selected.', margin, y + 4)
     }
 
     blockNames.forEach((blk) => {
@@ -473,7 +473,7 @@ export default function Preparation() {
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(255, 255, 255)
       doc.text(
-        `Bloc ${getCategoryLabel(blk)} · ${info.count} tâche(s) · ${info.totalHours.toFixed(1)} h`,
+        `Block ${getCategoryLabel(blk)} · ${info.count} task(s) · ${info.totalHours.toFixed(1)} h`,
         margin + 2,
         y + 4.6
       )
@@ -543,10 +543,10 @@ export default function Preparation() {
     if (!printPocket) return
     const doc = buildPocketPdf()
     doc.save(
-      `pochette-${printPocket.name
+      `pocket-${printPocket.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '') || 'sans-nom'}-${new Date().toISOString().slice(0, 10)}.pdf`
+        .replace(/^-|-$/g, '') || 'no-name'}-${new Date().toISOString().slice(0, 10)}.pdf`
     )
   }
 
@@ -555,10 +555,10 @@ export default function Preparation() {
     const doc = buildPocketPdf()
     downloadPdfAsJpeg(
       doc,
-      `pochette-${printPocket.name
+      `pocket-${printPocket.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '') || 'sans-nom'}.pdf`
+        .replace(/^-|-$/g, '') || 'no-name'}.pdf`
     )
   }
 
@@ -582,7 +582,7 @@ export default function Preparation() {
     printTasks.forEach((t) => {
       const blk = t.taskType || 'AUTRE'
       if (!map[blk]) map[blk] = { zones: {}, count: 0, totalHours: 0 }
-      const zone = t.workArea || 'Sans zone'
+      const zone = t.workArea || 'No zone'
       if (!map[blk].zones[zone]) map[blk].zones[zone] = []
       map[blk].zones[zone].push(t)
       map[blk].count += 1
@@ -603,21 +603,21 @@ export default function Preparation() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Préparation de charge</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Workload preparation</h1>
           <p className="text-slate-600 mt-1">
-            Charge restante pour la vacation suivante — {prepTasks.length} lignes
+            Remaining workload for the next vacation — {prepTasks.length} lines
             {zoneGroups.length > 0 &&
-              ` · ${[...new Set(prepTasks.map((t) => t.taskType).filter(Boolean))].length} blocs`}
+              ` · ${[...new Set(prepTasks.map((t) => t.taskType).filter(Boolean))].length} blocks`}
           </p>
         </div>
         {prepTasks.length > 0 && (
           <button
             onClick={() => {
-              if (window.confirm('Effacer toute la préparation de charge actuelle ?')) clearPrepTasks()
+              if (window.confirm('Clear the entire current workload preparation?')) clearPrepTasks()
             }}
             className="flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 border border-red-200 px-3 py-2 rounded-md"
           >
-            <X className="h-4 w-4" /> Tout effacer
+            <X className="h-4 w-4" /> Clear all
           </button>
         )}
       </div>
@@ -626,22 +626,22 @@ export default function Preparation() {
       {selectedMoveIds.length > 0 && (
         <div className="bg-white rounded-xl shadow p-3 border-l-4 border-l-sky-600 flex flex-wrap items-center justify-between gap-2">
           <span className="text-sm text-slate-700">
-            <strong>{selectedMoveIds.length}</strong> ligne(s) sélectionnée(s) — déplacer vers un
-            autre bloc / une autre sous-tâche :
+            <strong>{selectedMoveIds.length}</strong> line(s) selected — move to
+            another block / sub-task:
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => openMove(selectedMoveIds)}
               className="bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 text-xs font-semibold"
-              title="Déplacer toutes les lignes cochées"
+              title="Move all checked lines"
             >
-              Déplacer ({selectedMoveIds.length})
+              Move ({selectedMoveIds.length})
             </button>
             <button
               onClick={() => {
                 if (
                   window.confirm(
-                    `Supprimer définitivement les ${selectedMoveIds.length} ligne(s) sélectionnée(s) ?\n\nElles seront aussi retirées des pochettes.`
+                    `Delete the ${selectedMoveIds.length} selected line(s) permanently?\n\nThey will also be removed from the pockets.`
                   )
                 ) {
                   removePrepTasksByIds(selectedMoveIds)
@@ -649,15 +649,15 @@ export default function Preparation() {
                 }
               }}
               className="bg-white text-red-600 border border-red-200 px-3 py-1.5 rounded-md hover:bg-red-50 text-xs font-semibold"
-              title="Supprimer toutes les lignes sélectionnées"
+              title="Delete all selected lines"
             >
-              Supprimer ({selectedMoveIds.length})
+              Delete ({selectedMoveIds.length})
             </button>
             <button
               onClick={() => setMoveSelected({})}
               className="text-xs text-slate-500 hover:text-red-600 border border-slate-200 rounded-md px-2 py-1.5"
             >
-              Vider la sélection
+              Clear selection
             </button>
           </div>
         </div>
@@ -685,9 +685,9 @@ export default function Preparation() {
         />
         <Upload className="h-10 w-10 mx-auto text-slate-400" />
         <p className="mt-3 font-medium text-slate-700">
-          Chargez le fichier de la charge restante (fin de journée)
+          Upload the remaining workload file (end of day)
         </p>
-        <p className="text-sm text-slate-500 mt-1">Formats supportés : .xlsx, .xls, .csv</p>
+        <p className="text-sm text-slate-500 mt-1">Supported formats: .xlsx, .xls, .csv</p>
         {fileName && (
           <p className="mt-3 inline-flex items-center gap-2 bg-sky-50 text-sky-700 px-3 py-1 rounded-full text-sm">
             <FileSpreadsheet className="h-4 w-4" /> {fileName}
@@ -702,12 +702,12 @@ export default function Preparation() {
           <div className="px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b">
             <div>
               <h2 className="text-lg font-semibold">
-                Aperçu — {previewSelectedCount} / {preview.length} ligne(s) sélectionnée(s)
+                Preview — {previewSelectedCount} / {preview.length} line(s) selected
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Décochez un bloc, une sous-tâche ou une ligne pour ne pas l'importer.
+                Uncheck a block, a sub-task or a line to exclude it from the import.
                 {previewDoneCount > 0 &&
-                  ` ${previewDoneCount} ligne(s) déjà faite(s) (COMPLETE dans Tâches) décochée(s) automatiquement.`}
+                  ` ${previewDoneCount} line(s) already done (COMPLETE in Tasks) unchecked automatically.`}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -719,13 +719,13 @@ export default function Preparation() {
                 }
                 className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-2.5 py-1"
               >
-                Tout cocher
+                Check all
               </button>
               <button
                 onClick={() => setPreviewSelected({})}
                 className="text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 rounded-full px-2.5 py-1"
               >
-                Tout décocher
+                Uncheck all
               </button>
               <button
                 onClick={() => {
@@ -736,14 +736,14 @@ export default function Preparation() {
                 }}
                 className="px-4 py-2 rounded-md border border-slate-300 text-sm hover:bg-slate-50"
               >
-                Annuler
+                Cancel
               </button>
               <button
                 onClick={handleImport}
                 disabled={previewSelectedCount === 0}
                 className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold disabled:opacity-50"
               >
-                Ajouter à la préparation ({previewSelectedCount})
+                Add to preparation ({previewSelectedCount})
               </button>
             </div>
           </div>
@@ -769,11 +769,11 @@ export default function Preparation() {
           <div className="px-4 sm:px-6 py-4 border-b bg-slate-50/50">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <FolderPlus className="h-5 w-5 text-sky-600" />
-              Pochettes virtuelles
+              Virtual pockets
             </h2>
             <p className="text-sm text-slate-500 mt-0.5">
-              Créez des pochettes et affectez-y des blocs, des zones ou des tâches. Une pochette peut
-              ensuite être imprimée.
+              Create pockets and assign blocks, zones or tasks to them. A pocket can
+              then be printed.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <input
@@ -782,14 +782,14 @@ export default function Preparation() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') createPocket()
                 }}
-                placeholder="Nom de la pochette (ex : Équipe mécanique après-midi)"
+                placeholder="Pocket name (e.g. Mechanical team afternoon)"
                 className="border border-slate-300 rounded-md px-3 py-2 text-sm flex-1 min-w-[220px]"
               />
               <button
                 onClick={createPocket}
                 className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
               >
-                <Plus className="h-4 w-4" /> Créer la pochette
+                <Plus className="h-4 w-4" /> Create pocket
               </button>
             </div>
           </div>
@@ -803,8 +803,8 @@ export default function Preparation() {
 
           {pockets.length === 0 ? (
             <p className="px-4 sm:px-6 py-6 text-sm text-slate-500">
-              Aucune pochette pour le moment. Créez-en une ci-dessus, puis affectez des blocs ou des
-              tâches avec les menus déroulants des blocs / zones / lignes ci-dessous.
+              No pocket yet. Create one above, then assign blocks or
+              tasks with the block / zone / line dropdowns below.
             </p>
           ) : (
             <div className="grid gap-3 p-4 sm:p-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -845,18 +845,18 @@ export default function Preparation() {
                           }
                         }}
                         className="text-slate-400 hover:text-sky-600 p-1 rounded"
-                        title={renameId === p.id ? 'Enregistrer le nouveau nom' : 'Renommer la pochette'}
+                        title={renameId === p.id ? 'Save the new name' : 'Rename the pocket'}
                       >
                         {renameId === p.id ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
                       </button>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
                       <span className="px-2 py-0.5 bg-sky-50 text-sky-700 rounded-full text-xs font-semibold">
-                        {st.count} tâche{st.count > 1 ? 's' : ''}
+                        {st.count} task{st.count > 1 ? 's' : ''}
                       </span>
                       {st.missing > 0 && (
                         <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-xs">
-                          {st.missing} supprimé{st.missing > 1 ? 's' : ''}
+                          {st.missing} deleted task{st.missing > 1 ? 's' : ''}
                         </span>
                       )}
                     </div>
@@ -864,18 +864,18 @@ export default function Preparation() {
                       <button
                         onClick={() => openPrint(p.id)}
                         className="flex-1 flex items-center justify-center gap-2 bg-slate-900 text-white px-3 py-2 rounded-md hover:bg-slate-700 text-sm font-semibold"
-                        title="Afficher et imprimer la pochette"
+                        title="Show and print the pocket"
                       >
-                        <Printer className="h-4 w-4" /> Ouvrir / Imprimer
+                        <Printer className="h-4 w-4" /> Open / Print
                       </button>
                       <button
                         onClick={() => {
-                          if (window.confirm(`Supprimer la pochette « ${p.name} » ?`)) {
+                          if (window.confirm(`Delete the pocket “${p.name}”?`)) {
                             removePocket(p.id)
                           }
                         }}
                         className="text-slate-400 hover:text-red-600 p-2 rounded border border-slate-200"
-                        title="Supprimer la pochette"
+                        title="Delete the pocket"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -888,7 +888,7 @@ export default function Preparation() {
                             onChange={(e) => setTransferTargetCode(e.target.value)}
                             className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white flex-1 min-w-[140px]"
                           >
-                            <option value="">— Profil destinataire —</option>
+                            <option value="">— Recipient profile —</option>
                             {transferProfiles.map((pp) => (
                               <option key={pp.id} value={pp.id}>
                                 {pp.name}
@@ -901,7 +901,7 @@ export default function Preparation() {
                             disabled={transferring || !transferTargetCode}
                             className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-full px-3 py-1 disabled:opacity-50"
                           >
-                            {transferring ? 'Transfert…' : 'Transférer'}
+                            {transferring ? 'Transferring…' : 'Transfer'}
                           </button>
                           <button
                             onClick={() => {
@@ -909,7 +909,7 @@ export default function Preparation() {
                               setTransferTargetCode('')
                             }}
                             className="text-slate-400 hover:text-slate-700 p-1"
-                            title="Annuler"
+                            title="Cancel"
                           >
                             <X className="h-4 w-4" />
                           </button>
@@ -924,9 +924,9 @@ export default function Preparation() {
                             }}
                             disabled={transferProfiles.length === 0}
                             className="w-full text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1 disabled:opacity-50"
-                            title="Copier cette pochette (avec ses lignes) vers un autre profil — le profil d'origine la garde"
+                            title="Copy this pocket (with its lines) to another profile — the original profile keeps it"
                           >
-                            Copier vers un autre profil
+                            Copy to another profile
                           </button>
                       )}
                     </div>
@@ -937,8 +937,8 @@ export default function Preparation() {
           )}
           {emptyPockets.length > 0 && (
             <p className="px-4 sm:px-6 pb-4 text-xs text-slate-400">
-              {emptyPockets.map((p) => p.name).join(' · ')} : pochette(s) vide(s) — affectez-y des
-              blocs ou des tâches.
+              {emptyPockets.map((p) => p.name).join(' · ')}: empty pocket(s) — assign
+              blocks or tasks to them.
             </p>
           )}
         </div>
@@ -947,7 +947,7 @@ export default function Preparation() {
       {prepTasks.length === 0 && preview.length === 0 && (
         <div className="bg-white rounded-xl shadow p-10 text-center text-slate-500">
           <FolderClock className="h-10 w-10 mx-auto text-slate-300 mb-2" />
-          Aucune charge de préparation. Chargez le fichier de charge restante ci-dessus.
+          No workload preparation. Upload the remaining workload file above.
         </div>
       )}
 
@@ -959,14 +959,14 @@ export default function Preparation() {
 
       {prepTasks.length > 0 && (
         <div className="bg-white rounded-xl shadow p-3 flex flex-wrap items-center justify-between gap-2 border-l-4 border-l-sky-600">
-          <p className="text-sm font-semibold text-slate-800">Ajouter une ligne manuellement</p>
+          <p className="text-sm font-semibold text-slate-800">Add a line manually</p>
           <ManualTaskForm
             onAdd={(list) => {
               addPrepTasks(list)
               const labels = list.map((t) =>
                 (t.taskType || '') === 'CORR'
                   ? getCategoryLabel('CORR')
-                  : t.workArea || 'Sans zone'
+                  : t.workArea || 'No zone'
               )
               setCollapsed((prev) => prev.filter((z) => !labels.includes(z)))
             }}
@@ -985,7 +985,7 @@ export default function Preparation() {
               <input
                 value={prepSearch}
                 onChange={(e) => setPrepSearch(e.target.value)}
-                placeholder="Rechercher (n°, tâche, TRFX, zone…)"
+                placeholder="Search (No., task, TRFX, zone…)"
                 className="w-full border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm"
               />
             </div>
@@ -1010,7 +1010,7 @@ export default function Preparation() {
                         ? { backgroundColor: 'transparent', borderColor: color, color }
                         : { backgroundColor: color, borderColor: color, color: '#fff' }
                     }
-                    title={hidden ? 'Réafficher ce bloc' : 'Masquer ce bloc'}
+                    title={hidden ? 'Show this block again' : 'Hide this block'}
                   >
                     {getCategoryLabel(blk)} ({count})
                   </button>
@@ -1024,7 +1024,7 @@ export default function Preparation() {
                   }}
                   className="text-xs text-sky-600 hover:underline"
                 >
-                  Tout réafficher
+                  Show all
                 </button>
               )}
             </div>
@@ -1044,7 +1044,7 @@ export default function Preparation() {
                     ? 'bg-[#ff0000] border-[#ff0000] text-white'
                     : 'bg-white border-[#ff0000] text-[#ff0000] hover:bg-[#ff0000]/10'
                 }`}
-                title={`Afficher les lignes ${tok} (cumulable avec les autres filtres)`}
+                title={`Show ${tok} lines (can be combined with other filters)`}
               >
                 {tok} ({prepPrioCounts[tok]})
               </button>
@@ -1054,13 +1054,13 @@ export default function Preparation() {
                 onClick={() => setPrioFilter([])}
                 className="text-xs text-sky-600 hover:underline"
               >
-                Tout réafficher
+                Show all
               </button>
             )}
           </div>
           {(prepSearch || hiddenBlocks.length > 0 || prioFilter.length > 0) && (
             <p className="text-xs text-slate-400 mt-2">
-              {filteredPrepTasks.length} ligne(s) affichée(s) sur {prepTasks.length}
+              {filteredPrepTasks.length} line(s) shown out of {prepTasks.length}
             </p>
           )}
         </div>
@@ -1068,7 +1068,7 @@ export default function Preparation() {
 
       {prepTasks.length > 0 && filteredPrepTasks.length === 0 && (
         <div className="bg-white rounded-xl shadow p-8 text-center text-slate-500">
-          Aucune ligne ne correspond aux filtres.
+          No lines match the filters.
         </div>
       )}
 
@@ -1099,7 +1099,7 @@ export default function Preparation() {
                     className="px-3 sm:px-4 py-2 flex items-center justify-between flex-wrap gap-2 cursor-pointer"
                     style={{ backgroundColor: zoneColor }}
                     onClick={() => toggleZone(zone)}
-                    title={expanded ? 'Replier cette zone' : 'Déplier cette zone'}
+                    title={expanded ? 'Collapse this zone' : 'Expand this zone'}
                   >
                     <div className="flex items-center gap-2">
                       {expanded ? (
@@ -1129,7 +1129,7 @@ export default function Preparation() {
                         <PocketSelect
                           variant="dark"
                           pockets={pockets}
-                          placeholder="Affecter la zone..."
+                          placeholder="Assign zone..."
                           onSelect={(pid) => assignToPocket(pid, zoneTaskIds)}
                         />
                       </div>
@@ -1139,10 +1139,10 @@ export default function Preparation() {
                           selectZoneForMove(zoneTasks)
                         }}
                         className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5"
-                        title={`Sélectionner toutes les lignes de la zone ${zone} (déplacement multiple)`}
+                        title={`Select all lines in zone ${zone} (batch move)`}
                       >
                         <Plus className="h-3 w-3" />
-                        <span className="text-[10px] font-bold whitespace-nowrap">sél.</span>
+                        <span className="text-[10px] font-bold whitespace-nowrap">sel.</span>
                       </button>
                       {zoneBlocks.map((blk) => {
                         const n = zoneTasks.filter((t) => t.taskType === blk).length
@@ -1157,8 +1157,8 @@ export default function Preparation() {
                                 if (
                                   window.confirm(
                                     group.isFF
-                                      ? `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} ligne(s)) ?`
-                                      : `Supprimer les ${n} ligne(s) ${getCategoryLabel(blk)} de la zone ${zone} ?`
+                                      ? `Delete the whole ${getCategoryLabel(blk)} block (${total} line(s))?`
+                                      : `Delete the ${n} ${getCategoryLabel(blk)} line(s) in zone ${zone}?`
                                   )
                                 ) {
                                   if (group.isFF) removePrepTasksByBlock(blk)
@@ -1168,8 +1168,8 @@ export default function Preparation() {
                               className="bg-white/25 hover:bg-white/40 px-1.5 py-0.5 rounded-full text-[10px] font-semibold text-white flex items-center gap-1"
                               title={
                                 group.isFF
-                                  ? `Supprimer tout le bloc ${getCategoryLabel(blk)} (${total} lignes)`
-                                  : `Supprimer les ${n} ligne(s) ${getCategoryLabel(blk)} de la zone ${zone}`
+                                  ? `Delete the whole ${getCategoryLabel(blk)} block (${total} lines)`
+                                  : `Delete the ${n} ${getCategoryLabel(blk)} line(s) in zone ${zone}`
                               }
                             >
                               {getCategoryLabel(blk)} · {n}
@@ -1184,16 +1184,16 @@ export default function Preparation() {
                                   prepTasks.filter(
                                     (t) =>
                                       (t.taskType || 'AUTRE') === blk &&
-                                      (group.isFF || (t.workArea || 'Autre') === zone)
+                                      (group.isFF || (t.workArea || 'Other') === zone)
                                   )
                                 )
                               }}
                               className="bg-white/20 hover:bg-white/40 rounded-full p-1 text-white"
-                              title={`Réintégrer ${
+                              title={`Return ${
                                 group.isFF
-                                  ? `tout le bloc ${getCategoryLabel(blk)}`
-                                  : `les lignes ${getCategoryLabel(blk)} de la zone ${zone}`
-                              } dans Tâches`}
+                                  ? `the whole ${getCategoryLabel(blk)} block`
+                                  : `the ${getCategoryLabel(blk)} lines in zone ${zone}`
+                              } to Tasks`}
                             >
                               <Undo2 className="h-3 w-3" />
                             </button>
@@ -1202,7 +1202,7 @@ export default function Preparation() {
                                 variant="dark"
                                 compact
                                 pockets={pockets}
-                                placeholder={`${getCategoryLabel(blk)} → pochette`}
+                                placeholder={`${getCategoryLabel(blk)} → pocket`}
                                 onSelect={(pid) =>
                                   assignToPocket(
                                     pid,
@@ -1223,16 +1223,16 @@ export default function Preparation() {
                       <table className="w-full text-sm min-w-[760px]">
                         <thead>
                           <tr className="text-left bg-slate-50">
-                            <th className="px-1 py-2 border-b text-[10px] text-slate-500" title="Cocher pour sélectionner (déplacement multiple)">sél.</th>
-                            <th className="px-2 py-2 border-b">N°</th>
-                            <th className="px-2 py-2 border-b">Tâche</th>
-                            <th className="px-0.5 py-2 border-b">Bloc</th>
+                            <th className="px-1 py-2 border-b text-[10px] text-slate-500" title="Check to select (batch move)">sel.</th>
+                            <th className="px-2 py-2 border-b">No.</th>
+                            <th className="px-2 py-2 border-b">Task</th>
+                            <th className="px-0.5 py-2 border-b">Block</th>
                             <th className="px-0.5 py-2 border-b">Skills</th>
                               <th className="px-0.5 py-2 border-b font-bold text-black">TRFX</th>
-                            <th className="px-0.5 py-2 border-b">Statut</th>
-                            <th className="px-0.5 py-2 border-b">Appareil</th>
+                            <th className="px-0.5 py-2 border-b">Status</th>
+                            <th className="px-0.5 py-2 border-b">Aircraft</th>
                             <th className="px-0.5 py-2 border-b">Note</th>
-                            <th className="px-0.5 py-2 border-b">Pochette</th>
+                            <th className="px-0.5 py-2 border-b">Pocket</th>
                             <th className="px-4 py-2 border-b"></th>
                           </tr>
                         </thead>
@@ -1251,7 +1251,7 @@ export default function Preparation() {
                                     <tr
                                       className="border-b border-slate-100 cursor-pointer hover:brightness-110"
                                       onClick={() => toggleSubZone(`${group.key}::${subZone}`)}
-                                      title={subOpen ? 'Replier cette sous-tâche' : 'Déplier cette sous-tâche'}
+                                      title={subOpen ? 'Collapse this sub-task' : 'Expand this sub-task'}
                                     >
                                       <td colSpan={11} className="px-2 py-0.5">
                                         <span
@@ -1275,7 +1275,7 @@ export default function Preparation() {
                                               variant="dark"
                                               compact
                                               pockets={pockets}
-                                              placeholder={`${subZone} → pochette`}
+                                              placeholder={`${subZone} → pocket`}
                                               onSelect={(pid) =>
                                                 assignToPocket(
                                                   pid,
@@ -1289,13 +1289,13 @@ export default function Preparation() {
                                                 reintegrerTasks(
                                                   prepTasks.filter(
                                                     (t) =>
-                                                      (t.workArea || 'Autre') === subZone &&
+                                                      (t.workArea || 'Other') === subZone &&
                                                       (t.taskType || 'AUTRE') === 'CORR'
                                                   )
                                                 )
                                               }}
                                               className="text-white/80 hover:text-white"
-                                              title={`Réintégrer la sous-tâche ${subZone} dans Tâches`}
+                                              title={`Return sub-task ${subZone} to Tasks`}
                                             >
                                               <Undo2 className="h-4 w-4" />
                                             </button>
@@ -1304,14 +1304,14 @@ export default function Preparation() {
                                                 e.stopPropagation()
                                                 if (
                                                   window.confirm(
-                                                    `Supprimer toute la sous-tâche ${subZone} du bloc Found Fault (${subTasks.length} ligne(s)) ?`
+                                                    `Delete the whole sub-task ${subZone} from the Found Fault block (${subTasks.length} line(s))?`
                                                   )
                                                 ) {
                                                   removePrepTasksByZone(subZone, 'CORR')
                                                 }
                                               }}
                                               className="text-white/80 hover:text-white"
-                                              title={`Supprimer toute la sous-tâche ${subZone} (Found Fault)`}
+                                              title={`Delete the whole sub-task ${subZone} (Found Fault)`}
                                             >
                                               <Trash2 className="h-4 w-4" />
                                             </button>
@@ -1341,7 +1341,7 @@ export default function Preparation() {
                                     checked={!!moveSelected[task.id]}
                                     onChange={() => toggleMoveSel(task.id)}
                                     className="h-3.5 w-3.5 accent-sky-600"
-                                    title="Sélectionner pour un déplacement multiple"
+                                    title="Select for a batch move"
                                   />
                                 </td>
                                 <td className="px-2 py-2 font-bold text-slate-500">
@@ -1353,7 +1353,7 @@ export default function Preparation() {
                                     {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
                                       <span
                                         className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff0000]/10 text-[#ff0000] border border-[#ff0000]/40 whitespace-nowrap"
-                                        title="Ligne prioritaire (MEL / EXMP)"
+                                        title="Priority line (MEL / EXMP)"
                                       >
                                         {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`)}
                                       </span>
@@ -1395,7 +1395,7 @@ export default function Preparation() {
                                     <button
                                       onClick={() => updatePrepTask(task.id, { mtxStatus: 'COMPLETE' })}
                                       className="text-slate-300 hover:text-green-600 ml-1"
-                                      title="Marquer la tâche COMPLETE"
+                                      title="Mark the task COMPLETE"
                                     >
                                       <CheckCircle2 className="h-3.5 w-3.5" />
                                     </button>
@@ -1403,7 +1403,7 @@ export default function Preparation() {
                                     <button
                                       onClick={() => updatePrepTask(task.id, { mtxStatus: 'ACTV' })}
                                       className="text-slate-300 hover:text-sky-600 ml-1"
-                                      title="Rétablir la tâche ACTV"
+                                      title="Restore the task ACTV"
                                     >
                                       <RotateCcw className="h-3.5 w-3.5" />
                                     </button>
@@ -1422,7 +1422,7 @@ export default function Preparation() {
                                       <span
                                         key={p.id}
                                         className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-sky-50 text-sky-700 border border-sky-300 rounded text-[10px] font-semibold"
-                                        title={`Dans la pochette « ${p.name} » — cliquez sur la croix pour retirer`}
+                                        title={`In pocket “${p.name}” — click the cross to remove`}
                                       >
                                         {p.name}
                                         <button
@@ -1435,7 +1435,7 @@ export default function Preparation() {
                                     ))}
                                     <PocketSelect
                                       pockets={pockets}
-                                      placeholder="+ pochette"
+                                      placeholder="+ pocket"
                                       compact
                                       onSelect={(pid) => assignToPocket(pid, [task.id])}
                                     />
@@ -1446,24 +1446,24 @@ export default function Preparation() {
                                     <button
                                       onClick={() => openMove([task.id])}
                                       className="text-slate-400 hover:text-sky-600"
-                                      title="Déplacer cette ligne (bloc / sous-tâche)"
+                                      title="Move this line (block / sub-task)"
                                     >
                                       <Pencil className="h-4 w-4" />
                                     </button>
                                     <button
                                       onClick={() => reintegrerTasks([task])}
                                       className="text-slate-400 hover:text-emerald-600"
-                                      title="Réintégrer cette ligne dans Tâches (annuler le transfert)"
+                                      title="Return this line to Tasks (undo the transfer)"
                                     >
                                       <Undo2 className="h-4 w-4" />
                                     </button>
                                     <button
                                       onClick={() => {
-                                        if (window.confirm('Supprimer cette ligne ?'))
+                                        if (window.confirm('Delete this line?'))
                                           removePrepTask(task.id)
                                       }}
                                       className="text-slate-400 hover:text-red-600"
-                                      title="Supprimer cette ligne"
+                                      title="Delete this line"
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </button>
@@ -1498,14 +1498,14 @@ export default function Preparation() {
             <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
               <div className="min-w-0">
                 <h2 className="font-bold truncate">
-                  Déplacer {moveIds.length} ligne{moveIds.length > 1 ? 's' : ''}
+                  Move {moveIds.length} line{moveIds.length > 1 ? 's' : ''}
                 </h2>
                 <p className="text-xs text-slate-300 truncate">
                   {(() => {
                     const first = prepTasks.find((t) => t.id === moveIds[0])
                     return first
                       ? `N° ${first.seq || '—'} · ${first.description}${
-                          moveIds.length > 1 ? ` (+${moveIds.length - 1} autre(s))` : ''
+                          moveIds.length > 1 ? ` (+${moveIds.length - 1} more)` : ''
                         }`
                       : ''
                   })()}
@@ -1514,14 +1514,14 @@ export default function Preparation() {
               <button
                 onClick={() => setMoveIds(null)}
                 className="text-slate-300 hover:text-white shrink-0"
-                title="Fermer"
+                title="Close"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="p-5 space-y-4">
               <label className="block text-sm font-medium text-slate-700">
-                Bloc
+                Block
                 <select
                   value={moveBlk}
                   onChange={(e) => setMoveBlk(e.target.value)}
@@ -1535,7 +1535,7 @@ export default function Preparation() {
                 </select>
               </label>
               <label className="block text-sm font-medium text-slate-700">
-                Sous-tâche / zone
+                Sub-task / zone
                 <select
                   value={moveZoneNew ? '__new__' : moveZone}
                   onChange={(e) => {
@@ -1550,23 +1550,23 @@ export default function Preparation() {
                   }}
                   className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
                 >
-                  <option value="">— Choisir une sous-tâche —</option>
+                  <option value="">— Choose a sub-task —</option>
                   {allZones.map((z) => (
                     <option key={z} value={z}>
                       {z}
                     </option>
                   ))}
-                  <option value="__new__">➕ Nouvelle sous-tâche…</option>
+                  <option value="__new__">➕ New sub-task…</option>
                 </select>
               </label>
               {moveZoneNew && (
                 <label className="block text-sm font-medium text-slate-700">
-                  Nom de la nouvelle sous-tâche
+                  New sub-task name
                   <input
                     autoFocus
                     value={moveZone}
                     onChange={(e) => setMoveZone(e.target.value)}
-                    placeholder="Ex : CAB SECURITY"
+                    placeholder="E.g. CAB SECURITY"
                     className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
                   />
                 </label>
@@ -1576,13 +1576,13 @@ export default function Preparation() {
                   onClick={() => setMoveIds(null)}
                   className="px-4 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-100"
                 >
-                  Annuler
+                  Cancel
                 </button>
                 <button
                   onClick={applyMove}
                   className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
                 >
-                  Enregistrer {moveIds.length > 1 ? `(${moveIds.length} lignes)` : ''}
+                  Save {moveIds.length > 1 ? `(${moveIds.length} lines)` : ''}
                 </button>
               </div>
             </div>
@@ -1605,8 +1605,8 @@ export default function Preparation() {
                 <div className="min-w-0">
                   <h1 className="text-xl sm:text-2xl font-bold text-white truncate">{printPocket.name}</h1>
                   <p className="text-sm text-slate-300 mt-0.5">
-                    Pochette virtuelle · {printTasks.length} / {pocketTaskIds(printPocket).length} ligne(s)
-                    sélectionnée(s) · {new Date().toLocaleDateString('fr-FR')}
+                    Virtual pocket · {printTasks.length} / {pocketTaskIds(printPocket).length} line(s)
+                    selected · {new Date().toLocaleDateString('en-GB')}
                   </p>
                 </div>
               </div>
@@ -1623,18 +1623,18 @@ export default function Preparation() {
                   disabled={printTasks.length === 0}
                   className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold"
                 >
-                  <FileDown className="h-4 w-4" /> Exporter en PDF
+                  <FileDown className="h-4 w-4" /> Export as PDF
                 </button>
                 <button
                   onClick={printPocketPdf}
                   className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-md hover:bg-slate-700 text-sm font-semibold"
                 >
-                  <Printer className="h-4 w-4" /> Imprimer
+                  <Printer className="h-4 w-4" /> Print
                 </button>
                 <button
                   onClick={() => setPrintPocketId(null)}
                   className="text-slate-500 hover:text-slate-800 p-2 rounded hover:bg-slate-200"
-                  title="Fermer"
+                  title="Close"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -1645,10 +1645,10 @@ export default function Preparation() {
               {/* Colonne de gauche : répartition */}
               <div className="w-full sm:w-56 shrink-0 border-r border-slate-100 bg-slate-50 p-4 overflow-y-auto print-hide">
                 <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-3">
-                  Répartition par bloc
+                  Distribution by block
                 </h3>
                 {Object.keys(printByBlock).length === 0 ? (
-                  <p className="text-sm text-slate-500">Aucune tâche sélectionnée.</p>
+                  <p className="text-sm text-slate-500">No tasks selected.</p>
                 ) : (
                   <>
                     <button
@@ -1661,8 +1661,8 @@ export default function Preparation() {
                       className="w-full text-left text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-200 rounded-md px-3 py-1.5 mb-3 hover:bg-sky-100"
                     >
                       {pocketTaskIds(printPocket).every((id) => selectedTasks.includes(id))
-                        ? 'Tout décocher'
-                        : 'Tout cocher'}
+                        ? 'Uncheck all'
+                        : 'Check all'}
                     </button>
                     <ul className="space-y-2">
                     {Object.keys(printByBlock).map((blk) => (
@@ -1689,7 +1689,7 @@ export default function Preparation() {
                             <span className="text-sm font-semibold">{getCategoryLabel(blk)}</span>
                           </span>
                           <span className="text-xs text-slate-500">
-                            {printByBlock[blk].count} tâche(s)
+                            {printByBlock[blk].count} task(s)
                           </span>
                         </button>
                       </li>
@@ -1702,7 +1702,7 @@ export default function Preparation() {
               {/* Colonne principale : liste détaillée */}
               <div className="flex-1 p-4 overflow-y-auto bg-white">
                 {Object.keys(printByBlock).length === 0 ? (
-                  <p className="text-sm text-slate-500">Cochez des tâches à gauche pour les inclure.</p>
+                  <p className="text-sm text-slate-500">Check tasks on the left to include them.</p>
                 ) : (
                   <div className="space-y-5">
                     {Object.keys(printByBlock).map((blk) => (
@@ -1712,7 +1712,7 @@ export default function Preparation() {
   style={{ backgroundColor: getCategoryColor(blk) }}
 >
   <span>
-    Bloc {getCategoryLabel(blk)} · {printByBlock[blk].count} tâche(s)
+    Block {getCategoryLabel(blk)} · {printByBlock[blk].count} task(s)
   </span>
   <span className="inline-flex items-center gap-1.5 bg-white/25 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
     <FolderPlus className="h-3.5 w-3.5" />
@@ -1750,7 +1750,7 @@ export default function Preparation() {
                                         <button
                                           onClick={() => removeTasksFromPocket(printPocket.id, [t.id])}
                                           className="text-slate-300 hover:text-red-600 p-1 rounded"
-                                          title="Retirer cette tâche de la pochette"
+                                          title="Remove this task from the pocket"
                                         >
                                           <X className="h-3.5 w-3.5" />
                                         </button>
@@ -1765,7 +1765,7 @@ export default function Preparation() {
                       </div>
                     ))}
                     <div className="text-right text-sm font-semibold text-slate-700">
-                      Total : {printTasks.length} tâche(s)
+                      Total: {printTasks.length} task(s)
                     </div>
                   </div>
                 )}
@@ -1797,10 +1797,10 @@ function PocketSelect({ pockets, placeholder, onSelect, variant = 'light', compa
               ? 'border border-white/60 rounded-md px-2 py-1 text-xs font-medium bg-white text-slate-800 hover:border-white max-w-[200px]'
               : 'border border-slate-300 rounded-md px-2 py-1.5 text-xs font-medium text-slate-700 bg-white hover:border-sky-400 max-w-[200px]'
         }
-        title={pockets.length === 0 ? "Créez d'abord une pochette" : placeholder}
+        title={pockets.length === 0 ? "Create a pocket first" : placeholder}
       >
         <option value="" className="text-slate-400">
-          {pockets.length === 0 ? '— Aucune pochette —' : placeholder}
+          {pockets.length === 0 ? '— No pocket —' : placeholder}
         </option>
         {pockets.map((p) => (
           <option key={p.id} value={p.id} className="text-slate-800 bg-white font-semibold">
@@ -1828,7 +1828,7 @@ function PocketChips({ counts, pocketById, onRemove, dark }) {
                 ? 'inline-flex items-center gap-1.5 h-6 pl-1.5 pr-1.5 rounded-full text-[10px] font-bold text-white bg-slate-900 border border-white/90 shadow'
                 : 'inline-flex items-center gap-1.5 h-6 pl-1.5 pr-2 rounded-full text-xs font-bold text-sky-950 bg-sky-100 border-2 border-sky-500 shadow-sm'
             }
-            title={`Dans la pochette « ${p.name} » (${n}) — cliquez pour retirer`}
+            title={`In pocket “${p.name}” (${n}) — click to remove`}
           >
             <FolderPlus className={dark ? 'h-3.5 w-3.5 text-sky-300' : 'h-3.5 w-3.5 text-sky-600'} />
             <span>{p.name}</span>
@@ -1836,7 +1836,7 @@ function PocketChips({ counts, pocketById, onRemove, dark }) {
             <button
               onClick={() => onRemove(pid)}
               className="hover:text-red-400 -mr-0.5"
-              title={`Retirer de la pochette « ${p.name} »`}
+              title={`Remove from pocket “${p.name}”`}
             >
               <X className="h-3.5 w-3.5" />
             </button>

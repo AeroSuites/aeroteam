@@ -62,7 +62,7 @@ export default function ImportExcel() {
           const sheet = workbook.Sheets[workbook.SheetNames[0]]
           const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 })
           if (!rows || rows.length < 2) {
-            setError('Le fichier est vide ou ne contient pas assez de lignes.')
+            setError('The file is empty or does not contain enough lines.')
             return
           }
           const hdr = rows[0]
@@ -70,7 +70,7 @@ export default function ImportExcel() {
 
           // Vérifier que la description est détectable
           if (detected.description === undefined) {
-            setError('Colonne "Task_Name" introuvable. Vérifiez le format du fichier.')
+            setError('Column "Task_Name" not found. Check the file format.')
             return
           }
 
@@ -86,7 +86,7 @@ export default function ImportExcel() {
           const filteredOut = totalLines - kept
           setStats({ totalLines, kept, filteredOut })
         } catch (err) {
-          setError(`Erreur lors de la lecture du fichier: ${err.message}`)
+          setError(`Error reading the file: ${err.message}`)
         }
       }
       reader.readAsArrayBuffer(file)
@@ -107,9 +107,9 @@ export default function ImportExcel() {
     if (newRegs.length > 1) {
       if (
         !window.confirm(
-          `⚠ Ce fichier contient plusieurs immatriculations : ${newRegs.join(
+          `⚠ This file contains multiple registrations: ${newRegs.join(
             ', '
-          )}.\n\nContinuer l'import ?`
+          )}.\n\nContinue the import?`
         )
       ) {
         return
@@ -121,9 +121,9 @@ export default function ImportExcel() {
     ) {
       if (
         !window.confirm(
-          `⚠ Ce fichier concerne l'avion ${newRegs[0]} alors que la charge actuelle est pour ${existingRegs.join(
+          `⚠ This file is for aircraft ${newRegs[0]} while the current workload is for ${existingRegs.join(
             ', '
-          )}.\n\nLes deux charges vont se mélanger. Pensez à effacer l'ancienne charge (Export/Reset) si nécessaire.\n\nContinuer l'import quand même ?`
+          )}.\n\nBoth workloads will get mixed up. Consider clearing the old workload (Export/Reset) if necessary.\n\nContinue the import anyway?`
         )
       ) {
         return
@@ -138,21 +138,21 @@ export default function ImportExcel() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Importer vos tâches</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Import your tasks</h1>
         <p className="text-slate-600 mt-1">
-          Chargez votre Workpackage Report. Les tâches sont filtrées et classées automatiquement.
+          Upload your Workpackage Report. Tasks are filtered and classified automatically.
         </p>
       </div>
 
       {/* Rappel des filtres actifs */}
       <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
         <h3 className="font-semibold text-sky-800 flex items-center gap-2 mb-2">
-          <Filter className="h-5 w-5" /> Filtres d'import actifs
+          <Filter className="h-5 w-5" /> Active import filters
         </h3>
         <div className="text-sm text-sky-700 space-y-1">
-          <p>• <strong>Skills</strong> : toutes les lignes dont un des skills commence par CABB (ex. B1B2/CABB1B2)</p>
-          <p>• <strong>MTX Status</strong> : uniquement ACTV, PAUSE et IN WORK</p>
-          <p>• <strong>Task Type</strong> : tous les blocs (JIC, Found Fault, MPC, ADHOC, EO)</p>
+          <p>• <strong>Skills</strong>: all lines where one of the skills starts with CABB (e.g. B1B2/CABB1B2)</p>
+          <p>• <strong>MTX Status</strong>: only ACTV, PAUSE and IN WORK</p>
+          <p>• <strong>Task Type</strong>: all blocks (JIC, Found Fault, MPC, ADHOC, EO)</p>
         </div>
       </div>
 
@@ -184,9 +184,9 @@ export default function ImportExcel() {
         />
         <Upload className="h-12 w-12 mx-auto text-slate-400" />
         <p className="mt-4 text-lg font-medium text-slate-700">
-          Cliquez ou glissez-déposez votre fichier Excel ici
+          Click or drag and drop your Excel file here
         </p>
-        <p className="text-sm text-slate-500 mt-1">Formats supportés : .xlsx, .xls, .csv</p>
+        <p className="text-sm text-slate-500 mt-1">Supported formats: .xlsx, .xls, .csv</p>
         {fileName && (
           <p className="mt-3 inline-flex items-center gap-2 bg-sky-50 text-sky-700 px-3 py-1 rounded-full text-sm">
             <FileSpreadsheet className="h-4 w-4" /> {fileName}
@@ -198,15 +198,15 @@ export default function ImportExcel() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="bg-white rounded-xl shadow p-4 text-center">
             <div className="text-2xl font-bold text-slate-900">{stats.totalLines}</div>
-            <div className="text-sm text-slate-500">Lignes totales</div>
+            <div className="text-sm text-slate-500">Total lines</div>
           </div>
           <div className="bg-white rounded-xl shadow p-4 text-center">
             <div className="text-2xl font-bold text-green-600">{stats.kept}</div>
-            <div className="text-sm text-slate-500">Après filtres</div>
+            <div className="text-sm text-slate-500">After filters</div>
           </div>
           <div className="bg-white rounded-xl shadow p-4 text-center">
             <div className="text-2xl font-bold text-slate-400">{stats.filteredOut}</div>
-            <div className="text-sm text-slate-500">Exclues</div>
+            <div className="text-sm text-slate-500">Excluded</div>
           </div>
         </div>
       )}
@@ -216,24 +216,24 @@ export default function ImportExcel() {
           <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b">
             <div>
               <h2 className="text-xl font-semibold">
-                Sélection — {selectedCount} / {preview.length} tâche(s)
+                Selection — {selectedCount} / {preview.length} task(s)
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Classé par <strong>bloc → sous-tâche → ligne</strong> : cochez ce que vous voulez
-                importer (décocher un bloc ou une sous-tâche exclut tout son contenu).
+                Grouped by <strong>block → sub-task → line</strong>: check what you want to
+                import (unchecking a block or a sub-task excludes all of its content).
               </p>
               <div className="flex gap-1.5 mt-2">
                 <button
                   onClick={selectAll}
                   className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-2.5 py-0.5"
                 >
-                  Tout cocher
+                  Check all
                 </button>
                 <button
                   onClick={selectNone}
                   className="text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 rounded-full px-2.5 py-0.5"
                 >
-                  Tout décocher
+                  Uncheck all
                 </button>
               </div>
             </div>
@@ -242,14 +242,14 @@ export default function ImportExcel() {
               disabled={selectedCount === 0}
               className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 flex items-center gap-2"
             >
-              <CheckCircle2 className="h-4 w-4" /> Importer {selectedCount} tâche(s)
+              <CheckCircle2 className="h-4 w-4" /> Import {selectedCount} task(s)
             </button>
           </div>
 
           {imported && (
             <div className="bg-green-50 border-b border-green-200 text-green-700 px-6 py-3 flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5" />
-              {importedCount} tâches importées avec succès !
+              {importedCount} tasks imported successfully!
             </div>
           )}
 
@@ -395,7 +395,7 @@ export default function ImportExcel() {
       {tasks.length > 0 && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Tâches enregistrées ({tasks.length})</h2>
+            <h2 className="text-xl font-semibold">Saved tasks ({tasks.length})</h2>
             <div className="flex gap-2 flex-wrap">
               {CATEGORIES.filter((c) => tasks.some((t) => t.taskType === c)).map((cat) => (
                 <span

@@ -35,7 +35,7 @@ const groupByBlock = (tasks) => {
 const groupTeamTasks = (teamTasks) => {
   const zones = {}
   teamTasks.forEach((t) => {
-    const z = t.workArea || 'Autre'
+    const z = t.workArea || 'Other'
     if (!zones[z]) zones[z] = []
     zones[z].push(t)
   })
@@ -86,7 +86,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
   const transferPocket = async (pocket) => {
     const target = otherProfiles.find((p) => p.code === transferTargetCode)
     if (!target) {
-      setTransferError('Choisissez un profil destinataire.')
+      setTransferError('Choose a recipient profile.')
       return
     }
     setTransferring(true)
@@ -123,16 +123,16 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
         false
       )
       if (saved?.error === 'conflict') {
-        setTransferError('Le profil destinataire a été modifié entre-temps. Réessayez.')
+        setTransferError('The recipient profile was modified in the meantime. Try again.')
       } else if (saved?.error) {
-        setTransferError('Échec de la copie.')
+        setTransferError('Failed to copy.')
       } else {
-        setTransferMsg(`Pochette « ${pocket.name} » copiée vers « ${target.name} ».`)
+        setTransferMsg(`Pocket « ${pocket.name} » copied to « ${target.name} ».`)
         setTransferFor(null)
         setTransferTargetCode('')
       }
     } catch {
-      setTransferError('Échec de la copie (hors ligne ?).')
+      setTransferError('Failed to copy (offline?).')
     }
     setTransferring(false)
   }
@@ -149,11 +149,11 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
       .adminGetProfileData(adminCode, profile.id)
       .then((res) => {
         if (cancelled) return
-        if (res?.error) setError('Impossible de lire le profil.')
+        if (res?.error) setError('Unable to read the profile.')
         else setData(res.profile?.data || {})
       })
       .catch(() => {
-        if (!cancelled) setError('Impossible de lire le profil (hors ligne ?).')
+        if (!cancelled) setError('Unable to read the profile (offline?).')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -166,7 +166,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
   const handlePurge = async () => {
     if (
       !window.confirm(
-        'Supprimer les consignes [C] des jours déjà passés (vous gardez aujourd’hui et les jours à venir) ? Cette action est irréversible.'
+        'Delete [C] instructions from days already past (you keep today and the days to come)? This action is irreversible.'
       )
     ) {
       return
@@ -178,21 +178,21 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
       if (res?.ok) {
         const fresh = await profileStore.adminGetProfileData(adminCode, profile.id)
         if (fresh?.ok) setData(fresh.profile?.data || {})
-      } else setError(res?.error === 'not_admin' ? "Votre code administrateur n'est plus valide." : 'Échec de la purge.')
+      } else setError(res?.error === 'not_admin' ? "Your administrator code is no longer valid." : 'Failed to purge.')
     } catch {
-      setError('Échec de la purge (hors ligne ?).')
+      setError('Failed to purge (offline?).')
     }
     setPurging(false)
   }
 
   const handleResetWork = async () => {
     if (!profile?.code) {
-      setError("Le code de ce profil n'est pas disponible (migration à exécuter ?).")
+      setError("This profile's code is not available (migration to run?).")
       return
     }
     if (
       !window.confirm(
-        "Réinitialiser le travail de ce profil ?\n\nTâches, équipes, affectations, préparation, consignes et membres assignés à l'avion du jour seront effacés, et l'avion associé sera retiré.\nLes membres permanents et les notes du Bloc-notes sont conservés. Action irréversible."
+        "Reset the work of this profile?\n\nTasks, teams, assignments, preparation, instructions and members assigned to today's aircraft will be erased, and the associated aircraft will be removed.\nPermanent members and notepad notes are kept. Irreversible action."
       )
     ) {
       return
@@ -222,9 +222,9 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
         false
       )
       if (saved?.error === 'conflict') {
-        setError('Le profil a été modifié entre-temps. Réessayez.')
+        setError('The profile was modified in the meantime. Try again.')
       } else if (saved?.error) {
-        setError('Échec de la réinitialisation.')
+        setError('Failed to reset.')
       } else {
         try {
           await profileStore.adminSetProfileAircraft(adminCode, profile.code, '')
@@ -234,11 +234,11 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
         const again = await profileStore.adminGetProfileData(adminCode, profile.id)
         if (again?.ok) {
           setData(again.profile?.data || {})
-          setMsg('Réinitialisation effectuée (membres permanents conservés, avion retiré).')
+          setMsg('Reset done (permanent members kept, aircraft removed).')
         }
       }
     } catch {
-      setError('Échec de la réinitialisation (hors ligne ?).')
+      setError('Failed to reset (offline?).')
     }
     setResetting(false)
   }
@@ -271,87 +271,87 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                 <button
                   onClick={() => exportRecapPdf(profile, data)}
                   className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-1.5"
-                  title="Télécharger le récap en PDF"
+                  title="Download the recap as PDF"
                 >
-                  <FileDown className="h-4 w-4" /> Exporter PDF
+                  <FileDown className="h-4 w-4" /> Export PDF
                 </button>
                 <button
                   onClick={() => exportRecapJpeg(profile, data)}
                   className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-1.5"
-                  title="Télécharger le récap en image JPEG"
+                  title="Download the recap as a JPEG image"
                 >
                   <FileImage className="h-4 w-4" /> JPEG
                 </button>
                 <button
                   onClick={() => openPdfPrint(buildRecapPdf(profile, data))}
                   className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-1.5"
-                  title="Imprimer le récap au format PDF"
+                  title="Print the recap as PDF"
                 >
-                  <Printer className="h-4 w-4" /> Imprimer
+                  <Printer className="h-4 w-4" /> Print
                 </button>
                 <button
                   onClick={handleResetWork}
                   disabled={resetting}
                   className="bg-red-500/30 hover:bg-red-500/50 text-white px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-1.5 disabled:opacity-50"
-                  title="Efface le travail (tâches, équipes, affectations, préparation, membres du jour) — membres permanents et consignes conservés"
+                  title="Clears the work (tasks, teams, assignments, preparation, day members) — permanent members and instructions kept"
                 >
                   <RotateCcw className="h-4 w-4" />{' '}
-                  {resetting ? 'Réinitialisation…' : 'Réinitialiser le travail'}
+                  {resetting ? 'Resetting…' : 'Reset the work'}
                 </button>
                 <button
                   onClick={handlePurge}
                   disabled={purging}
                   className="bg-red-500/30 hover:bg-red-500/50 text-white px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-1.5 disabled:opacity-50"
-                  title="Supprime les consignes [C] des jours déjà écoulés de la semaine (hier et avant) — aujourd'hui et les jours suivants sont conservés"
+                  title="Deletes [C] instructions from days already elapsed in the week (yesterday and before) — today and the following days are kept"
                 >
                   <Eraser className="h-4 w-4" />{' '}
-                  {purging ? 'Purge…' : 'Purger les consignes passées'}
+                  {purging ? 'Purging…' : 'Purge past instructions'}
                 </button>
               </>
             )}
-            <button onClick={onClose} className="text-slate-400 hover:text-white p-1" title="Fermer">
+            <button onClick={onClose} className="text-slate-400 hover:text-white p-1" title="Close">
               <X className="h-5 w-5" />
             </button>
           </div>
         </div>
         <div className="p-5 space-y-4 overflow-y-auto">
-          {loading && <p className="text-sm text-slate-400">Chargement…</p>}
+          {loading && <p className="text-sm text-slate-400">Loading…</p>}
           {error && <p className="text-sm text-red-600">{error}</p>}
           {msg && <p className="text-sm text-emerald-700">{msg}</p>}
 
           {data && (
             <>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatBox label="Tâches" value={(data.tasks || []).length} />
-                <StatBox label="Affectées" value={assignedCount} />
-                <StatBox label="Non affectées" value={(data.tasks || []).length - assignedCount} />
-                <StatBox label="Membres" value={(data.members || []).length} />
+                <StatBox label="Tasks" value={(data.tasks || []).length} />
+                <StatBox label="Assigned" value={assignedCount} />
+                <StatBox label="Unassigned" value={(data.tasks || []).length - assignedCount} />
+                <StatBox label="Members" value={(data.members || []).length} />
               </div>
 
               <div>
                 <h3 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4 text-amber-500" /> Consignes (
+                  <ClipboardList className="h-4 w-4 text-amber-500" /> Instructions (
                   {(data.notes || []).filter((n) => String(n.title || '').startsWith('[C] ')).length})
                 </h3>
                 {(data.notes || [])
                   .filter((n) => String(n.title || '').startsWith('[C] ')).length === 0 && (
                   <p className="text-sm text-slate-400 italic">
-                    Aucune consigne importée pour ce profil.
+                    No instructions imported for this profile.
                   </p>
                 )}
                 <div className="grid gap-3 md:grid-cols-2">
                   {/* Carte récap : avion + équipe(s) assignée(s) */}
                   <div className="border border-sky-200 bg-sky-50/50 rounded-lg p-3">
                     <p className="text-xs font-bold text-sky-800 flex items-center gap-1.5">
-                      <Plane className="h-3.5 w-3.5" /> Avion & équipe
+                      <Plane className="h-3.5 w-3.5" /> Aircraft & team
                     </p>
                     <p className="mt-1.5 text-sm font-bold font-mono text-slate-800">
                       {profile?.aircraft || '—'}
                     </p>
-                    <p className="text-[11px] text-slate-500 mt-1">Équipe(s) assignée(s)</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Assigned team(s)</p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {(data.teams || []).length === 0 && (
-                        <span className="text-xs text-slate-400 italic">Aucune équipe</span>
+                        <span className="text-xs text-slate-400 italic">No team</span>
                       )}
                       {(data.teams || []).map((t) => (
                         <span
@@ -397,7 +397,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                                     {tok && (
                                       <span
                                         className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff0000]/10 text-[#ff0000] border border-[#ff0000]/40 whitespace-nowrap"
-                                        title="Ligne prioritaire (MEL / EXMP / NSRE)"
+                                        title="Priority line (MEL / EXMP / NSRE)"
                                       >
                                         {tok}
                                       </span>
@@ -414,14 +414,14 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
 
               <div>
                 <h3 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
-                  <FolderKanban className="h-4 w-4 text-emerald-500" /> Pochettes (
+                  <FolderKanban className="h-4 w-4 text-emerald-500" /> Pockets (
                   {(data.pockets || []).length})
                 </h3>
                 {transferMsg && <p className="text-sm text-emerald-700 mb-2">{transferMsg}</p>}
                 {transferError && <p className="text-sm text-red-600 mb-2">{transferError}</p>}
                 {(data.pockets || []).length === 0 ? (
                   <p className="text-sm text-slate-400 italic">
-                    Aucune pochette virtuelle (créées dans Préparation vac suivante).
+                    No virtual pocket (created in Next vac preparation).
                   </p>
                 ) : (
                   <ul className="space-y-2">
@@ -434,7 +434,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                         >
                           <div className="min-w-0">
                             <span className="font-medium text-sm">{p.name}</span>
-                            <span className="ml-2 text-xs text-slate-400">{count} ligne(s)</span>
+                            <span className="ml-2 text-xs text-slate-400">{count} line(s)</span>
                           </div>
                           {transferFor === p.id ? (
                             <div className="flex flex-wrap items-center gap-1.5">
@@ -443,7 +443,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                                 onChange={(e) => setTransferTargetCode(e.target.value)}
                                 className="border border-slate-300 rounded-md px-2 py-1 text-xs bg-white"
                               >
-                                <option value="">— Profil destinataire —</option>
+                                <option value="">— Recipient profile —</option>
                                 {otherProfiles.map((pp) => (
                                   <option key={pp.id} value={pp.code}>
                                     {pp.name}
@@ -456,7 +456,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                                 disabled={transferring || !transferTargetCode}
                                 className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-full px-3 py-1 disabled:opacity-50"
                               >
-                                {transferring ? 'Copie…' : 'Copier'}
+                                {transferring ? 'Copying…' : 'Copy'}
                               </button>
                               <button
                                 onClick={() => {
@@ -464,7 +464,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                                   setTransferTargetCode('')
                                 }}
                                 className="text-slate-400 hover:text-slate-700 p-1"
-                                title="Annuler"
+                                title="Cancel"
                               >
                                 <X className="h-4 w-4" />
                               </button>
@@ -481,11 +481,11 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                               className="text-xs font-semibold text-sky-600 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1 disabled:opacity-50"
                               title={
                                 otherProfiles.length === 0
-                                  ? 'Aucun autre profil disponible'
-                                  : 'Copier cette pochette (avec ses lignes) vers un autre profil — le profil d’origine la garde'
+                                  ? 'No other profile available'
+                                  : 'Copy this pocket (with its lines) to another profile — the original profile keeps it'
                               }
                             >
-                              Copier vers un autre profil
+                              Copy to another profile
                             </button>
                           )}
                         </li>
@@ -497,13 +497,13 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
 
               <div>
                 <h3 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
-                  <Users className="h-4 w-4 text-sky-500" /> Équipes du profil (
+                  <Users className="h-4 w-4 text-sky-500" /> Profile teams (
                   {(data.teams || []).length})
                 </h3>
                 {(data.teams || []).length === 0 && (
                   <p className="text-sm text-slate-400 italic">
-                    Aucune équipe créée — le leader monte ses équipes dans la page « Équipes » de
-                    son profil.
+                    No team created — the leader builds their teams in the « Teams » page of
+                    their profile.
                   </p>
                 )}
                 <div className="grid gap-3 md:grid-cols-2">
@@ -523,7 +523,7 @@ export default function ProfileViewModal({ profile, adminCode, onClose }) {
                         >
                           <span className="font-bold text-sm truncate">{team.name}</span>
                           <span className="text-xs opacity-90 shrink-0">
-                            {teamTasks.length} tâche{teamTasks.length > 1 ? 's' : ''}
+                            {teamTasks.length} task{teamTasks.length > 1 ? 's' : ''}
                           </span>
                         </div>
                         <div className="p-3">

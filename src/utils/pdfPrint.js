@@ -42,7 +42,7 @@ export async function downloadPdfAsJpeg(doc, filename) {
     a.click()
     document.body.removeChild(a)
   } catch {
-    alert("Export JPEG indisponible dans ce navigateur — utilisez l'export PDF.")
+    alert('JPEG export unavailable in this browser — use the PDF export.')
   }
 }
 

@@ -94,38 +94,38 @@ export default function RichEditor({
   return (
     <div className="border border-slate-300 rounded-md focus-within:border-sky-400">
       <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 bg-slate-50 border-b border-slate-200 rounded-t-md">
-        <button type="button" className={toolbarButton} title="Gras" onClick={() => exec('bold')}>
+        <button type="button" className={toolbarButton} title="Bold" onClick={() => exec('bold')}>
           <Bold className="h-4 w-4" />
         </button>
-        <button type="button" className={toolbarButton} title="Italique" onClick={() => exec('italic')}>
+        <button type="button" className={toolbarButton} title="Italic" onClick={() => exec('italic')}>
           <Italic className="h-4 w-4" />
         </button>
-        <button type="button" className={toolbarButton} title="Souligné" onClick={() => exec('underline')}>
+        <button type="button" className={toolbarButton} title="Underline" onClick={() => exec('underline')}>
           <Underline className="h-4 w-4" />
         </button>
-        <button type="button" className={toolbarButton} title="Barré" onClick={() => exec('strikeThrough')}>
+        <button type="button" className={toolbarButton} title="Strikethrough" onClick={() => exec('strikeThrough')}>
           <Strikethrough className="h-4 w-4" />
         </button>
         <span className="w-px h-5 bg-slate-300 mx-0.5" />
-        <button type="button" className={toolbarButton} title="Liste à puces" onClick={() => exec('insertUnorderedList')}>
+        <button type="button" className={toolbarButton} title="Bulleted list" onClick={() => exec('insertUnorderedList')}>
           <List className="h-4 w-4" />
         </button>
-        <button type="button" className={toolbarButton} title="Liste numérotée" onClick={() => exec('insertOrderedList')}>
+        <button type="button" className={toolbarButton} title="Numbered list" onClick={() => exec('insertOrderedList')}>
           <ListOrdered className="h-4 w-4" />
         </button>
         <span className="w-px h-5 bg-slate-300 mx-0.5" />
-        <button type="button" className={toolbarButton} title="Aligner à gauche" onClick={() => exec('justifyLeft')}>
+        <button type="button" className={toolbarButton} title="Align left" onClick={() => exec('justifyLeft')}>
           <AlignLeft className="h-4 w-4" />
         </button>
-        <button type="button" className={toolbarButton} title="Centrer" onClick={() => exec('justifyCenter')}>
+        <button type="button" className={toolbarButton} title="Center" onClick={() => exec('justifyCenter')}>
           <AlignCenter className="h-4 w-4" />
         </button>
-        <button type="button" className={toolbarButton} title="Aligner à droite" onClick={() => exec('justifyRight')}>
+        <button type="button" className={toolbarButton} title="Align right" onClick={() => exec('justifyRight')}>
           <AlignRight className="h-4 w-4" />
         </button>
         <span className="w-px h-5 bg-slate-300 mx-0.5" />
         <select
-          title="Police"
+          title="Font"
           className="text-xs border border-slate-300 rounded px-1 py-1 bg-white"
           defaultValue=""
           onChange={(e) => {
@@ -133,12 +133,12 @@ export default function RichEditor({
             e.target.value = ''
           }}
         >
-          <option value="">Police…</option>
+          <option value="">Font…</option>
           {FONTS.map((f) => (
             <option key={f} value={f}>{f}</option>
           ))}
         </select>
-        <div className="flex items-center gap-1" title="Couleur du texte">
+        <div className="flex items-center gap-1" title="Text color">
           {COLORS.map((c) => (
             <button
               key={c}

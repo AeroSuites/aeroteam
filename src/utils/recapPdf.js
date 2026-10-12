@@ -35,9 +35,9 @@ export function buildRecapPdf(profile, data) {
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.text(
-    `${(data?.tasks || []).length} tâches · ${assignedCount} affectées · ${
+    `${(data?.tasks || []).length} tasks · ${assignedCount} assigned · ${
       (data?.tasks || []).length - assignedCount
-    } non affectées · ${(data?.members || []).length} membres · ${new Date().toLocaleDateString('fr-FR')}`,
+    } unassigned · ${(data?.members || []).length} members · ${new Date().toLocaleDateString('en-GB')}`,
     margin,
     21
   )
@@ -55,7 +55,7 @@ export function buildRecapPdf(profile, data) {
   if (notes.length > 0) {
     doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
-    doc.text('Consignes', margin, y)
+    doc.text('Instructions', margin, y)
     y += 6
     notes.forEach((n) => {
       ensureRoom(10)
@@ -78,7 +78,7 @@ export function buildRecapPdf(profile, data) {
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
   ensureRoom(12)
-  doc.text(`Équipes du profil (${(data?.teams || []).length})`, margin, y)
+  doc.text(`Profile teams (${(data?.teams || []).length})`, margin, y)
   y += 8
 
   const gap = 6
@@ -108,7 +108,7 @@ export function buildRecapPdf(profile, data) {
     )
     const zoneMap = {}
     teamTasks.forEach((t) => {
-      const z = t.workArea || 'Autre'
+      const z = t.workArea || 'Other'
       const b = t.taskType || 'AUTRE'
       if (!zoneMap[z]) zoneMap[z] = {}
       if (!zoneMap[z][b]) zoneMap[z][b] = []
@@ -125,7 +125,7 @@ export function buildRecapPdf(profile, data) {
         doc.setFontSize(8.5)
         doc.setTextColor(255, 255, 255)
         const label = `${team.name}`
-        const count = `${teamTasks.length} tâche${teamTasks.length > 1 ? 's' : ''}`
+        const count = `${teamTasks.length} task${teamTasks.length > 1 ? 's' : ''}`
         doc.text(doc.splitTextToSize(label, colW - 30)[0], x + 4, yy + 5.6)
         doc.setFontSize(7)
         doc.text(count, x + colW - 4 - doc.getTextWidth(count), yy + 5.6)

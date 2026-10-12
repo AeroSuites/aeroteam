@@ -130,15 +130,15 @@ describe('buildProfileData (jour × shift)', () => {
     }
     const data = buildProfileData(existing, info, { day: 'MERCREDI', shift: 'soir' })
     const note = data.notes.find((n) => n.title === '[C] F-GSQB MERCREDI Soir')
-    expect(note.content).toContain("Date d'entrée : 06/09/2026 20H")
-    expect(note.content).toContain('OSM : 63994878 · Config : Y148 · Position : H1-1B')
-    expect(note.content).toContain("Date de sortie : 07/09/2026 12H")
+    expect(note.content).toContain('Entry date: 06/09/2026 20H')
+    expect(note.content).toContain('OSM: 63994878 · Config: Y148 · Position: H1-1B')
+    expect(note.content).toContain('Exit date: 07/09/2026 12H')
     expect(note.content).toContain('- Tâche A')
   })
 })
 
 describe('aircraftProfileLabel', () => {
   it('nomme le profil pour un avion', () => {
-    expect(aircraftProfileLabel('F-GSQB')).toBe('Équipe F-GSQB')
+    expect(aircraftProfileLabel('F-GSQB')).toBe('Team F-GSQB')
   })
 })
