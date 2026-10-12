@@ -4,7 +4,7 @@ import ManualTaskForm from '../components/ManualTaskForm'
 import LeaderPrimesForm from '../components/LeaderPrimesForm'
 import NoteCell from '../components/NoteCell'
 import ConsignesAvions from '../components/ConsignesAvions'
-import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, priorityToken, priorityTokens } from '../utils/helpers'
+import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, priorityToken, priorityTokens, PRIMES_ENABLED } from '../utils/helpers'
 import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X, Send } from 'lucide-react'
 import SendChargeToAgent from '../components/SendChargeToAgent'
 
@@ -344,19 +344,21 @@ export default function Affectation() {
         >
           Task assignment
         </button>
-        <button
-          onClick={() => setTab('primes')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
-            tab === 'primes'
-              ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg ring-2 ring-emerald-300'
-              : 'bg-white border-emerald-300 text-emerald-800 hover:border-emerald-500 hover:bg-emerald-50'
-          }`}
-        >
-          Toilet bonuses — beneficiaries
-        </button>
+        {PRIMES_ENABLED && (
+          <button
+            onClick={() => setTab('primes')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
+              tab === 'primes'
+                ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg ring-2 ring-emerald-300'
+                : 'bg-white border-emerald-300 text-emerald-800 hover:border-emerald-500 hover:bg-emerald-50'
+            }`}
+          >
+            Toilet bonuses — beneficiaries
+          </button>
+        )}
       </div>
 
-      {tab === 'affectation' ? (
+      {tab === 'affectation' || !PRIMES_ENABLED ? (
         <>
 
       <ConsignesAvions />

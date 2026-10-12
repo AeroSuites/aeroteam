@@ -161,7 +161,7 @@ export default function Taches() {
     // Transfert = déplacement : les lignes quittent Tâches
     if (toSend.length) removeTasksByIds(toSend.map((t) => t.id))
     setTransferMsg(
-      `${toSend.length} line(s) transferred to Next vacation preparation${
+      `${toSend.length} line(s) transferred to the next shift prep${
         ignored ? ` · ${ignored} already present (merged)` : ''
       }${doneCount ? ` · ${doneCount} COMPLETE ignored` : ''}.`
     )
@@ -278,8 +278,8 @@ export default function Taches() {
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Tasks by zone</h1>
         <p className="text-slate-600 mt-1">{filtered.length} tasks — grouped by work zone</p>
         <p className="text-xs text-slate-400 mt-1">
-          Checkbox <strong>“to follow”</strong>: prepares the next vacation (transfer to
-          Preparation) — the <strong>+ to follow</strong> button on a block adds it in full. A green check{' '}
+          Checkbox <strong>“to follow”</strong>: prepares the next shift (transfer to
+          prep) — the <strong>+ to follow</strong> button on a block adds it in full. A green check{' '}
           <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-emerald-100 text-emerald-700 align-middle">
             <Check className="h-2.5 w-2.5" />
           </span>{' '}
@@ -299,9 +299,9 @@ export default function Taches() {
               <button
                 onClick={transferToPrep}
                 className="bg-sky-600 text-white px-3 py-1.5 rounded-md hover:bg-sky-700 text-xs font-semibold"
-                title="Add these lines to the next vacation preparation (classification and notes kept, duplicates ignored)"
+                title="Add these lines to the next shift prep (classification and notes kept, duplicates ignored)"
               >
-                Transfer to Preparation ({followTasks.length})
+                Transfer to prep ({followTasks.length})
               </button>
               <button
                 onClick={() => {
@@ -347,7 +347,7 @@ export default function Taches() {
         {followTasks.length === 0 ? (
           <p className="text-xs text-slate-400 italic mt-2">
             Check lines — or a block's <strong>+ to follow</strong> — to prepare the next
-            vacation.
+            shift.
           </p>
         ) : (
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3 mt-2">
@@ -529,7 +529,7 @@ export default function Taches() {
                   <button
                     onClick={() => addBlockToFollow(block)}
                     className="inline-flex items-center gap-0.5 text-[10px] font-bold text-sky-700 border border-sky-300 hover:bg-sky-50 rounded-full px-1.5 py-0.5"
-                    title={`Add the whole ${getCategoryLabel(block)} block to follow (next vacation preparation)`}
+                    title={`Add the whole ${getCategoryLabel(block)} block to follow (next shift prep)`}
                   >
                     <Plus className="h-3 w-3" /> to follow
                   </button>
@@ -619,7 +619,7 @@ export default function Taches() {
                   {transferredCount > 0 && (
                     <span
                       className="bg-emerald-500/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white whitespace-nowrap self-center"
-                      title="Lines in this zone already transferred to Next vacation preparation"
+                      title="Lines in this zone already transferred to the next shift prep"
                     >
                       ✓ {transferredCount} transferred line{transferredCount > 1 ? 's' : ''}
                     </span>
@@ -660,7 +660,7 @@ export default function Taches() {
                     <button
                       onClick={() => addBlockToFollow('CORR')}
                       className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5 self-center"
-                      title="Add the whole Found Fault block to follow (next vacation preparation)"
+                      title="Add the whole Found Fault block to follow (next shift prep)"
                     >
                       <Plus className="h-3 w-3" />
                       <span className="text-[10px] font-bold whitespace-nowrap">to follow</span>
@@ -671,7 +671,7 @@ export default function Taches() {
                       <button
                         onClick={() => addZoneToFollow(zone)}
                         className="bg-white/20 hover:bg-white/50 rounded-full pl-1 pr-1.5 py-0.5 text-white inline-flex items-center gap-0.5"
-                        title={`Add the whole sub-task ${zone} to follow (next vacation preparation)`}
+                        title={`Add the whole sub-task ${zone} to follow (next shift prep)`}
                       >
                         <Plus className="h-3 w-3" />
                         <span className="text-[10px] font-bold whitespace-nowrap">to follow</span>
@@ -709,7 +709,7 @@ export default function Taches() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left bg-slate-50">
-                      <th className="px-1 py-2 border-b text-[11px] text-slate-700 font-bold whitespace-nowrap" title="Check to prepare the next vacation (transfer to Preparation)">to follow</th>
+                      <th className="px-1 py-2 border-b text-[11px] text-slate-700 font-bold whitespace-nowrap" title="Check to prepare the next shift (transfer to prep)">to follow</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">No.</th>
                       <th className="px-2 py-2 border-b whitespace-nowrap">Task</th>
                       <th className="px-0.5 py-2 border-b whitespace-nowrap">Block</th>
@@ -757,7 +757,7 @@ export default function Taches() {
                                         addZoneToFollow(subZone, 'CORR')
                                       }}
                                       className="ml-auto inline-flex items-center gap-0.5 rounded-full bg-white/20 hover:bg-white/40 px-1.5 py-0.5 text-white"
-                                      title={`Add the whole sub-task ${subZone} to follow (next vacation preparation)`}
+                                      title={`Add the whole sub-task ${subZone} to follow (next shift prep)`}
                                     >
                                       <Plus className="h-3 w-3" />
                                       <span className="text-[10px] font-bold whitespace-nowrap">to follow</span>
@@ -813,7 +813,7 @@ export default function Taches() {
                             {isTransferred(task) ? (
                               <span
                                 className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-emerald-100 text-emerald-700"
-                                title="Already transferred to Next vacation preparation"
+                                title="Already transferred to the next shift prep"
                               >
                                 <Check className="h-3 w-3" />
                               </span>
@@ -823,7 +823,7 @@ export default function Taches() {
                                 checked={!!followSelected[task.id]}
                                 onChange={() => toggleFollow(task.id)}
                                 className="h-3.5 w-3.5 accent-sky-600"
-                                title="Check to prepare the next vacation"
+                                title="Check to prepare the next shift"
                               />
                             )}
                           </td>

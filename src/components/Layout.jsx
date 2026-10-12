@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { Plane, LogOut, ClipboardList, ChevronDown } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import * as profileStore from '../lib/profileStore'
+import { PRIMES_ENABLED } from '../utils/helpers'
 
 const navItems = [
   { to: '/', label: 'Dashboard', end: true, ordre: 5 },
@@ -11,7 +12,7 @@ const navItems = [
   { to: '/equipes', label: 'Teams', ordre: 3 },
   { to: '/affectation', label: 'Assignment', ordre: 4 },
   { to: '/export', label: 'Export/Reset' },
-  { to: '/preparation', label: 'Next vacation preparation' },
+  { to: '/preparation', label: 'Next shift prep' },
   {
     to: '/notes',
     label: 'Notepad & Messages',
@@ -77,7 +78,7 @@ export default function Layout({ children }) {
   }, [activeProfile?.code])
 
   useEffect(() => {
-    if (!isAdmin || !activeProfile?.code) return
+    if (!PRIMES_ENABLED || !isAdmin || !activeProfile?.code) return
     let alive = true
     const load = () => {
       profileStore
@@ -346,9 +347,9 @@ export default function Layout({ children }) {
                     adminMenuOpen ? 'rotate-180' : ''
                   }`}
                 />
-                {(primesPending > 0 || adminPending > 0) && (
+                {(adminPending > 0 || (PRIMES_ENABLED && primesPending > 0)) && (
                   <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-[#ff0000] text-white text-[10px] font-bold shadow">
-                    {primesPending + adminPending}
+                    {adminPending + (PRIMES_ENABLED ? primesPending : 0)}
                   </span>
                 )}
               </button>
@@ -370,22 +371,24 @@ export default function Layout({ children }) {
                       </span>
                     )}
                   </NavLink>
-                  <NavLink
-                    to="/primes"
-                    onClick={() => setAdminMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between gap-2 px-3 py-2 text-sm ${
-                        isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
-                      }`
-                    }
-                  >
-                    <span>Bonuses</span>
-                    {primesPending > 0 && (
-                      <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff0000] text-white text-[10px] font-bold">
-                        {primesPending}
-                      </span>
-                    )}
-                  </NavLink>
+                  {PRIMES_ENABLED && (
+                    <NavLink
+                      to="/primes"
+                      onClick={() => setAdminMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center justify-between gap-2 px-3 py-2 text-sm ${
+                          isActive ? 'bg-sky-600 text-white' : 'text-slate-200 hover:bg-slate-700'
+                        }`
+                      }
+                    >
+                      <span>Bonuses</span>
+                      {primesPending > 0 && (
+                        <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff0000] text-white text-[10px] font-bold">
+                          {primesPending}
+                        </span>
+                      )}
+                    </NavLink>
+                  )}
                 </div>
               )}
             </div>

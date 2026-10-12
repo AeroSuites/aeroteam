@@ -605,7 +605,7 @@ export default function Preparation() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Workload preparation</h1>
           <p className="text-slate-600 mt-1">
-            Remaining workload for the next vacation — {prepTasks.length} lines
+            Remaining workload for the next shift — {prepTasks.length} lines
             {zoneGroups.length > 0 &&
               ` · ${[...new Set(prepTasks.map((t) => t.taskType).filter(Boolean))].length} blocks`}
           </p>

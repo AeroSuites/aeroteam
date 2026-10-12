@@ -1,3 +1,8 @@
+// Interrupteur global : partie « primes toilettes » (AeroPrimes) désactivée
+// et masquée (menu Administration + onglet Affectation). Repasser à true
+// pour la réafficher.
+export const PRIMES_ENABLED = false
+
 // Charte Air France — « Encrier coloriel » :
 // bleus identitaires #051039 / #003165 / #14438B / #0045B6 (+ déclinaisons),
 // blancs/gris, et rouge #FF0000 en touche.

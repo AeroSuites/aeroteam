@@ -16,6 +16,7 @@ import ImportConsignes from './pages/ImportConsignes'
 import Admin from './pages/Admin'
 import Primes from './pages/Primes'
 import MaCharge from './pages/MaCharge'
+import { PRIMES_ENABLED } from './utils/helpers'
 
 function AppContent() {
   const { activeProfile, loading, error, isAdmin } = useApp()
@@ -61,7 +62,7 @@ function AppContent() {
             <Route path="/export" element={<Export />} />
             <Route path="/ma-charge" element={<Navigate to="/" replace />} />
             {isAdmin && <Route path="/admin" element={<Admin />} />}
-            {isAdmin && <Route path="/primes" element={<Primes />} />}
+            {isAdmin && PRIMES_ENABLED && <Route path="/primes" element={<Primes />} />}
             {isAdmin && <Route path="/import-consignes" element={<ImportConsignes />} />}
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
