@@ -5,7 +5,7 @@ import LeaderPrimesForm from '../components/LeaderPrimesForm'
 import NoteCell from '../components/NoteCell'
 import ConsignesAvions from '../components/ConsignesAvions'
 import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, priorityToken, priorityTokens, cleanTaskText, consigneDay, logicalToday, TEAM_COLORS, PRIMES_ENABLED } from '../utils/helpers'
-import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X, Send, FileText, ListChecks, Plus, Pencil, Star, BookUser, Upload, Search } from 'lucide-react'
+import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X, Send, FileText, ListChecks, Plus, Pencil, Star, BookUser, Upload, Search, Eraser } from 'lucide-react'
 import SendChargeToAgent from '../components/SendChargeToAgent'
 
 const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
@@ -1823,10 +1823,10 @@ export default function TeamsAssignment() {
                               clearTeamCharge(team.id)
                             }
                           }}
-                          className="text-slate-400 hover:text-red-400"
-                          title={`Clear ${team.name}'s workload at once`}
+                          className="text-slate-400 hover:text-amber-300"
+                          title={`Clear the workload (unassign its ${assignedCount(team.id)} task(s)) — the team is kept`}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Eraser className="h-4 w-4" />
                         </button>
                       )}
                       {assignedCount(team.id) > 0 && (
@@ -1873,8 +1873,8 @@ export default function TeamsAssignment() {
                             removeTeam(team.id)
                           }
                         }}
-                        className="text-slate-400 hover:text-red-400"
-                        title="Delete team (also removes the workload sent to the agent)"
+                        className="text-red-400 hover:text-red-300"
+                        title="Delete this team (also removes the workload sent to the agent)"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
