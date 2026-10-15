@@ -732,6 +732,9 @@ export function AppProvider({ children }) {
       const next = prev.map((t) => {
         const s = statusByKey[taskContentKey(t)]
         if (s && s !== t.mtxStatus) {
+          // Une ligne passée en COMPLETE par le leader n'est jamais rétrogradée
+          // par le rapport de l'agent (le leader peut toujours surpasser).
+          if (t.mtxStatus === 'COMPLETE' && s !== 'COMPLETE') return t
           changed = true
           return { ...t, mtxStatus: s }
         }
