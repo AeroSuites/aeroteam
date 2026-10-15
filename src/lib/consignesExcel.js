@@ -155,9 +155,18 @@ export function parseEffectif(rows, ws) {
         if (h === 'affectation') affectCols.push(ac)
       }
       const members = []
+      let emptyStreak = 0
       for (let dr = r + 2; dr < Math.min(r + 70, rows.length); dr++) {
         const name = cell(rows, dr, memberCol)
-        if (!name) break
+        if (!name) {
+          // Ligne sans nom (cellule fusionnée ou trou de saisie) : la liste
+          // continue tant que le trou reste court ; au-delà, c'est la fin
+          // de l'effectif (on s'arrête avant la section suivante du fichier).
+          emptyStreak += 1
+          if (emptyStreak >= 5) break
+          continue
+        }
+        emptyStreak = 0
         const aircrafts = [...new Set(affectCols.map((ac) => cell(rows, dr, ac)).filter((v) => /^F-[\w-]+$/i.test(v)))]
         if (!aircrafts.length) continue // ABSENT / MANAGER / TSP etc.
         members.push({

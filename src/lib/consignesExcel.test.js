@@ -165,6 +165,26 @@ describe('parseEffectif', () => {
     expect(soir.members[0].aircrafts).toEqual(['F-BBB'])
   })
 
+  it('poursuit la liste après une ligne sans nom (cellule fusionnée)', () => {
+    const rows = []
+    rows[1] = []
+    rows[1][0] = 'Matin'
+    rows[2] = []
+    rows[2][0] = 'Nom'
+    rows[2][1] = 'Affectation'
+    rows[3] = []
+    rows[3][0] = 'PREMIER (A)'
+    rows[3][1] = 'F-AAA'
+    rows[4] = []
+    rows[4][1] = 'F-AAA'
+    rows[5] = []
+    rows[5][0] = 'DERNIER (Z)'
+    rows[5][1] = 'F-BBB'
+    const eff = parseEffectif(rows)
+    const matin = eff.find((s) => s.shift === 'matin')
+    expect(matin.members.map((m) => m.name)).toEqual(['PREMIER (A)', 'DERNIER (Z)'])
+  })
+
   it('marque comme leader le membre dont le nom est sur fond bleu', () => {
     const rows = []
     rows[1] = []
