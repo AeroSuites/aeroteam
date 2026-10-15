@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, FileDown, FileText, ListChecks, Printer, StickyNote, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, FileDown, FileText, ListChecks, Pencil, Printer, StickyNote, X } from 'lucide-react'
 import {
   getCategoryColor,
   getCategoryLabel,
@@ -43,7 +43,7 @@ function groupTeamTasks(teamTasks) {
 }
 
 // Une carte d'équipe : pliée par défaut, dépliable individuellement
-function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgress }) {
+function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgress, onRenameTask }) {
   const [open, setOpen] = useState(false)
   const [descTask, setDescTask] = useState(null)
   const [notePopup, setNotePopup] = useState(null)
@@ -186,6 +186,18 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                 </span>
                                 {(t.taskDescription || t.taskSteps) && (
                                   <FileText className="h-3 w-3 shrink-0 text-sky-600 mt-0.5" />
+                                )}
+                                {onRenameTask && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onRenameTask(t)
+                                    }}
+                                    className="shrink-0 text-slate-400 hover:text-sky-700 mt-0.5"
+                                    title="Rename this line (title)"
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                  </button>
                                 )}
                                 <span className="shrink-0 w-4 h-4 flex items-center justify-center">
                                   {agentInfo &&
@@ -349,7 +361,7 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
 }
 
 // Liste des cartes d'équipes avec leur charge
-export default function TeamChargeCards({ teams, tasks, assignments, onExportPdf, onPrint, agentsProgress }) {
+export default function TeamChargeCards({ teams, tasks, assignments, onExportPdf, onPrint, agentsProgress, onRenameTask }) {
   if (!(teams || []).length) return null
   const columns = [[], []]
   ;(teams || []).forEach((team, i) => {
@@ -368,6 +380,7 @@ export default function TeamChargeCards({ teams, tasks, assignments, onExportPdf
               onExportPdf={onExportPdf}
               onPrint={onPrint}
               agentsProgress={agentsProgress}
+              onRenameTask={onRenameTask}
             />
           ))}
         </div>

@@ -47,8 +47,49 @@ export function findSheetDate(rows) {
   return ''
 }
 
-// Numéro de semaine du classeur (« Semaine » → « S40 »), 0 si introuvable.
+// Numéro de semaine ISO d'une date (chaîne ISO « yyyy-mm-dd », « d/m/y » ou « m/d/y »).
+function isoWeekOf(s) {
+  const str = String(s || '')
+  let y, mo, d
+  let m = str.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (m) {
+    y = +m[1]
+    mo = +m[2]
+    d = +m[3]
+  } else {
+    m = str.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})/)
+    if (!m) return 0
+    d = +m[1]
+    mo = +m[2]
+    // « 10/14/26 » (mois/jour) vs « 14/10/26 » (jour/mois)
+    if (mo > 12 && d <= 12) {
+      const t = d
+      d = mo
+      mo = t
+    }
+    y = +m[3] < 100 ? 2000 + +m[3] : +m[3]
+  }
+  const date = new Date(Date.UTC(y, mo - 1, d))
+  if (isNaN(date.getTime())) return 0
+  const day = date.getUTCDay() || 7
+  date.setUTCDate(date.getUTCDate() + 4 - day)
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
+  const week = Math.ceil(((date - yearStart) / 86400000 + 1) / 7)
+  return week >= 1 && week <= 53 ? week : 0
+}
+
+// Numéro de semaine du classeur. Priorité à la semaine ISO calculée depuis la
+// DATE des feuilles de jours : la cellule « Semaine » d'autres feuilles peut
+// être périmée (ex. « Consignes CHECK » restée en S33). Repli : cellule
+// « Semaine » du classeur (« Semaine » → « S40 »). 0 si introuvable.
 export function findWorkbookWeek(workbook) {
+  for (const name of DAY_SHEET_NAMES) {
+    const ws = workbook.Sheets[name]
+    if (!ws) continue
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true })
+    const week = isoWeekOf(findSheetDate(rows))
+    if (week) return week
+  }
   for (const name of workbook.SheetNames) {
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, raw: true })
     for (let r = 0; r < Math.min(rows.length, 12); r++) {

@@ -39,6 +39,15 @@ export default function Taches() {
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     )
 
+  // Renomme le titre d'une ligne (description de la tâche)
+  const renameTask = (task) => {
+    const next = window.prompt('New line title:', task.description || '')
+    if (next === null) return
+    const name = String(next).trim()
+    if (!name) return
+    updateTask(task.id, { description: name })
+  }
+
   // Sélection « à suivre » (préparation de la vacation suivante)
   const [followSelected, setFollowSelected] = useState({})
   const [transferMsg, setTransferMsg] = useState('')
@@ -851,6 +860,13 @@ export default function Taches() {
                                   <FileText className="h-3.5 w-3.5" />
                                 </button>
                               )}
+                              <button
+                                onClick={() => renameTask(task)}
+                                className="shrink-0 text-slate-400 hover:text-sky-700"
+                                title="Rename this line (title)"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
                               {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
                                 <span
                                   className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff0000]/10 text-[#ff0000] border border-[#ff0000]/40 whitespace-nowrap"

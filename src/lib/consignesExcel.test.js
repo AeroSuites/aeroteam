@@ -278,9 +278,18 @@ describe('dates des jours (semaine du fichier)', () => {
     expect(weekMonday(2026, 40).toISOString().slice(0, 10)).toBe('2026-09-28')
   })
 
-  it('lit le numéro de semaine dans la feuille « Consignes CHECK »', () => {
-    const { wb } = buildFixtureSheet()
-    expect(findWorkbookWeek(wb)).toBe(0)
+  it('calcule la semaine depuis la date des feuilles de jours (cellule « Semaine » périmée ignorée)', () => {
+    const { wb } = buildFixtureSheet() // LUNDI avec Date 2026-09-08 → semaine ISO 37
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.aoa_to_sheet([[], ['Semaine', 'S33']]),
+      'Consignes CHECK'
+    )
+    expect(findWorkbookWeek(wb)).toBe(37)
+  })
+
+  it('repli : lit « Semaine » quand aucune feuille de jour n’a de date exploitable', () => {
+    const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(
       wb,
       XLSX.utils.aoa_to_sheet([[], ['Semaine', 'S37']]),
@@ -304,10 +313,20 @@ describe('dates des jours (semaine du fichier)', () => {
     expect(results.DIMANCHE.date).toBe('2026-09-13')
   })
 
-  it('garde la date du fichier quand la semaine est introuvable', () => {
-    const { wb } = buildFixtureSheet()
+  it('garde la date du fichier quand aucune semaine ne peut être déterminée', () => {
+    const rows = []
+    rows[0] = []
+    rows[0][1] = 'Date'
+    rows[0][2] = 'inconnue'
+    rows[1] = []
+    rows[1][0] = 'Matin'
+    rows[2] = []
+    rows[2][0] = 'Nom'
+    rows[2][1] = 'Affectation'
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'LUNDI')
     const results = parseConsignesWorkbook(wb)
-    expect(results.LUNDI.date).toBe('2026-09-08')
+    expect(results.LUNDI.date).toBe('inconnue')
   })
 })
 
@@ -315,7 +334,9 @@ describe('parseConsignesWorkbook + summarizeAircrafts', () => {
   it('agrège effectif et consignes par avion', () => {
     const { wb } = buildFixtureSheet()
     const results = parseConsignesWorkbook(wb)
-    expect(results.LUNDI.date).toBe('2026-09-08')
+    // La date du fichier (2026-09-08, mardi) donne la semaine ISO 37 :
+    // chaque jour reçoit la date de son jour de la semaine (LUNDI = 2026-09-07).
+    expect(results.LUNDI.date).toBe('2026-09-07')
     const aircrafts = summarizeAircrafts(results)
     expect(aircrafts).toHaveLength(3)
     const gsqb = aircrafts.find((a) => a.immat === 'F-GSQB')

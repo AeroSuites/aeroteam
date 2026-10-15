@@ -47,7 +47,7 @@ function groupByZone(blockTasks) {
 }
 
 export default function Dashboard() {
-  const { tasks, teams, assignments, notes, updateNote, removeNote, members, dayMembers, dayLeaders, pockets, activeProfile, agentsProgress, clearAgentCharge } = useApp()
+  const { tasks, teams, assignments, notes, updateNote, removeNote, members, dayMembers, dayLeaders, pockets, activeProfile, agentsProgress, clearAgentCharge, updateTask } = useApp()
   const [editingConsigneId, setEditingConsigneId] = useState(null)
   const [consigneText, setConsigneText] = useState('')
   const [historyAgent, setHistoryAgent] = useState(null)
@@ -626,6 +626,13 @@ export default function Dashboard() {
             tasks={tasks}
             assignments={assignments}
             agentsProgress={agentsProgress}
+            onRenameTask={(task) => {
+              const next = window.prompt('New line title:', task.description || '')
+              if (next === null) return
+              const name = String(next).trim()
+              if (!name) return
+              updateTask(task.id, { description: name })
+            }}
             onExportPdf={(team) => {
               const doc = buildTeamPdf(team)
               doc.save(
