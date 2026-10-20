@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, priorityToken, priorityTokens, cleanTaskText, cleanShortValue } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
@@ -7,6 +7,7 @@ import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plu
 
 export default function Taches() {
   const {
+    activeProfile,
     tasks,
     teams,
     assignments,
@@ -48,8 +49,25 @@ export default function Taches() {
     updateTask(task.id, { description: name })
   }
 
-  // Sélection « à suivre » (préparation de la vacation suivante)
-  const [followSelected, setFollowSelected] = useState({})
+  // Sélection « à suivre » (préparation de la vacation suivante) — conservée
+  // au changement d'onglet et au rechargement (localStorage, par profil).
+  const followKey = `maintenance-app-follow-${activeProfile?.code || ''}`
+  const [followSelected, setFollowSelected] = useState(() => {
+    try {
+      const raw = localStorage.getItem(followKey)
+      const parsed = raw ? JSON.parse(raw) : null
+      return parsed && typeof parsed === 'object' ? parsed : {}
+    } catch {
+      return {}
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem(followKey, JSON.stringify(followSelected))
+    } catch {
+      // stockage indisponible : la sélection reste en mémoire
+    }
+  }, [followKey, followSelected])
   const [transferMsg, setTransferMsg] = useState('')
 
   const followTasks = useMemo(

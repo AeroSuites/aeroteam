@@ -13,7 +13,7 @@ const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'
 export default function TeamsAssignment() {
   const {
     tasks, teams, assignments, assignTask, unassignTask, updateTeam, addTasks,
-    removeTasksByBlock, updateTask, clearAgentChargesByTeam,
+    removeTasksByBlock, removeTasksByZone, updateTask, clearAgentChargesByTeam,
     members, dayMembers, dayLeaders, notes, addTeam, removeTeam,
     addMembers, addDayMembers, clearDayMembers, removeMember,
   } = useApp()
@@ -1480,17 +1480,33 @@ export default function TeamsAssignment() {
                           </span>
                           <button
                             onClick={() => {
-                              const total = tasks.filter((t) => (t.taskType || 'AUTRE') === blk).length
-                              if (
+                              if (group.isFF) {
+                                // Found Fault : le bandeau regroupe toutes les sous-tâches
+                                const total = tasks.filter(
+                                  (t) => (t.taskType || 'AUTRE') === blk
+                                ).length
+                                if (
+                                  window.confirm(
+                                    `Delete the entire ${getCategoryLabel(blk)} block (${total} tasks, all sub-tasks)?\n\nAll these tasks will disappear from the planning.`
+                                  )
+                                ) {
+                                  removeTasksByBlock(blk)
+                                }
+                              } else if (
                                 window.confirm(
-                                  `Delete the entire block ${getCategoryLabel(blk)} (${total} tasks, all zones)?\n\nAll these tasks will disappear from the planning.`
+                                  `Delete the ${getCategoryLabel(blk)} lines of sub-task "${group.label}" (${n} task(s))?\n\nThe other sub-tasks are kept.`
                                 )
                               ) {
-                                removeTasksByBlock(blk)
+                                // Bandeau d'une sous-tâche : supprime ce bloc UNIQUEMENT ici
+                                removeTasksByZone(group.label, blk)
                               }
                             }}
                             className="text-white/80 hover:text-white"
-                            title={`Delete the entire block ${getCategoryLabel(blk)}`}
+                            title={
+                              group.isFF
+                                ? `Delete the entire ${getCategoryLabel(blk)} block`
+                                : `Delete the ${getCategoryLabel(blk)} lines of this sub-task`
+                            }
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>
