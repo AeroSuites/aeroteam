@@ -549,3 +549,10 @@ export function parseExcelRows(rows, columns) {
 
   return result
 }
+
+// Lien Maintenix : ouvre une ligne à partir de son TRFX (ScanBarcode).
+export function trfxUrl(barcode) {
+  const b = String(barcode || '').trim()
+  if (!b) return ''
+  return `http://mtx.af-klm.com/maintenix/servlet/ScanBarcode?aBarcodeScan=${encodeURIComponent(b)}&aReturnToPage=/`
+}

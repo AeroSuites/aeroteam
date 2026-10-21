@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { getCategoryColor, getCategoryLabel } from '../utils/helpers'
+import TrfxLink from './TrfxLink'
 
 // Arbre de sélection : bloc → sous-tâche (zone) → lignes, avec cases à cocher.
 // Utilisé par Import consignes (charge) et Préparation de vac suivante.
@@ -135,9 +136,10 @@ export default function TaskTreeSelect({
                         {task.seq || '—'}
                       </span>
                       {task.taskBarcode && (
-                        <span className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
-                          {task.taskBarcode}
-                        </span>
+                        <TrfxLink
+                          value={task.taskBarcode}
+                          className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5"
+                        />
                       )}
                       <span
                         className="flex-1 min-w-0 truncate text-slate-700"

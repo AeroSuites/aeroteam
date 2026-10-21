@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { openPdfPrint, drawCheckboxCell, drawPriorityBadge, hidePriorityCellText } from '../utils/pdfPrint'
 import TeamChargeCards from '../components/TeamChargeCards'
+import TrfxLink from '../components/TrfxLink'
 import { buildRecapPdf } from '../utils/recapPdf'
 import { useApp } from '../context/AppContext'
 import {
@@ -528,9 +529,10 @@ export default function Dashboard() {
                                     >
                                       <span className="w-10 shrink-0 font-bold text-slate-500">{task.seq || '—'}</span>
                                       {task.taskBarcode && (
-                                        <span className="shrink-0 font-mono text-[11px] font-bold text-black bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">
-                                          {task.taskBarcode}
-                                        </span>
+                                        <TrfxLink
+                                          value={task.taskBarcode}
+                                          className="shrink-0 font-mono text-[11px] font-bold text-black bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5"
+                                        />
                                       )}
                                       <span className="flex-1 truncate text-slate-700" title={task.description}>
                                         {task.description}
@@ -831,9 +833,10 @@ export default function Dashboard() {
                               {t.description}
                             </span>
                             {t.taskBarcode && (
-                              <span className="shrink-0 font-mono text-[10px] font-bold text-sky-700 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
-                                {t.taskBarcode}
-                              </span>
+                              <TrfxLink
+                                value={t.taskBarcode}
+                                className="shrink-0 font-mono text-[10px] font-bold text-sky-700 bg-slate-100 border border-slate-200 rounded px-1 py-0.5"
+                              />
                             )}
                             <span
                               className={`shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${

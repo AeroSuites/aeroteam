@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, FileDown, FileText, ListChecks, Pencil, Printer, StickyNote, X } from 'lucide-react'
+import TrfxLink from './TrfxLink'
 import {
   getCategoryColor,
   getCategoryLabel,
@@ -220,13 +221,20 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                       </button>
                                     )}
                                 </span>
-                                {(t.taskBarcode || t.registration) && (
-                                  <span
+                                {t.taskBarcode ? (
+                                  <TrfxLink
+                                    value={t.taskBarcode}
                                     className="shrink-0 ml-auto font-mono text-[10px] font-bold text-sky-700"
-                                    title={t.taskBarcode ? `TRFX ${t.taskBarcode}` : 'Aircraft'}
-                                  >
-                                    {t.taskBarcode || t.registration}
-                                  </span>
+                                  />
+                                ) : (
+                                  t.registration && (
+                                    <span
+                                      className="shrink-0 ml-auto font-mono text-[10px] font-bold text-sky-700"
+                                      title="Aircraft"
+                                    >
+                                      {t.registration}
+                                    </span>
+                                  )
                                 )}
                                 {agentInfo && agentByKey[taskContentKey(t)] && (
                                   <span

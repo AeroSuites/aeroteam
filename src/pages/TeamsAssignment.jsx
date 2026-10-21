@@ -4,6 +4,7 @@ import ManualTaskForm from '../components/ManualTaskForm'
 import LeaderPrimesForm from '../components/LeaderPrimesForm'
 import NoteCell from '../components/NoteCell'
 import ConsignesAvions from '../components/ConsignesAvions'
+import TrfxLink from '../components/TrfxLink'
 import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, priorityToken, priorityTokens, cleanTaskText, consigneDay, logicalToday, TEAM_COLORS, PRIMES_ENABLED } from '../utils/helpers'
 import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X, Send, FileText, ListChecks, Plus, Pencil, Star, BookUser, Upload, Search, Eraser } from 'lucide-react'
 import SendChargeToAgent from '../components/SendChargeToAgent'
@@ -1662,9 +1663,10 @@ export default function TeamsAssignment() {
                                         </p>
                                         <p className="text-xs text-slate-400 truncate">
                                           {task.taskBarcode && (
-                                            <span className="font-mono font-bold text-slate-500">
-                                              {task.taskBarcode}  {' '}
-                                            </span>
+                                            <TrfxLink
+                                              value={task.taskBarcode}
+                                              className="font-mono font-bold text-slate-500 mr-2"
+                                            />
                                           )}
                                           {task.registration && `✈ ${task.registration}  `}
                                           {task.skills && `🔧 ${task.skills}  `}
@@ -2024,9 +2026,10 @@ export default function TeamsAssignment() {
                                         {t.seq || '—'}
                                       </span>
                                       {t.taskBarcode && (
-                                        <span className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
-                                          {t.taskBarcode}
-                                        </span>
+                                        <TrfxLink
+                                          value={t.taskBarcode}
+                                          className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5"
+                                        />
                                       )}
                                       <span className="flex-1" />
                                       <button

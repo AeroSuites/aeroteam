@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext'
 import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignmentTeams, filterNewPrepTasks, taskContentKey, priorityToken, priorityTokens, cleanTaskText, cleanShortValue } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
+import TrfxLink from '../components/TrfxLink'
 import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check, FileText, Pencil, AlertTriangle } from 'lucide-react'
 
 export default function Taches() {
@@ -901,7 +902,9 @@ export default function Taches() {
                             </span>
                           </td>
                           <td className="hidden lg:table-cell px-0.5 py-2 text-xs whitespace-nowrap">{task.skills || '-'}</td>
-                          <td className="px-0.5 py-2 font-mono font-bold text-xs whitespace-nowrap">{task.taskBarcode || '-'}</td>
+                          <td className="px-0.5 py-2 font-mono font-bold text-xs whitespace-nowrap">
+                            {task.taskBarcode ? <TrfxLink value={task.taskBarcode} /> : '-'}
+                          </td>
                           <td className="px-0.5 py-2 whitespace-nowrap">
                             <span
                               className={`px-2 py-0.5 rounded-full text-xs font-semibold ${

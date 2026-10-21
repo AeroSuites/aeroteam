@@ -22,6 +22,7 @@ import {
 } from '../utils/helpers'
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
+import TrfxLink from '../components/TrfxLink'
 import TaskTreeSelect, { groupTasksTree } from '../components/TaskTreeSelect'
 import {
   Upload,
@@ -1415,7 +1416,7 @@ export default function Preparation() {
                                 </td>
                                 <td className="px-0.5 py-2 text-xs">{task.skills || '-'}</td>
                                 <td className="px-0.5 py-2 font-mono font-bold text-xs">
-                                  {task.taskBarcode || '-'}
+                                  {task.taskBarcode ? <TrfxLink value={task.taskBarcode} /> : '-'}
                                 </td>
                                 <td className="px-0.5 py-2">
                                   <span

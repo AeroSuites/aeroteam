@@ -1,4 +1,5 @@
 import TaskTreeSelect, { groupTasksTree } from '../components/TaskTreeSelect'
+import TrfxLink from '../components/TrfxLink'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import {
@@ -1627,9 +1628,10 @@ export default function ImportConsignes() {
                                       {task.seq || '—'}
                                     </span>
                                     {task.taskBarcode && (
-                                      <span className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">
-                                        {task.taskBarcode}
-                                      </span>
+                                      <TrfxLink
+                                        value={task.taskBarcode}
+                                        className="shrink-0 font-mono text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded px-1 py-0.5"
+                                      />
                                     )}
                                     <span
                                       className="flex-1 min-w-0 truncate text-slate-700"
