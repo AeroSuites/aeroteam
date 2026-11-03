@@ -52,13 +52,11 @@ export async function downloadPdfAsJpeg(doc, filename) {
 export function drawCheckboxCell(doc, data) {
   if (data.section !== 'body' || data.column.index !== 0) return
   const size = 4.2
-  const padTop = typeof data.cell.padding === 'function' ? data.cell.padding('top') : 1.8
-  const lineHeight = 3.5
   doc.setDrawColor(0, 0, 0)
   doc.setLineWidth(0.25)
   doc.rect(
     data.cell.x + (data.cell.width - size) / 2,
-    data.cell.y + padTop + (lineHeight - size) / 2,
+    data.cell.y + (data.cell.height - size) / 2,
     size,
     size
   )
@@ -74,9 +72,7 @@ export function drawPriorityBadge(doc, data, token, columnIndex = 2) {
   const h = 4.6
   const w = Math.min(data.cell.width - 1.5, token.length * 2.2 + 5)
   const x = data.cell.x + (data.cell.width - w) / 2
-  const padTop = typeof data.cell.padding === 'function' ? data.cell.padding('top') : 1.8
-  const lineHeight = 3.5
-  const y = data.cell.y + padTop + (lineHeight - h) / 2
+  const y = data.cell.y + (data.cell.height - h) / 2
   doc.setFillColor(220, 38, 38)
   doc.roundedRect(x, y, w, h, 1.4, 1.4, 'F')
   doc.setTextColor(255, 255, 255)
