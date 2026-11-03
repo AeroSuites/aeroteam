@@ -29,10 +29,10 @@ export function buildRecapPdf(profile, data) {
     String(n.title || '').startsWith('[C] ')
   )
 
-  doc.setFontSize(16)
+  doc.setFontSize(18)
   doc.setFont('helvetica', 'bold')
   doc.text(profileTitle(profile), margin, 15)
-  doc.setFontSize(10)
+  doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
   doc.text(
     `${(data?.tasks || []).length} tasks · ${assignedCount} assigned · ${
@@ -53,41 +53,41 @@ export function buildRecapPdf(profile, data) {
 
   // Consignes
   if (notes.length > 0) {
-    doc.setFontSize(12)
+    doc.setFontSize(13)
     doc.setFont('helvetica', 'bold')
     doc.text('Instructions', margin, y)
-    y += 6
+    y += 7
     notes.forEach((n) => {
       ensureRoom(10)
-      doc.setFontSize(8.5)
+      doc.setFontSize(9.5)
       doc.setFont('helvetica', 'bold')
       doc.text(String(n.title).replace('[C] ', ''), margin, y)
-      y += 3.5
+      y += 4.2
       doc.setFont('helvetica', 'normal')
       const lines = doc.splitTextToSize(n.content || '', contentWidth)
       lines.forEach((line) => {
-        ensureRoom(3.5)
+        ensureRoom(4.2)
         doc.text(line, margin, y)
-        y += 3.5
+        y += 4.2
       })
-      y += 2.5
+      y += 3
     })
   }
 
   // Équipes — cartes sur 2 colonnes, comme le récap à l'écran
-  doc.setFontSize(12)
+  doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
   ensureRoom(12)
   doc.text(`Profile teams (${(data?.teams || []).length})`, margin, y)
-  y += 8
+  y += 9
 
   const gap = 6
   const colW = (contentWidth - gap) / 2
   const colX = [margin, margin + colW + gap]
-  const chipH = 3.9
+  const chipH = 4.8
 
   const drawChip = (txt, x, yy, fill, opts = {}) => {
-    const fs = opts.fontSize || 6.5
+    const fs = opts.fontSize || 7.5
     const padX = opts.padX || 2
     const white = opts.white !== false
     doc.setFont('helvetica', 'bold')
@@ -96,7 +96,7 @@ export function buildRecapPdf(profile, data) {
     doc.setFillColor(...fill)
     doc.roundedRect(x, yy, w, chipH, 1.2, 1.2, 'F')
     doc.setTextColor(...(white ? [255, 255, 255] : [51, 65, 85]))
-    doc.text(txt, x + padX, yy + chipH - 1.4)
+    doc.text(txt, x + padX, yy + chipH - 1.6)
     doc.setTextColor(30, 41, 59)
     return w
   }
@@ -117,18 +117,18 @@ export function buildRecapPdf(profile, data) {
 
     const items = []
     items.push({
-      h: 8.5,
+      h: 10,
       draw: (x, yy) => {
         doc.setFillColor(...hexToRgb(team.color || '#767676'))
-        doc.roundedRect(x + 1.5, yy + 1, colW - 3, 7.5, 1.5, 1.5, 'F')
+        doc.roundedRect(x + 1.5, yy + 1, colW - 3, 9, 1.5, 1.5, 'F')
         doc.setFont('helvetica', 'bold')
-        doc.setFontSize(8.5)
+        doc.setFontSize(10)
         doc.setTextColor(255, 255, 255)
         const label = `${team.name}`
         const count = `${teamTasks.length} task${teamTasks.length > 1 ? 's' : ''}`
-        doc.text(doc.splitTextToSize(label, colW - 30)[0], x + 4, yy + 5.6)
-        doc.setFontSize(7)
-        doc.text(count, x + colW - 4 - doc.getTextWidth(count), yy + 5.6)
+        doc.text(doc.splitTextToSize(label, colW - 30)[0], x + 4, yy + 6.6)
+        doc.setFontSize(8)
+        doc.text(count, x + colW - 4 - doc.getTextWidth(count), yy + 6.6)
         doc.setTextColor(30, 41, 59)
       },
     })
@@ -141,7 +141,7 @@ export function buildRecapPdf(profile, data) {
       let curW = 0
       const maxW = colW - 8
       doc.setFont('helvetica', 'normal')
-      doc.setFontSize(6.5)
+      doc.setFontSize(7.5)
       memberChips.forEach((m) => {
         const w = doc.getTextWidth(m) + 4
         if (curW + w > maxW && cur.length) {
@@ -161,7 +161,7 @@ export function buildRecapPdf(profile, data) {
             row.forEach(({ m }) => {
               const w = drawChip(m, cx, yy + 1 + ri * (chipH + 1), [241, 245, 249], {
                 white: false,
-                fontSize: 6.5,
+                fontSize: 7.5,
                 maxW: colW - 8,
               })
               cx += w + 1.5
@@ -179,9 +179,9 @@ export function buildRecapPdf(profile, data) {
         draw: (x, yy) => {
           const w = drawChip(zone, x + 4, yy + 0.5, hexToRgb(getZoneColor(zone)))
           doc.setFont('helvetica', 'normal')
-          doc.setFontSize(6.5)
+          doc.setFontSize(7.5)
           doc.setTextColor(100, 116, 139)
-          doc.text(String(zoneTasks.length), x + 6 + w, yy + chipH - 1.4)
+          doc.text(String(zoneTasks.length), x + 6 + w, yy + chipH - 1.6)
           doc.setTextColor(30, 41, 59)
         },
       })
@@ -196,23 +196,24 @@ export function buildRecapPdf(profile, data) {
               hexToRgb(getCategoryColor(blk))
             )
             doc.setFont('helvetica', 'normal')
-            doc.setFontSize(6.5)
+            doc.setFontSize(7.5)
             doc.setTextColor(100, 116, 139)
-            doc.text(String(list.length), x + 6 + w, yy + chipH - 1.4)
+            doc.text(String(list.length), x + 6 + w, yy + chipH - 1.6)
             doc.setTextColor(30, 41, 59)
           },
         })
         list.forEach((t) => {
           items.push({
-            h: 3.7,
+            h: 4.6,
             draw: (x, yy) => {
               doc.setFont('helvetica', 'bold')
-              doc.setFontSize(6.5)
+              doc.setFontSize(8)
               doc.setTextColor(71, 85, 105)
-              doc.text(String(t.seq || '—'), x + 4, yy + 3)
+              doc.text(String(t.seq || '—'), x + 4, yy + 3.7)
               doc.setTextColor(30, 41, 59)
               // Description tronquée AVANT le code TRFX (jamais de chevauchement)
               doc.setFont('helvetica', 'normal')
+              doc.setFontSize(8)
               // Fin de TRFX : après « TRFX900 » (ex. TRFX900ABCD → ABCD)
               const rawBarcode = String(t.taskBarcode || '')
               const trfxMatch = rawBarcode.match(/TRFX900(.*)$/i)
@@ -225,7 +226,7 @@ export function buildRecapPdf(profile, data) {
                 immatW = doc.getTextWidth(tail) + 3
                 doc.setFont('helvetica', 'normal')
               }
-              const maxDescW = Math.max(20, colW - 16 - immatW)
+              const maxDescW = Math.max(20, colW - 18 - immatW)
               const fullDesc = String(t.description || '')
               let desc = fullDesc
               if (doc.getTextWidth(desc) > maxDescW) {
@@ -234,11 +235,11 @@ export function buildRecapPdf(profile, data) {
                 }
                 desc += '…'
               }
-              doc.text(desc, x + 12, yy + 3)
+              doc.text(desc, x + 14, yy + 3.7)
               if (tail) {
                 doc.setFont('helvetica', 'bold')
                 doc.setTextColor(3, 105, 161)
-                doc.text(tail, x + colW - 4 - doc.getTextWidth(tail), yy + 3)
+                doc.text(tail, x + colW - 4 - doc.getTextWidth(tail), yy + 3.7)
                 doc.setTextColor(30, 41, 59)
               }
             },

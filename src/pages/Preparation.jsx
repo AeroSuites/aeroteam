@@ -453,10 +453,10 @@ export default function Preparation() {
     const margin = 10
     const contentWidth = pageWidth - margin * 2
 
-    doc.setFontSize(16)
+    doc.setFontSize(18)
     doc.setFont('helvetica', 'bold')
     doc.text(printPocket.name, margin, 15)
-    doc.setFontSize(10)
+    doc.setFontSize(11)
     doc.setFont('helvetica', 'normal')
     const hours = Object.entries(printByBlock).reduce(
       (acc, [, info]) => acc + info.totalHours,
@@ -482,17 +482,17 @@ export default function Preparation() {
         y = 14
       }
       doc.setFillColor(...hexToRgb(getCategoryColor(blk)))
-      doc.rect(margin, y, contentWidth, 7, 'F')
-      doc.setFontSize(10)
+      doc.rect(margin, y, contentWidth, 9, 'F')
+      doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(255, 255, 255)
       doc.text(
         `Block ${getCategoryLabel(blk)} · ${info.count} task(s) · ${info.totalHours.toFixed(1)} h`,
         margin + 2,
-        y + 4.6
+        y + 5.8
       )
       doc.setTextColor(0, 0, 0)
-      y += 10
+      y += 12
 
       Object.keys(info.zones).forEach((zone) => {
         const zoneTasks = info.zones[zone]
@@ -509,7 +509,7 @@ export default function Preparation() {
                   fillColor: hexToRgb(getZoneColor(zone)),
                   textColor: [255, 255, 255],
                   fontStyle: 'bold',
-                  fontSize: 9,
+                  fontSize: 10.5,
                 },
               },
             ],
@@ -523,14 +523,14 @@ export default function Preparation() {
             t.registration || '—',
             t.note || '',
           ]),
-          styles: { fontSize: 8, cellPadding: 1.2, textColor: [0, 0, 0], fontStyle: 'bold' },
+          styles: { fontSize: 10, cellPadding: 1.8, textColor: [0, 0, 0], fontStyle: 'bold' },
           columnStyles: {
             0: { cellWidth: 8 },
             1: { cellWidth: 12 },
             2: { cellWidth: 16 },
             3: { cellWidth: 30, fontStyle: 'bold', textColor: [0, 0, 0] },
-            5: { cellWidth: 26, halign: 'left' },
-            6: { cellWidth: 40, textColor: [0, 0, 0], fontStyle: 'bolditalic' },
+            5: { cellWidth: 22, halign: 'left' },
+            6: { cellWidth: 34, textColor: [0, 0, 0], fontStyle: 'bolditalic' },
           },
           didDrawCell: (data) => {
             drawCheckboxCell(doc, data)

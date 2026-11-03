@@ -51,9 +51,9 @@ export async function downloadPdfAsJpeg(doc, filename) {
 // Alignée sur la PREMIÈRE ligne de texte (autoTable aligne le texte en haut).
 export function drawCheckboxCell(doc, data) {
   if (data.section !== 'body' || data.column.index !== 0) return
-  const size = 3.2
-  const padTop = typeof data.cell.padding === 'function' ? data.cell.padding('top') : 1.2
-  const lineHeight = 2.8
+  const size = 4.2
+  const padTop = typeof data.cell.padding === 'function' ? data.cell.padding('top') : 1.8
+  const lineHeight = 3.5
   doc.setDrawColor(0, 0, 0)
   doc.setLineWidth(0.25)
   doc.rect(
@@ -71,18 +71,18 @@ export function drawCheckboxCell(doc, data) {
 export function drawPriorityBadge(doc, data, token, columnIndex = 2) {
   if (data.section !== 'body' || data.column.index !== columnIndex) return
   if (!token) return
-  const h = 3.8
-  const w = Math.min(data.cell.width - 1.5, token.length * 2 + 5)
+  const h = 4.6
+  const w = Math.min(data.cell.width - 1.5, token.length * 2.2 + 5)
   const x = data.cell.x + (data.cell.width - w) / 2
-  const padTop = typeof data.cell.padding === 'function' ? data.cell.padding('top') : 1.2
-  const lineHeight = 2.8
+  const padTop = typeof data.cell.padding === 'function' ? data.cell.padding('top') : 1.8
+  const lineHeight = 3.5
   const y = data.cell.y + padTop + (lineHeight - h) / 2
   doc.setFillColor(220, 38, 38)
   doc.roundedRect(x, y, w, h, 1.4, 1.4, 'F')
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(6.5)
-  doc.text(token, x + w / 2, y + h / 2 + 0.7, { align: 'center' })
+  doc.setFontSize(7.5)
+  doc.text(token, x + w / 2, y + h / 2 + 0.9, { align: 'center' })
   doc.setTextColor(0, 0, 0)
 }
 
