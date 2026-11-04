@@ -528,7 +528,7 @@ export default function Preparation() {
             0: { cellWidth: 8 },
             1: { cellWidth: 12, halign: 'center' },
             2: { cellWidth: 16, halign: 'center' },
-            3: { cellWidth: 30, halign: 'center', fontStyle: 'bold', textColor: [0, 0, 0] },
+            3: { cellWidth: 30, halign: 'center', fontSize: 8.5, fontStyle: 'bold', textColor: [0, 0, 0] },
             5: { cellWidth: 22, halign: 'left' },
             6: { cellWidth: 34, textColor: [0, 0, 0], fontStyle: 'bolditalic' },
           },
