@@ -2,7 +2,8 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { useApp } from '../context/AppContext'
 import { groupTasksTree } from '../components/TaskTreeSelect'
-import { detectColumns, parseExcelRows, getCategoryColor, getCategoryLabel, CATEGORIES } from '../utils/helpers'
+import MissingSkillsAlert from '../components/MissingSkillsAlert'
+import { detectColumns, parseExcelRows, findRowsWithoutSkill, getCategoryColor, getCategoryLabel, CATEGORIES } from '../utils/helpers'
 import {
   Upload,
   FileSpreadsheet,
@@ -25,6 +26,8 @@ export default function ImportExcel() {
   const [expandedBlocks, setExpandedBlocks] = useState([])
   const [expandedZones, setExpandedZones] = useState([])
   const [selected, setSelected] = useState({})
+  // Lignes du fichier sans skill (exclues par le filtre) — signalées à l'utilisateur
+  const [missingSkills, setMissingSkills] = useState([])
 
   // Arborescence du fichier : bloc -> sous-tâche (zone) -> lignes
   const tree = useMemo(() => groupTasksTree(preview), [preview])
@@ -53,6 +56,7 @@ export default function ImportExcel() {
     (file) => {
       setError('')
       setImported(false)
+      setMissingSkills([])
       setFileName(file.name)
       const reader = new FileReader()
       reader.onload = (e) => {
@@ -79,6 +83,8 @@ export default function ImportExcel() {
           setSelected(Object.fromEntries(parsed.map((t) => [t.id, true])))
           setExpandedBlocks([])
           setExpandedZones([])
+          // Lignes sans skill : exclues par le filtre Skills → à signaler
+          setMissingSkills(findRowsWithoutSkill(rows.slice(1), detected))
 
           // Statistiques de filtrage
           const totalLines = rows.length - 1
@@ -155,6 +161,8 @@ export default function ImportExcel() {
           <p>• <strong>Task Type</strong>: all blocks (JIC, Found Fault, MPC, ADHOC, EO)</p>
         </div>
       </div>
+
+      {missingSkills.length > 0 && <MissingSkillsAlert rows={missingSkills} />}
 
       {error && (
         <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">

@@ -20,6 +20,7 @@ import {
   cleanShortValue,
   consigneDay,
   logicalToday,
+  findRowsWithoutSkill,
 } from './helpers'
 
 describe('taskContentKey / filterNewPrepTasks', () => {
@@ -333,5 +334,20 @@ describe('priorityTokens', () => {
     expect(priorityTokens('*** IDT ***')).toEqual(['IDT'])
     expect(priorityTokens('TLI / NSRE 123')).toEqual(['TLI', 'NSRE'])
     expect(priorityTokens('remplacement standard')).toEqual([])
+  })
+})
+
+describe('findRowsWithoutSkill', () => {
+  it('liste les lignes du fichier Victory sans skill (n°, titre, TRFX)', () => {
+    const columns = { seq: 0, description: 1, taskBarcode: 2, skills: 3 }
+    const rows = [
+      ['1', 'Task A', 'TRFX900AAA', 'B1'],
+      ['2', 'Task B', 'TRFX900BBB', ''],
+      ['', '', '', ''],
+      ['3', 'Task C', '', 'CABB'],
+    ]
+    expect(findRowsWithoutSkill(rows, columns)).toEqual([
+      { seq: '2', description: 'Task B', taskBarcode: 'TRFX900BBB' },
+    ])
   })
 })

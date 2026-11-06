@@ -550,6 +550,28 @@ export function parseExcelRows(rows, columns) {
   return result
 }
 
+// Lignes d'un fichier Victory sans skill (colonne « Skills » vide) : le filtre
+// Skills les exclut → source d'oubli, à signaler à l'utilisateur.
+export function findRowsWithoutSkill(rows, columns) {
+  if (!columns || columns.skills === undefined) return []
+  const get = (row, field) => {
+    const idx = columns[field]
+    if (idx === undefined) return ''
+    const v = row ? row[idx] : undefined
+    return v === undefined || v === null ? '' : String(v).trim()
+  }
+  const out = []
+  ;(rows || []).forEach((row) => {
+    const seq = get(row, 'seq')
+    const description = get(row, 'description')
+    const taskBarcode = get(row, 'taskBarcode')
+    if (!seq && !description && !taskBarcode) return // ligne vide
+    if (get(row, 'skills')) return
+    out.push({ seq, description, taskBarcode })
+  })
+  return out
+}
+
 // Lien Maintenix : ouvre une ligne à partir de son TRFX (ScanBarcode).
 export function trfxUrl(barcode) {
   const b = String(barcode || '').trim()

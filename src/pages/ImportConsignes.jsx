@@ -1,5 +1,6 @@
 import TaskTreeSelect, { groupTasksTree } from '../components/TaskTreeSelect'
 import TrfxLink from '../components/TrfxLink'
+import MissingSkillsAlert from '../components/MissingSkillsAlert'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import {
@@ -11,6 +12,7 @@ import {
   detectColumns,
   parseExcelRows,
   dedupeAndMerge,
+  findRowsWithoutSkill,
   getCategoryColor,
   getCategoryLabel,
   getZoneColor,
@@ -90,6 +92,7 @@ export default function ImportConsignes() {
   const [chargeExpandedBlocks, setChargeExpandedBlocks] = useState([])
   const [chargeExpandedZones, setChargeExpandedZones] = useState([])
   const [chargeAircraft, setChargeAircraft] = useState('')
+  const [chargeMissingSkills, setChargeMissingSkills] = useState([])
   const [hideNoConsignes, setHideNoConsignes] = useState(true)
   const [chargeTargetTasks, setChargeTargetTasks] = useState(null)
   const [chargeRemoveSel, setChargeRemoveSel] = useState({})
@@ -288,6 +291,7 @@ export default function ImportConsignes() {
   const handleChargeFile = (file) => {
     setChargeError('')
     setChargeMsg('')
+    setChargeMissingSkills([])
     setChargeFileName(file.name)
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -311,6 +315,7 @@ export default function ImportConsignes() {
         setChargeExpandedBlocks([])
         setChargeExpandedZones([])
         setChargeAircraft('')
+        setChargeMissingSkills(findRowsWithoutSkill(rows.slice(1), detected))
         setChargeStats({
           totalLines: rows.length - 1,
           kept: parsed.length,
@@ -1400,6 +1405,10 @@ export default function ImportConsignes() {
               <p>• <strong>Task Type</strong>: all blocks (JIC, Found Fault, MPC, ADHOC, EO)</p>
             </div>
           </div>
+
+          {chargeMissingSkills.length > 0 && (
+            <MissingSkillsAlert rows={chargeMissingSkills} />
+          )}
 
           {chargeError && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
