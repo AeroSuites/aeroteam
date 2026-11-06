@@ -105,20 +105,37 @@ export default function ImportExcel() {
   )
 
   // Intégration manuelle des lignes sans skill : le skill saisi remplit la
-  // colonne manquante et la ligne est importée (filtre Skills contourné).
+  // colonne manquante, le bloc et la sous-tâche choisis sont appliqués, puis
+  // la ligne est importée (filtres Skills et Task Type contournés).
   const handleImportMissingSkills = (items) => {
     if (!importColumns || !items.length) return
-    const filled = items
-      .filter((it) => String(it.skill || '').trim())
-      .map((it) => {
-        const row = [...it.row]
-        row[importColumns.skills] = String(it.skill).trim()
-        return row
+    const tasks = []
+    let ignored = 0
+    items.forEach((it) => {
+      const skill = String(it.skill || '').trim()
+      if (!skill) return
+      const row = [...it.row]
+      row[importColumns.skills] = skill
+      const one = parseExcelRows([row], importColumns, {
+        skipSkillFilter: true,
+        skipTypeFilter: true,
       })
-    if (!filled.length) return
-    const parsed = parseExcelRows(filled, importColumns, { skipSkillFilter: true })
-    if (parsed.length) addTasks(parsed)
-    const ignored = filled.length - parsed.length
+      if (!one.length) {
+        ignored += 1
+        return
+      }
+      const t = one[0]
+      if (it.taskType) {
+        t.taskType = it.taskType
+        t.category = it.taskType
+      }
+      if (it.workArea) {
+        t.workArea = it.workArea
+        t.zone = it.workArea
+      }
+      tasks.push(t)
+    })
+    if (tasks.length) addTasks(tasks)
     const done = new Set(items.map((it) => it.row))
     setMissingSkills((prev) =>
       prev.map((r) => (done.has(r.row) ? { ...r, imported: true } : r))
@@ -127,14 +144,14 @@ export default function ImportExcel() {
       s
         ? {
             ...s,
-            kept: s.kept + parsed.length,
-            filteredOut: Math.max(0, s.filteredOut - parsed.length),
+            kept: s.kept + tasks.length,
+            filteredOut: Math.max(0, s.filteredOut - tasks.length),
           }
         : s
     )
     setMissingMsg(
-      `${parsed.length} line(s) added to Tasks${
-        ignored ? ` · ${ignored} ignored (status/type filter)` : ''
+      `${tasks.length} line(s) added to Tasks${
+        ignored ? ` · ${ignored} ignored (status filter)` : ''
       }.`
     )
   }
@@ -202,7 +219,12 @@ export default function ImportExcel() {
       </div>
 
       {missingSkills.some((r) => !r.imported) && (
-        <MissingSkillsAlert rows={missingSkills} onImport={handleImportMissingSkills} />
+        <MissingSkillsAlert
+          key={fileName}
+          rows={missingSkills}
+          onImport={handleImportMissingSkills}
+          zones={[...new Set(preview.map((t) => t.workArea).filter(Boolean))]}
+        />
       )}
       {missingMsg && (
         <p className="text-sm text-green-700 font-semibold">{missingMsg}</p>

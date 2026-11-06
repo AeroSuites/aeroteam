@@ -474,8 +474,9 @@ export function filterRow(row, columns, options = {}) {
     if (!IMPORT_FILTERS.mtxStatus.match(status)) return false
   }
 
-  // Filtre Task Type (colonne H)
-  if (IMPORT_FILTERS.taskType.enabled) {
+  // Filtre Task Type (colonne H) — contournable quand l'utilisateur choisit
+  // lui-même le bloc lors de l'intégration manuelle d'une ligne.
+  if (IMPORT_FILTERS.taskType.enabled && !options.skipTypeFilter) {
     const type = get('taskType')
     if (!IMPORT_FILTERS.taskType.match(type)) return false
   }
@@ -568,7 +569,14 @@ export function findRowsWithoutSkill(rows, columns) {
     const taskBarcode = get(row, 'taskBarcode')
     if (!seq && !description && !taskBarcode) return // ligne vide
     if (get(row, 'skills')) return
-    out.push({ seq, description, taskBarcode, row })
+    out.push({
+      seq,
+      description,
+      taskBarcode,
+      taskType: get(row, 'taskType'),
+      workArea: get(row, 'workArea'),
+      row,
+    })
   })
   return out
 }

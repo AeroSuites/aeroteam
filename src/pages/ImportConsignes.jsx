@@ -332,33 +332,59 @@ export default function ImportConsignes() {
     reader.readAsArrayBuffer(file)
   }
 
-  // Intégration manuelle des lignes sans skill dans la charge (skill saisi).
+  // Intégration manuelle des lignes sans skill dans la charge : skill saisi,
+  // bloc et sous-tâche choisis (filtres Skills et Task Type contournés).
   const handleImportChargeMissingSkills = (items) => {
     if (!chargeImportColumns || !items.length) return
-    const filled = items
-      .filter((it) => String(it.skill || '').trim())
-      .map((it) => {
-        const row = [...it.row]
-        row[chargeImportColumns.skills] = String(it.skill).trim()
-        return row
+    const parsed = []
+    let ignored = 0
+    items.forEach((it) => {
+      const skill = String(it.skill || '').trim()
+      if (!skill) return
+      const row = [...it.row]
+      row[chargeImportColumns.skills] = skill
+      const one = parseExcelRows([row], chargeImportColumns, {
+        skipSkillFilter: true,
+        skipTypeFilter: true,
       })
-    if (!filled.length) return
-    const parsed = parseExcelRows(filled, chargeImportColumns, { skipSkillFilter: true })
+      if (!one.length) {
+        ignored += 1
+        return
+      }
+      const t = one[0]
+      if (it.taskType) {
+        t.taskType = it.taskType
+        t.category = it.taskType
+      }
+      if (it.workArea) {
+        t.workArea = it.workArea
+        t.zone = it.workArea
+      }
+      parsed.push(t)
+    })
     if (parsed.length) {
       setChargePreview((prev) => [...prev, ...parsed])
       setChargeSelected((prev) => ({
         ...prev,
         ...Object.fromEntries(parsed.map((t) => [t.id, true])),
       }))
+      setChargeStats((s) =>
+        s
+          ? {
+              ...s,
+              kept: s.kept + parsed.length,
+              filteredOut: Math.max(0, s.filteredOut - parsed.length),
+            }
+          : s
+      )
     }
-    const ignored = filled.length - parsed.length
     const done = new Set(items.map((it) => it.row))
     setChargeMissingSkills((prev) =>
       prev.map((r) => (done.has(r.row) ? { ...r, imported: true } : r))
     )
     setChargeMissingMsg(
       `${parsed.length} line(s) added to the charge${
-        ignored ? ` · ${ignored} ignored (status/type filter)` : ''
+        ignored ? ` · ${ignored} ignored (status filter)` : ''
       }.`
     )
   }
@@ -1443,9 +1469,11 @@ export default function ImportConsignes() {
 
           {chargeMissingSkills.some((r) => !r.imported) && (
             <MissingSkillsAlert
+              key={chargeFileName}
               rows={chargeMissingSkills}
               onImport={handleImportChargeMissingSkills}
               importLabel="Add checked lines to the charge"
+              zones={[...new Set(chargePreview.map((t) => t.workArea).filter(Boolean))]}
             />
           )}
           {chargeMissingMsg && (
