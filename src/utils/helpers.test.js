@@ -21,6 +21,7 @@ import {
   consigneDay,
   logicalToday,
   findRowsWithoutSkill,
+  findWrongSkillFoundFault,
 } from './helpers'
 
 describe('taskContentKey / filterNewPrepTasks', () => {
@@ -334,6 +335,29 @@ describe('priorityTokens', () => {
     expect(priorityTokens('*** IDT ***')).toEqual(['IDT'])
     expect(priorityTokens('TLI / NSRE 123')).toEqual(['TLI', 'NSRE'])
     expect(priorityTokens('remplacement standard')).toEqual([])
+  })
+})
+
+describe('findWrongSkillFoundFault', () => {
+  it('détecte les Found Fault des slots ATA ciblés sans CABB1B2', () => {
+    const columns = {
+      seq: 0,
+      description: 1,
+      taskBarcode: 2,
+      taskType: 3,
+      configSlot: 4,
+      skills: 5,
+    }
+    const rows = [
+      ['1', 'NSRE door', 'TRFX900A', 'CORR', '25-21-00', 'B1B2'],
+      ['2', 'JIC cabin', 'TRFX900B', 'JIC', '25-21-00', 'B1B2'],
+      ['3', 'FF ok', 'TRFX900C', 'CORR', '25-00-00', 'CABB1B2'],
+      ['4', 'FF slot 52', 'TRFX900D', 'CORR', '52-00-00', 'B1B2'],
+      ['5', 'FF sans skill', 'TRFX900E', 'CORR', '25-00-00', ''],
+      ['6', 'FF 33', 'TRFX900F', 'CORR', '33-42-03', 'B1/B2'],
+    ]
+    const result = findWrongSkillFoundFault(rows, columns)
+    expect(result.map((r) => r.seq)).toEqual(['1', '6'])
   })
 })
 

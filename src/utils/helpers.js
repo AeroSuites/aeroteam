@@ -581,6 +581,34 @@ export function findRowsWithoutSkill(rows, columns) {
   return out
 }
 
+// Found Fault (CORR) dans les slots ATA 11/12/21/23/25/33/35/38/44/56 avec un
+// skill autre que CABB1B2 : lignes au « mauvais skill », à proposer à l'import.
+export function findWrongSkillFoundFault(rows, columns) {
+  if (!columns || columns.skills === undefined || columns.taskType === undefined) return []
+  const SLOT_RE = /^(11|12|21|23|25|33|35|38|44|56)/
+  const get = (row, field) => {
+    const idx = columns[field]
+    if (idx === undefined) return ''
+    const v = row ? row[idx] : undefined
+    return v === undefined || v === null ? '' : String(v).trim()
+  }
+  const out = []
+  ;(rows || []).forEach((row) => {
+    const seq = get(row, 'seq')
+    const description = get(row, 'description')
+    const taskBarcode = get(row, 'taskBarcode')
+    if (!seq && !description && !taskBarcode) return // ligne vide
+    if (get(row, 'taskType').toUpperCase() !== 'CORR') return
+    const configSlot = get(row, 'configSlot')
+    if (!SLOT_RE.test(configSlot)) return
+    const skills = get(row, 'skills')
+    if (!skills) return // skill vide → traité par l'alerte « lignes sans skill »
+    if (skills.toUpperCase().includes('CABB1B2')) return
+    out.push({ seq, description, taskBarcode, configSlot, skills, row })
+  })
+  return out
+}
+
 // Lien Maintenix : ouvre une ligne à partir de son TRFX (ScanBarcode).
 export function trfxUrl(barcode) {
   const b = String(barcode || '').trim()

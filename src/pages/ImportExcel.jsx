@@ -3,7 +3,8 @@ import * as XLSX from 'xlsx'
 import { useApp } from '../context/AppContext'
 import { groupTasksTree } from '../components/TaskTreeSelect'
 import MissingSkillsAlert from '../components/MissingSkillsAlert'
-import { detectColumns, parseExcelRows, findRowsWithoutSkill, getCategoryColor, getCategoryLabel, CATEGORIES } from '../utils/helpers'
+import WrongSkillAlert from '../components/WrongSkillAlert'
+import { detectColumns, parseExcelRows, findRowsWithoutSkill, findWrongSkillFoundFault, getCategoryColor, getCategoryLabel, CATEGORIES } from '../utils/helpers'
 import {
   Upload,
   FileSpreadsheet,
@@ -31,6 +32,9 @@ export default function ImportExcel() {
   const [missingSkills, setMissingSkills] = useState([])
   const [importColumns, setImportColumns] = useState(null)
   const [missingMsg, setMissingMsg] = useState('')
+  // Found Fault dans les slots ATA ciblés avec un mauvais skill (≠ CABB1B2)
+  const [wrongSkillLines, setWrongSkillLines] = useState([])
+  const [wrongSkillMsg, setWrongSkillMsg] = useState('')
 
   // Arborescence du fichier : bloc -> sous-tâche (zone) -> lignes
   const tree = useMemo(() => groupTasksTree(preview), [preview])
@@ -61,6 +65,8 @@ export default function ImportExcel() {
       setImported(false)
       setMissingSkills([])
       setMissingMsg('')
+      setWrongSkillLines([])
+      setWrongSkillMsg('')
       setFileName(file.name)
       const reader = new FileReader()
       reader.onload = (e) => {
@@ -90,6 +96,7 @@ export default function ImportExcel() {
           // Lignes sans skill : exclues par le filtre Skills → à signaler
           setImportColumns(detected)
           setMissingSkills(findRowsWithoutSkill(rows.slice(1), detected))
+          setWrongSkillLines(findWrongSkillFoundFault(rows.slice(1), detected))
 
           // Statistiques de filtrage
           const totalLines = rows.length - 1
@@ -152,6 +159,47 @@ export default function ImportExcel() {
     )
     setMissingMsg(
       `${tasks.length} line(s) added to Tasks${
+        ignored ? ` · ${ignored} ignored (status filter)` : ''
+      }.`
+    )
+  }
+
+  // Intégration des Found Fault au mauvais skill : le skill est corrigé en
+  // CABB1B2, la ligne passe alors le filtre Skills et rejoint les tâches.
+  const handleImportWrongSkill = (items) => {
+    if (!importColumns || !items.length) return
+    const tasks = []
+    let ignored = 0
+    items.forEach((it) => {
+      const row = [...it.row]
+      row[importColumns.skills] = 'CABB1B2'
+      const one = parseExcelRows([row], importColumns)
+      if (!one.length) {
+        ignored += 1
+        return
+      }
+      const t = one[0]
+      t.skills = 'CABB1B2'
+      t.taskType = 'CORR'
+      t.category = 'CORR'
+      tasks.push(t)
+    })
+    if (tasks.length) addTasks(tasks)
+    const done = new Set(items.map((it) => it.row))
+    setWrongSkillLines((prev) =>
+      prev.map((r) => (done.has(r.row) ? { ...r, imported: true } : r))
+    )
+    setStats((s) =>
+      s
+        ? {
+            ...s,
+            kept: s.kept + tasks.length,
+            filteredOut: Math.max(0, s.filteredOut - tasks.length),
+          }
+        : s
+    )
+    setWrongSkillMsg(
+      `${tasks.length} Found Fault line(s) added to Tasks (skill CABB1B2)${
         ignored ? ` · ${ignored} ignored (status filter)` : ''
       }.`
     )
@@ -247,6 +295,17 @@ export default function ImportExcel() {
       )}
       {missingMsg && (
         <p className="text-sm text-green-700 font-semibold">{missingMsg}</p>
+      )}
+
+      {wrongSkillLines.some((r) => !r.imported) && (
+        <WrongSkillAlert
+          key={`wrong-${fileName}`}
+          rows={wrongSkillLines}
+          onImport={handleImportWrongSkill}
+        />
+      )}
+      {wrongSkillMsg && (
+        <p className="text-sm text-green-700 font-semibold">{wrongSkillMsg}</p>
       )}
 
       {error && (
