@@ -1473,7 +1473,14 @@ export default function ImportConsignes() {
               rows={chargeMissingSkills}
               onImport={handleImportChargeMissingSkills}
               importLabel="Add checked lines to the charge"
-              zones={[...new Set(chargePreview.map((t) => t.workArea).filter(Boolean))]}
+              zones={[
+                ...new Set(
+                  [
+                    ...chargePreview.map((t) => t.workArea),
+                    ...chargeMissingSkills.map((r) => r.workArea),
+                  ].filter(Boolean)
+                ),
+              ]}
             />
           )}
           {chargeMissingMsg && (

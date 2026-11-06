@@ -2,19 +2,25 @@ import { useState } from 'react'
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { CATEGORIES, getCategoryLabel } from '../utils/helpers'
 
+// Skill proposé par défaut pour les lignes sans skill
+const DEFAULT_SKILL = 'CAB1B2'
+
 // Alerte : lignes du fichier Victory sans skill (colonne « Skills » vide).
 // Elles sont exclues par le filtre Skills → on propose de renseigner le skill
 // manquant, de choisir le bloc / la sous-tâche, et de les intégrer malgré tout.
 export default function MissingSkillsAlert({ rows, onImport, importLabel, zones }) {
-  const [skills, setSkills] = useState({})
+  const [skills, setSkills] = useState(() =>
+    Object.fromEntries((rows || []).map((_, i) => [i, DEFAULT_SKILL]))
+  )
   const [blocks, setBlocks] = useState(() =>
     Object.fromEntries(
       (rows || []).map((r, i) => [i, CATEGORIES.includes(r.taskType) ? r.taskType : ''])
     )
   )
-  const [zonesSel, setZonesSel] = useState(() =>
+  const [subTasks, setSubTasks] = useState(() =>
     Object.fromEntries((rows || []).map((r, i) => [i, r.workArea || '']))
   )
+  const [newSubTasks, setNewSubTasks] = useState({})
   const [checked, setChecked] = useState(() =>
     Object.fromEntries((rows || []).map((_, i) => [i, true]))
   )
@@ -28,6 +34,11 @@ export default function MissingSkillsAlert({ rows, onImport, importLabel, zones 
   )
   const canImport = Boolean(onImport) && checkedCount > 0 && allFilled
 
+  const subTaskFor = (i) =>
+    subTasks[i] === '__NEW__'
+      ? String(newSubTasks[i] || '').trim()
+      : String(subTasks[i] || '').trim()
+
   const handleImport = () => {
     if (!canImport) return
     const items = selectable
@@ -36,7 +47,7 @@ export default function MissingSkillsAlert({ rows, onImport, importLabel, zones 
         row: rows[i].row,
         skill: String(skills[i] || '').trim(),
         taskType: blocks[i] || '',
-        workArea: String(zonesSel[i] || '').trim(),
+        workArea: subTaskFor(i),
       }))
     onImport(items)
   }
@@ -52,11 +63,11 @@ export default function MissingSkillsAlert({ rows, onImport, importLabel, zones 
       </h3>
       <p className="text-xs text-amber-700 mb-3">
         The Skills column is empty on these lines: they are dropped by the Skills
-        filter. Fill in the missing skill, choose the block / sub-task, then import
-        them anyway.
+        filter. Fill in the missing skill (default {DEFAULT_SKILL}), choose the block /
+        sub-task, then import them anyway.
       </p>
       <div className="max-h-64 overflow-auto rounded-lg border border-amber-200 bg-white">
-        <table className="w-full min-w-[860px] text-xs">
+        <table className="w-full min-w-[880px] text-xs">
           <thead className="sticky top-0 bg-amber-100 text-amber-900">
             <tr>
               <th className="px-2 py-1.5 w-8"></th>
@@ -65,7 +76,7 @@ export default function MissingSkillsAlert({ rows, onImport, importLabel, zones 
               <th className="text-left px-2 py-1.5 w-36">TRFX</th>
               <th className="text-left px-2 py-1.5 w-32">Skill</th>
               <th className="text-left px-2 py-1.5 w-32">Block</th>
-              <th className="text-left px-2 py-1.5 w-36">Sub-task</th>
+              <th className="text-left px-2 py-1.5 w-40">Sub-task</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-amber-100">
@@ -97,7 +108,7 @@ export default function MissingSkillsAlert({ rows, onImport, importLabel, zones 
                     <input
                       value={skills[i] || ''}
                       onChange={(e) => setSkills((prev) => ({ ...prev, [i]: e.target.value }))}
-                      placeholder="e.g. B1B2"
+                      placeholder={DEFAULT_SKILL}
                       disabled={!checked[i]}
                       className="w-full border border-amber-300 rounded px-2 py-1 text-xs disabled:bg-slate-50 disabled:opacity-60"
                     />
@@ -120,26 +131,38 @@ export default function MissingSkillsAlert({ rows, onImport, importLabel, zones 
                   </select>
                 </td>
                 <td className="px-2 py-1">
-                  <input
-                    list="missing-skill-zones"
-                    value={zonesSel[i] || ''}
-                    onChange={(e) => setZonesSel((prev) => ({ ...prev, [i]: e.target.value }))}
-                    placeholder="e.g. CABIN"
+                  <select
+                    value={subTasks[i] || ''}
+                    onChange={(e) => setSubTasks((prev) => ({ ...prev, [i]: e.target.value }))}
                     disabled={!checked[i] || r.imported}
-                    className="w-full border border-amber-300 rounded px-2 py-1 text-xs disabled:bg-slate-50 disabled:opacity-60"
-                    title="Choose an existing sub-task or type a new one"
-                  />
+                    className="w-full border border-amber-300 rounded px-1.5 py-1 text-xs bg-white disabled:bg-slate-50 disabled:opacity-60"
+                    title="Choose an existing sub-task or create a new one"
+                  >
+                    <option value="">— Sub-task —</option>
+                    {zoneOptions.map((z) => (
+                      <option key={z} value={z}>
+                        {z}
+                      </option>
+                    ))}
+                    <option value="__NEW__">➕ New sub-task…</option>
+                  </select>
+                  {subTasks[i] === '__NEW__' && !r.imported && (
+                    <input
+                      value={newSubTasks[i] || ''}
+                      onChange={(e) =>
+                        setNewSubTasks((prev) => ({ ...prev, [i]: e.target.value }))
+                      }
+                      placeholder="New sub-task name"
+                      disabled={!checked[i]}
+                      className="mt-1 w-full border border-amber-300 rounded px-2 py-1 text-xs disabled:bg-slate-50 disabled:opacity-60"
+                    />
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <datalist id="missing-skill-zones">
-        {zoneOptions.map((z) => (
-          <option key={z} value={z} />
-        ))}
-      </datalist>
       <div className="flex flex-wrap items-center gap-3 mt-3">
         <button
           onClick={handleImport}

@@ -223,7 +223,14 @@ export default function ImportExcel() {
           key={fileName}
           rows={missingSkills}
           onImport={handleImportMissingSkills}
-          zones={[...new Set(preview.map((t) => t.workArea).filter(Boolean))]}
+          zones={[
+            ...new Set(
+              [
+                ...preview.map((t) => t.workArea),
+                ...missingSkills.map((r) => r.workArea),
+              ].filter(Boolean)
+            ),
+          ]}
         />
       )}
       {missingMsg && (
