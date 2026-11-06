@@ -12,6 +12,7 @@ import {
   Filter,
   ChevronDown,
   ChevronRight,
+  ExternalLink,
 } from 'lucide-react'
 
 export default function ImportExcel() {
@@ -199,11 +200,22 @@ export default function ImportExcel() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Import your tasks</h1>
-        <p className="text-slate-600 mt-1">
-          Upload your Workpackage Report. Tasks are filtered and classified automatically.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Import your tasks</h1>
+          <p className="text-slate-600 mt-1">
+            Upload your Workpackage Report. Tasks are filtered and classified automatically.
+          </p>
+        </div>
+        <a
+          href="https://www.vic.klm.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 bg-white border border-sky-300 text-sky-700 px-4 py-2 rounded-md hover:bg-sky-50 text-sm font-semibold"
+          title="Open the Victory tracking site (company network or VPN required)"
+        >
+          <ExternalLink className="h-4 w-4" /> Open Victory tracking
+        </a>
       </div>
 
       {/* Rappel des filtres actifs */}
