@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
+import TrfxLink from './TrfxLink'
 
 // Alerte : lignes Found Fault (CORR) dans les slots ATA 11/12/21/23/25/33/35/
 // 38/44/56 qui n'ont pas le skill CABB1B2 (mauvais skill dans le fichier).
@@ -65,7 +66,7 @@ export default function WrongSkillAlert({ rows, onImport }) {
                 <td className="px-2 py-1 font-bold text-slate-600">{r.seq || '—'}</td>
                 <td className="px-2 py-1 text-slate-700">{r.description || '—'}</td>
                 <td className="px-2 py-1 font-mono font-bold text-sky-700">
-                  {r.taskBarcode || '—'}
+                  {r.taskBarcode ? <TrfxLink value={r.taskBarcode} /> : '—'}
                 </td>
                 <td className="px-2 py-1 font-mono font-semibold text-slate-700">
                   {r.configSlot || '—'}

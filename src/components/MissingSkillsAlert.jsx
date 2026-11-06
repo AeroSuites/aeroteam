@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { CATEGORIES, getCategoryLabel } from '../utils/helpers'
+import TrfxLink from './TrfxLink'
 
 // Skill proposé par défaut pour les lignes sans skill
 const DEFAULT_SKILL = 'CAB1B2'
@@ -97,7 +98,7 @@ export default function MissingSkillsAlert({ rows, onImport, importLabel, zones 
                 <td className="px-2 py-1 font-bold text-slate-600">{r.seq || '—'}</td>
                 <td className="px-2 py-1 text-slate-700">{r.description || '—'}</td>
                 <td className="px-2 py-1 font-mono font-bold text-sky-700">
-                  {r.taskBarcode || '—'}
+                  {r.taskBarcode ? <TrfxLink value={r.taskBarcode} /> : '—'}
                 </td>
                 <td className="px-2 py-1">
                   {r.imported ? (
