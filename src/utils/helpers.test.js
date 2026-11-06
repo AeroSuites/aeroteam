@@ -346,8 +346,28 @@ describe('findRowsWithoutSkill', () => {
       ['', '', '', ''],
       ['3', 'Task C', '', 'CABB'],
     ]
-    expect(findRowsWithoutSkill(rows, columns)).toEqual([
-      { seq: '2', description: 'Task B', taskBarcode: 'TRFX900BBB' },
-    ])
+    const result = findRowsWithoutSkill(rows, columns)
+    expect(result).toHaveLength(1)
+    expect(result[0].seq).toBe('2')
+    expect(result[0].description).toBe('Task B')
+    expect(result[0].taskBarcode).toBe('TRFX900BBB')
+    expect(result[0].row).toBe(rows[1])
+  })
+
+  it('parseExcelRows peut contourner le filtre Skills pour l’intégration manuelle', () => {
+    const columns = {
+      seq: 0,
+      description: 1,
+      taskBarcode: 2,
+      skills: 3,
+      mtxStatus: 4,
+      taskType: 5,
+    }
+    const rows = [['7', 'Task D', 'TRFX900DDD', 'B1', 'ACTV', 'JIC']]
+    expect(parseExcelRows(rows, columns)).toHaveLength(0)
+    const parsed = parseExcelRows(rows, columns, { skipSkillFilter: true })
+    expect(parsed).toHaveLength(1)
+    expect(parsed[0].skills).toBe('B1')
+    expect(parsed[0].seq).toBe('7')
   })
 })

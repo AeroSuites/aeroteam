@@ -455,14 +455,15 @@ export function detectColumns(headers) {
 }
 
 // Filtre les lignes selon les règles d'import
-export function filterRow(row, columns) {
+export function filterRow(row, columns, options = {}) {
   const get = (field) => {
     const idx = columns[field]
     return idx !== undefined ? row[idx] : undefined
   }
 
-  // Filtre Skill (colonne F)
-  if (IMPORT_FILTERS.skills.enabled) {
+  // Filtre Skill (colonne F) — contournable pour l'intégration manuelle des
+  // lignes sans skill après saisie du skill manquant.
+  if (IMPORT_FILTERS.skills.enabled && !options.skipSkillFilter) {
     const skill = get('skills')
     if (!IMPORT_FILTERS.skills.match(skill)) return false
   }
@@ -494,7 +495,7 @@ export function cleanShortValue(v) {
   return s
 }
 
-export function parseExcelRows(rows, columns) {
+export function parseExcelRows(rows, columns, options = {}) {
   const result = []
 
   rows.forEach((row, _idx) => {
@@ -504,7 +505,7 @@ export function parseExcelRows(rows, columns) {
     }
 
     // Applique les filtres
-    if (!filterRow(row, columns)) return
+    if (!filterRow(row, columns, options)) return
 
     const description = get('description')
       ? String(get('description'))
@@ -567,7 +568,7 @@ export function findRowsWithoutSkill(rows, columns) {
     const taskBarcode = get(row, 'taskBarcode')
     if (!seq && !description && !taskBarcode) return // ligne vide
     if (get(row, 'skills')) return
-    out.push({ seq, description, taskBarcode })
+    out.push({ seq, description, taskBarcode, row })
   })
   return out
 }
