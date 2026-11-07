@@ -15,9 +15,8 @@ export default function WrongSkillAlert({ rows, onImport, zones }) {
     Object.fromEntries((rows || []).map((r, i) => [i, r.workArea || '']))
   )
   const [newSubTasks, setNewSubTasks] = useState({})
-  const [checked, setChecked] = useState(() =>
-    Object.fromEntries((rows || []).map((_, i) => [i, true]))
-  )
+  // Aucune ligne cochée par défaut (sélection volontaire)
+  const [checked, setChecked] = useState({})
 
   if (!rows || rows.length === 0) return null
 
