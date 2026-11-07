@@ -38,6 +38,7 @@ export default function ImportExcel() {
   // Lignes COMPLETE du fichier (même immatriculation) — proposées à l'import
   const [completeLines, setCompleteLines] = useState([])
   const [completeImported, setCompleteImported] = useState(0)
+  const [includeCompleteCheck, setIncludeCompleteCheck] = useState(false)
 
   // Arborescence du fichier : bloc -> sous-tâche (zone) -> lignes
   const tree = useMemo(() => groupTasksTree(preview), [preview])
@@ -72,6 +73,7 @@ export default function ImportExcel() {
       setWrongSkillMsg('')
       setCompleteLines([])
       setCompleteImported(0)
+      setIncludeCompleteCheck(false)
       setFileName(file.name)
       const reader = new FileReader()
       reader.onload = (e) => {
@@ -224,7 +226,7 @@ export default function ImportExcel() {
   const handleImport = () => {
     const list = preview.filter((t) => selected[t.id])
     const fileTasks = [...preview, ...completeLines]
-    if (!list.length && !completeLines.length) return
+    if (!list.length && !(includeCompleteCheck && completeLines.length)) return
 
     // Alerte immatriculations : le fichier concerne-t-il un autre avion que la
     // charge déjà en place ? (import accidentel sans effacer l'ancienne charge)
@@ -259,18 +261,11 @@ export default function ImportExcel() {
     }
 
     // Même immatriculation : proposer d'intégrer (ou d'exclure) les lignes
-    // COMPLETE du fichier, en passant leur statut à COMPLETE dans AeroTeam.
-    const sameReg =
-      newRegs.length === 1 && existingRegs.length > 0 && existingRegs.includes(newRegs[0])
-    let includeComplete = false
-    if (sameReg && completeLines.length > 0) {
-      includeComplete = window.confirm(
-        `This file contains ${completeLines.length} COMPLETE line(s) for aircraft ${newRegs[0]}.\n\nOK = include them in AeroTeam with status COMPLETE (lines already present are set to COMPLETE).\nCancel = exclude the COMPLETE lines (import only the selected lines).`
-      )
-    }
+    // Lignes COMPLETE : incluses uniquement si la case dédiée est cochée
+    // (le choix se fait avant l'import, sans pop-up).
     addTasks(list)
     let completeAdded = 0
-    if (includeComplete) {
+    if (includeCompleteCheck && completeLines.length > 0) {
       const bySeq = new Map()
       tasks.forEach((t) => {
         if (t.seq !== undefined && t.seq !== '') bySeq.set(String(t.seq), t)
@@ -459,7 +454,10 @@ export default function ImportExcel() {
             </div>
             <button
               onClick={handleImport}
-              disabled={selectedCount === 0 && completeLines.length === 0}
+              disabled={
+                selectedCount === 0 &&
+                !(includeCompleteCheck && completeLines.length > 0)
+              }
               className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 flex items-center gap-2"
             >
               <CheckCircle2 className="h-4 w-4" />
@@ -468,6 +466,22 @@ export default function ImportExcel() {
                 : `Import COMPLETE lines (${completeLines.length})`}
             </button>
           </div>
+
+          {completeLines.length > 0 && (
+            <label className="flex items-start gap-2 px-6 py-3 bg-amber-50 border-b border-amber-200 text-xs text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includeCompleteCheck}
+                onChange={(e) => setIncludeCompleteCheck(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-sky-600 shrink-0"
+              />
+              <span>
+                <strong>Include the {completeLines.length} COMPLETE line(s)</strong> with
+                status COMPLETE. Lines already present (same number) are set to COMPLETE.
+                Unchecked = the COMPLETE lines are excluded.
+              </span>
+            </label>
+          )}
 
           {imported && (
             <div className="bg-green-50 border-b border-green-200 text-green-700 px-6 py-3 flex items-center gap-2">
