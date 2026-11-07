@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { exportToExcel } from '../utils/export'
 import { assignedTaskCount } from '../utils/helpers'
-import { FileSpreadsheet, Trash2, Download, Save, RotateCcw } from 'lucide-react'
+import { FileSpreadsheet, Trash2, Download, Save, RotateCcw, Upload } from 'lucide-react'
 
 export default function Export() {
   const {
@@ -26,6 +26,7 @@ export default function Export() {
   })
   const [sessionName, setSessionName] = useState('')
   const [sessionMsg, setSessionMsg] = useState('')
+  const importSessionsRef = useRef(null)
 
   const persistSessions = (list) => {
     setSessions(list)
@@ -67,6 +68,57 @@ export default function Export() {
 
   const removeSession = (session) => {
     persistSessions(sessions.filter((s) => s.id !== session.id))
+  }
+
+  // Sauvegarde transportable : exporte toutes les sessions locales en .json
+  const exportSessions = () => {
+    const payload = {
+      app: 'aeroteam-sessions',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      profile: activeProfile?.code || '',
+      profileName: activeProfile?.name || '',
+      sessions,
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `aeroteam-sessions-${new Date().toISOString().slice(0, 10)}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+    setSessionMsg(`${sessions.length} session(s) exported.`)
+  }
+
+  // Importe un fichier .json de sessions (fusion, doublons ignorés)
+  const importSessions = (file) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(String(e.target.result || ''))
+        const incoming = Array.isArray(parsed) ? parsed : parsed?.sessions
+        if (!Array.isArray(incoming)) throw new Error('format')
+        const existing = new Set(sessions.map((s) => `${s.name}|${s.savedAt || ''}`))
+        const valid = incoming
+          .filter((s) => s && s.data && typeof s.data === 'object')
+          .filter((s) => !existing.has(`${s.name}|${s.savedAt || ''}`))
+          .map((s) => ({
+            ...s,
+            id: `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          }))
+        if (!valid.length) throw new Error('empty')
+        persistSessions([...valid, ...sessions])
+        setSessionMsg(`${valid.length} session(s) imported.`)
+      } catch {
+        setSessionMsg('Invalid file: no AeroTeam session found.')
+      }
+      if (importSessionsRef.current) importSessionsRef.current.value = ''
+    }
+    reader.readAsText(file)
   }
 
   return (
@@ -131,9 +183,35 @@ export default function Export() {
           >
             <Save className="h-4 w-4" /> Save current session
           </button>
+          <button
+            onClick={exportSessions}
+            disabled={sessions.length === 0}
+            className="bg-white text-slate-700 border border-slate-300 px-4 py-2 rounded-md hover:bg-slate-50 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold"
+            title="Download all local sessions as a .json file (keep it in Files / OneDrive)"
+          >
+            <Download className="h-4 w-4" /> Export sessions (.json)
+          </button>
+          <label className="inline-flex items-center gap-2 bg-white text-slate-700 border border-slate-300 px-4 py-2 rounded-md hover:bg-slate-50 cursor-pointer text-sm font-semibold">
+            <Upload className="h-4 w-4" /> Import sessions (.json)
+            <input
+              ref={importSessionsRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files[0]) importSessions(e.target.files[0])
+              }}
+            />
+          </label>
         </div>
         {sessionMsg && (
-          <p className="text-sm text-green-700 font-semibold mb-3">{sessionMsg}</p>
+          <p
+            className={`text-sm font-semibold mb-3 ${
+              /invalid|full/i.test(sessionMsg) ? 'text-red-600' : 'text-green-700'
+            }`}
+          >
+            {sessionMsg}
+          </p>
         )}
         {sessions.length === 0 ? (
           <p className="text-sm text-slate-400 italic">No local session saved yet.</p>
