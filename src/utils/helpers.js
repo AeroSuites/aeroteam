@@ -468,8 +468,9 @@ export function filterRow(row, columns, options = {}) {
     if (!IMPORT_FILTERS.skills.match(skill)) return false
   }
 
-  // Filtre MTX Status (colonne G)
-  if (IMPORT_FILTERS.mtxStatus.enabled) {
+  // Filtre MTX Status (colonne G) — contournable pour intégrer les lignes
+  // COMPLETE d'un fichier de la même immatriculation (choix à l'import).
+  if (IMPORT_FILTERS.mtxStatus.enabled && !options.skipStatusFilter) {
     const status = get('mtxStatus')
     if (!IMPORT_FILTERS.mtxStatus.match(status)) return false
   }

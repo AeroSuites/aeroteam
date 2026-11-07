@@ -1,12 +1,20 @@
 import { useState } from 'react'
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { CATEGORIES, getCategoryLabel } from '../utils/helpers'
 import TrfxLink from './TrfxLink'
 
 // Alerte : lignes Found Fault (CORR) dans les slots ATA 11/12/21/23/25/33/35/
 // 38/44/56 qui n'ont pas le skill CABB1B2 (mauvais skill dans le fichier).
 // Elles sont exclues par le filtre Skills → on propose de les intégrer avec
-// le skill corrigé (CABB1B2), au choix, ligne par ligne.
-export default function WrongSkillAlert({ rows, onImport }) {
+// le skill corrigé (CABB1B2) et le bloc / la sous-tâche de son choix.
+export default function WrongSkillAlert({ rows, onImport, zones }) {
+  const [blocks, setBlocks] = useState(() =>
+    Object.fromEntries((rows || []).map((_, i) => [i, 'CORR']))
+  )
+  const [subTasks, setSubTasks] = useState(() =>
+    Object.fromEntries((rows || []).map((r, i) => [i, r.workArea || '']))
+  )
+  const [newSubTasks, setNewSubTasks] = useState({})
   const [checked, setChecked] = useState(() =>
     Object.fromEntries((rows || []).map((_, i) => [i, true]))
   )
@@ -16,14 +24,25 @@ export default function WrongSkillAlert({ rows, onImport }) {
   const selectable = rows.map((r, i) => ({ r, i })).filter(({ r }) => !r.imported)
   const checkedCount = selectable.filter(({ i }) => checked[i]).length
 
+  const subTaskFor = (i) =>
+    subTasks[i] === '__NEW__'
+      ? String(newSubTasks[i] || '').trim()
+      : String(subTasks[i] || '').trim()
+
   const handleImport = () => {
     if (!onImport || checkedCount === 0) return
     onImport(
       selectable
         .filter(({ i }) => checked[i])
-        .map(({ i }) => ({ row: rows[i].row }))
+        .map(({ i }) => ({
+          row: rows[i].row,
+          taskType: blocks[i] || 'CORR',
+          workArea: subTaskFor(i),
+        }))
     )
   }
+
+  const zoneOptions = [...new Set((zones || []).filter(Boolean))].sort()
 
   return (
     <div className="bg-rose-50 border-2 border-rose-300 rounded-xl p-4">
@@ -34,10 +53,11 @@ export default function WrongSkillAlert({ rows, onImport }) {
       <p className="text-xs text-rose-700 mb-3">
         Found Fault lines in Config Slots 11 / 12 / 21 / 23 / 25 / 33 / 35 / 38 / 44 / 56
         without the <strong>CABB1B2</strong> skill. They are excluded by the Skills
-        filter — check the lines to import them with the corrected skill (CABB1B2).
+        filter — choose the block / sub-task, then import them with the corrected
+        skill (CABB1B2).
       </p>
       <div className="max-h-64 overflow-auto rounded-lg border border-rose-200 bg-white">
-        <table className="w-full min-w-[720px] text-xs">
+        <table className="w-full min-w-[980px] text-xs">
           <thead className="sticky top-0 bg-rose-100 text-rose-900">
             <tr>
               <th className="px-2 py-1.5 w-8"></th>
@@ -46,6 +66,8 @@ export default function WrongSkillAlert({ rows, onImport }) {
               <th className="text-left px-2 py-1.5 w-36">TRFX</th>
               <th className="text-left px-2 py-1.5 w-24">Slot</th>
               <th className="text-left px-2 py-1.5 w-28">Current skill</th>
+              <th className="text-left px-2 py-1.5 w-32">Block</th>
+              <th className="text-left px-2 py-1.5 w-40">Sub-task</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-rose-100">
@@ -76,6 +98,49 @@ export default function WrongSkillAlert({ rows, onImport }) {
                     <span className="text-[11px] font-semibold text-green-700">imported</span>
                   ) : (
                     <span className="font-semibold text-rose-700">{r.skills || '—'}</span>
+                  )}
+                </td>
+                <td className="px-2 py-1">
+                  <select
+                    value={blocks[i] || 'CORR'}
+                    onChange={(e) => setBlocks((prev) => ({ ...prev, [i]: e.target.value }))}
+                    disabled={!checked[i] || r.imported}
+                    className="w-full border border-rose-300 rounded px-1.5 py-1 text-xs bg-white disabled:bg-slate-50 disabled:opacity-60"
+                    title="Choose the block for this line"
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {getCategoryLabel(c)}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-2 py-1">
+                  <select
+                    value={subTasks[i] || ''}
+                    onChange={(e) => setSubTasks((prev) => ({ ...prev, [i]: e.target.value }))}
+                    disabled={!checked[i] || r.imported}
+                    className="w-full border border-rose-300 rounded px-1.5 py-1 text-xs bg-white disabled:bg-slate-50 disabled:opacity-60"
+                    title="Choose an existing sub-task or create a new one"
+                  >
+                    <option value="">— Sub-task —</option>
+                    {zoneOptions.map((z) => (
+                      <option key={z} value={z}>
+                        {z}
+                      </option>
+                    ))}
+                    <option value="__NEW__">➕ New sub-task…</option>
+                  </select>
+                  {subTasks[i] === '__NEW__' && !r.imported && (
+                    <input
+                      value={newSubTasks[i] || ''}
+                      onChange={(e) =>
+                        setNewSubTasks((prev) => ({ ...prev, [i]: e.target.value }))
+                      }
+                      placeholder="New sub-task name"
+                      disabled={!checked[i]}
+                      className="mt-1 w-full border border-rose-300 rounded px-2 py-1 text-xs disabled:bg-slate-50 disabled:opacity-60"
+                    />
                   )}
                 </td>
               </tr>

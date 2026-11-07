@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import { groupTasksTree } from '../components/TaskTreeSelect'
 import MissingSkillsAlert from '../components/MissingSkillsAlert'
 import WrongSkillAlert from '../components/WrongSkillAlert'
-import { detectColumns, parseExcelRows, findRowsWithoutSkill, findWrongSkillFoundFault, getCategoryColor, getCategoryLabel, CATEGORIES } from '../utils/helpers'
+import { detectColumns, parseExcelRows, findRowsWithoutSkill, findWrongSkillFoundFault, getCategoryColor, getCategoryLabel, taskContentKey, CATEGORIES } from '../utils/helpers'
 import {
   Upload,
   FileSpreadsheet,
@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 
 export default function ImportExcel() {
-  const { tasks, addTasks } = useApp()
+  const { tasks, addTasks, updateTasks, prepTasks, updatePrepTasks } = useApp()
   const fileInputRef = useRef(null)
   const [preview, setPreview] = useState([])
   const [fileName, setFileName] = useState('')
@@ -35,6 +35,9 @@ export default function ImportExcel() {
   // Found Fault dans les slots ATA ciblés avec un mauvais skill (≠ CABB1B2)
   const [wrongSkillLines, setWrongSkillLines] = useState([])
   const [wrongSkillMsg, setWrongSkillMsg] = useState('')
+  // Lignes COMPLETE du fichier (même immatriculation) — proposées à l'import
+  const [completeLines, setCompleteLines] = useState([])
+  const [completeImported, setCompleteImported] = useState(0)
 
   // Arborescence du fichier : bloc -> sous-tâche (zone) -> lignes
   const tree = useMemo(() => groupTasksTree(preview), [preview])
@@ -67,6 +70,8 @@ export default function ImportExcel() {
       setMissingMsg('')
       setWrongSkillLines([])
       setWrongSkillMsg('')
+      setCompleteLines([])
+      setCompleteImported(0)
       setFileName(file.name)
       const reader = new FileReader()
       reader.onload = (e) => {
@@ -97,6 +102,13 @@ export default function ImportExcel() {
           setImportColumns(detected)
           setMissingSkills(findRowsWithoutSkill(rows.slice(1), detected))
           setWrongSkillLines(findWrongSkillFoundFault(rows.slice(1), detected))
+          // Lignes COMPLETE (hors filtres skill/type) : proposées au moment de
+          // l'import si le fichier concerne la même immatriculation.
+          setCompleteLines(
+            parseExcelRows(rows.slice(1), detected, { skipStatusFilter: true }).filter(
+              (t) => String(t.mtxStatus || '').toUpperCase() === 'COMPLETE'
+            )
+          )
 
           // Statistiques de filtrage
           const totalLines = rows.length - 1
@@ -117,7 +129,7 @@ export default function ImportExcel() {
   // la ligne est importée (filtres Skills et Task Type contournés).
   const handleImportMissingSkills = (items) => {
     if (!importColumns || !items.length) return
-    const tasks = []
+    const parsedTasks = []
     let ignored = 0
     items.forEach((it) => {
       const skill = String(it.skill || '').trim()
@@ -141,9 +153,9 @@ export default function ImportExcel() {
         t.workArea = it.workArea
         t.zone = it.workArea
       }
-      tasks.push(t)
+      parsedTasks.push(t)
     })
-    if (tasks.length) addTasks(tasks)
+    if (parsedTasks.length) addTasks(parsedTasks)
     const done = new Set(items.map((it) => it.row))
     setMissingSkills((prev) =>
       prev.map((r) => (done.has(r.row) ? { ...r, imported: true } : r))
@@ -152,23 +164,23 @@ export default function ImportExcel() {
       s
         ? {
             ...s,
-            kept: s.kept + tasks.length,
-            filteredOut: Math.max(0, s.filteredOut - tasks.length),
+            kept: s.kept + parsedTasks.length,
+            filteredOut: Math.max(0, s.filteredOut - parsedTasks.length),
           }
         : s
     )
     setMissingMsg(
-      `${tasks.length} line(s) added to Tasks${
+      `${parsedTasks.length} line(s) added to Tasks${
         ignored ? ` · ${ignored} ignored (status filter)` : ''
       }.`
     )
   }
 
   // Intégration des Found Fault au mauvais skill : le skill est corrigé en
-  // CABB1B2, la ligne passe alors le filtre Skills et rejoint les tâches.
+  // CABB1B2, le bloc et la sous-tâche choisis sont appliqués.
   const handleImportWrongSkill = (items) => {
     if (!importColumns || !items.length) return
-    const tasks = []
+    const parsedTasks = []
     let ignored = 0
     items.forEach((it) => {
       const row = [...it.row]
@@ -180,11 +192,15 @@ export default function ImportExcel() {
       }
       const t = one[0]
       t.skills = 'CABB1B2'
-      t.taskType = 'CORR'
-      t.category = 'CORR'
-      tasks.push(t)
+      t.taskType = it.taskType || 'CORR'
+      t.category = t.taskType
+      if (it.workArea) {
+        t.workArea = it.workArea
+        t.zone = it.workArea
+      }
+      parsedTasks.push(t)
     })
-    if (tasks.length) addTasks(tasks)
+    if (parsedTasks.length) addTasks(parsedTasks)
     const done = new Set(items.map((it) => it.row))
     setWrongSkillLines((prev) =>
       prev.map((r) => (done.has(r.row) ? { ...r, imported: true } : r))
@@ -193,13 +209,13 @@ export default function ImportExcel() {
       s
         ? {
             ...s,
-            kept: s.kept + tasks.length,
-            filteredOut: Math.max(0, s.filteredOut - tasks.length),
+            kept: s.kept + parsedTasks.length,
+            filteredOut: Math.max(0, s.filteredOut - parsedTasks.length),
           }
         : s
     )
     setWrongSkillMsg(
-      `${tasks.length} Found Fault line(s) added to Tasks (skill CABB1B2)${
+      `${parsedTasks.length} Found Fault line(s) added to Tasks (skill CABB1B2)${
         ignored ? ` · ${ignored} ignored (status filter)` : ''
       }.`
     )
@@ -207,13 +223,14 @@ export default function ImportExcel() {
 
   const handleImport = () => {
     const list = preview.filter((t) => selected[t.id])
-    if (!list.length) return
+    const fileTasks = [...preview, ...completeLines]
+    if (!list.length && !completeLines.length) return
 
     // Alerte immatriculations : le fichier concerne-t-il un autre avion que la
     // charge déjà en place ? (import accidentel sans effacer l'ancienne charge)
     const regsOf = (arr) =>
       [...new Set((arr || []).map((t) => t.registration).filter(Boolean))]
-    const newRegs = regsOf(list)
+    const newRegs = regsOf(fileTasks)
     const existingRegs = regsOf(tasks)
     if (newRegs.length > 1) {
       if (
@@ -241,10 +258,61 @@ export default function ImportExcel() {
       }
     }
 
+    // Même immatriculation : proposer d'intégrer (ou d'exclure) les lignes
+    // COMPLETE du fichier, en passant leur statut à COMPLETE dans AeroTeam.
+    const sameReg =
+      newRegs.length === 1 && existingRegs.length > 0 && existingRegs.includes(newRegs[0])
+    let includeComplete = false
+    if (sameReg && completeLines.length > 0) {
+      includeComplete = window.confirm(
+        `This file contains ${completeLines.length} COMPLETE line(s) for aircraft ${newRegs[0]}.\n\nOK = include them in AeroTeam with status COMPLETE (lines already present are set to COMPLETE).\nCancel = exclude the COMPLETE lines (import only the selected lines).`
+      )
+    }
     addTasks(list)
+    let completeAdded = 0
+    if (includeComplete) {
+      const bySeq = new Map()
+      tasks.forEach((t) => {
+        if (t.seq !== undefined && t.seq !== '') bySeq.set(String(t.seq), t)
+      })
+      const toAdd = []
+      const toUpdate = []
+      completeLines.forEach((t) => {
+        const existing = t.seq !== undefined && t.seq !== '' ? bySeq.get(String(t.seq)) : null
+        if (existing) {
+          if (existing.mtxStatus !== 'COMPLETE') toUpdate.push(existing.id)
+        } else {
+          toAdd.push(t)
+        }
+      })
+      if (toAdd.length) addTasks(toAdd)
+      if (toUpdate.length) {
+        updateTasks(toUpdate, { mtxStatus: 'COMPLETE' })
+        // Synchronise les copies déjà transférées dans Préparation (même clé)
+        const keys = new Set(
+          tasks.filter((t) => toUpdate.includes(t.id)).map(taskContentKey)
+        )
+        const prepIds = (prepTasks || [])
+          .filter((t) => keys.has(taskContentKey(t)))
+          .map((t) => t.id)
+        if (prepIds.length) updatePrepTasks(prepIds, { mtxStatus: 'COMPLETE' })
+      }
+      completeAdded = toAdd.length + toUpdate.length
+    }
+    setCompleteImported(completeAdded)
     setImportedCount(list.length)
     setImported(true)
   }
+
+  const zoneOptions = [
+    ...new Set(
+      [
+        ...preview.map((t) => t.workArea),
+        ...missingSkills.map((r) => r.workArea),
+        ...wrongSkillLines.map((r) => r.workArea),
+      ].filter(Boolean)
+    ),
+  ]
 
   return (
     <div className="space-y-6">
@@ -283,14 +351,7 @@ export default function ImportExcel() {
           key={fileName}
           rows={missingSkills}
           onImport={handleImportMissingSkills}
-          zones={[
-            ...new Set(
-              [
-                ...preview.map((t) => t.workArea),
-                ...missingSkills.map((r) => r.workArea),
-              ].filter(Boolean)
-            ),
-          ]}
+          zones={zoneOptions}
         />
       )}
       {missingMsg && (
@@ -302,6 +363,7 @@ export default function ImportExcel() {
           key={`wrong-${fileName}`}
           rows={wrongSkillLines}
           onImport={handleImportWrongSkill}
+          zones={zoneOptions}
         />
       )}
       {wrongSkillMsg && (
@@ -363,7 +425,7 @@ export default function ImportExcel() {
         </div>
       )}
 
-      {preview.length > 0 && (
+      {(preview.length > 0 || completeLines.length > 0) && (
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b">
             <div>
@@ -374,6 +436,12 @@ export default function ImportExcel() {
                 Grouped by <strong>block → sub-task → line</strong>: check what you want to
                 import (unchecking a block or a sub-task excludes all of its content).
               </p>
+              {preview.length === 0 && completeLines.length > 0 && (
+                <p className="text-xs text-amber-700 mt-0.5">
+                  No ACTV line in this file: only the COMPLETE lines can be included
+                  (same aircraft as the current workload only).
+                </p>
+              )}
               <div className="flex gap-1.5 mt-2">
                 <button
                   onClick={selectAll}
@@ -391,10 +459,13 @@ export default function ImportExcel() {
             </div>
             <button
               onClick={handleImport}
-              disabled={selectedCount === 0}
+              disabled={selectedCount === 0 && completeLines.length === 0}
               className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 flex items-center gap-2"
             >
-              <CheckCircle2 className="h-4 w-4" /> Import {selectedCount} task(s)
+              <CheckCircle2 className="h-4 w-4" />
+              {selectedCount > 0
+                ? `Import ${selectedCount} task(s)`
+                : `Import COMPLETE lines (${completeLines.length})`}
             </button>
           </div>
 
@@ -402,6 +473,8 @@ export default function ImportExcel() {
             <div className="bg-green-50 border-b border-green-200 text-green-700 px-6 py-3 flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5" />
               {importedCount} tasks imported successfully!
+              {completeImported > 0 &&
+                ` · ${completeImported} COMPLETE line(s) included`}
             </div>
           )}
 
