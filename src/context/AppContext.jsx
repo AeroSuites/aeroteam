@@ -770,6 +770,32 @@ export function AppProvider({ children }) {
     setNotes((prev) => prev.filter((n) => !String(n.title || '').startsWith('[C] ')))
   }, [])
 
+  // Restaure une session locale sauvegardée (snapshot). La sauvegarde
+  // automatique la persiste ensuite dans le profil (cloud + cache local).
+  const restoreSession = useCallback((data) => {
+    const toArray = (v) => (Array.isArray(v) ? v : [])
+    const toObject = (v) =>
+      v && typeof v === 'object' && !Array.isArray(v) ? v : {}
+    const rawAssignments = toObject(data?.assignments)
+    const normalized = {}
+    Object.keys(rawAssignments).forEach((k) => {
+      const v = rawAssignments[k]
+      normalized[k] = Array.isArray(v) ? v : v ? [v] : []
+    })
+    setTasks(toArray(data?.tasks))
+    setTeams(toArray(data?.teams))
+    setAssignments(normalized)
+    setMembers(toArray(data?.members))
+    setDayMembers(toArray(data?.dayMembers))
+    setDayLeaders(toArray(data?.dayLeaders))
+    setPrimeRequests(toArray(data?.primeRequests))
+    setPrepTasks(toArray(data?.prepTasks))
+    setPockets(toArray(data?.pockets))
+    setNotes(toArray(data?.notes))
+    setCharge(data?.charge && typeof data.charge === 'object' ? data.charge : null)
+    setChargeHistory(toArray(data?.chargeHistory))
+  }, [])
+
 const value = {
     tasks, teams, assignments, members, dayMembers, dayLeaders, prepTasks, notes, pockets,
     primeRequests,
@@ -780,7 +806,7 @@ const value = {
     changeAdminCode, updateOwnProfile,
     addTasks, addTeam, updateTeam, removeTeam, assignTask, unassignTask,
       removeTask, removeTasksByBlock, removeTasksByZone, removeTasksByIds, updateTask, updateTasks, addMember, addMembers, addDayMember, addDayMembers,
-    clearDayMembers, removeMember, resetData,
+    clearDayMembers, removeMember, resetData, restoreSession,
       addPrepTasks, removePrepTask, removePrepTasksByBlock, removePrepTasksByZone, removePrepTasksByIds, updatePrepTask, updatePrepTasks, clearPrepTasks,
     addPocket, renamePocket, addTasksToPocket, removeTasksFromPocket, removePocket,
     addNote, updateNote, removeNote,

@@ -1,12 +1,73 @@
+import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { exportToExcel } from '../utils/export'
 import { assignedTaskCount } from '../utils/helpers'
-import { FileSpreadsheet, Trash2, Download } from 'lucide-react'
+import { FileSpreadsheet, Trash2, Download, Save, RotateCcw } from 'lucide-react'
 
 export default function Export() {
-  const { tasks, teams, assignments, resetData, activeProfile, updateOwnProfile } = useApp()
+  const {
+    tasks, teams, assignments, resetData, activeProfile, updateOwnProfile,
+    members, dayMembers, dayLeaders, prepTasks, notes, pockets, primeRequests,
+    charge, chargeHistory, restoreSession,
+  } = useApp()
   const assigned = assignedTaskCount(assignments)
   const unassigned = tasks.length - assigned
+
+  // Sessions locales (snapshots) — stockées dans ce navigateur, par profil
+  const sessionsKey = `maintenance-app-sessions-${activeProfile?.code || ''}`
+  const [sessions, setSessions] = useState(() => {
+    try {
+      const raw = localStorage.getItem(sessionsKey)
+      const parsed = raw ? JSON.parse(raw) : []
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  })
+  const [sessionName, setSessionName] = useState('')
+  const [sessionMsg, setSessionMsg] = useState('')
+
+  const persistSessions = (list) => {
+    setSessions(list)
+    try {
+      localStorage.setItem(sessionsKey, JSON.stringify(list))
+    } catch {
+      setSessionMsg('Local storage is full: delete an old session first.')
+    }
+  }
+
+  const saveSession = () => {
+    const name = sessionName.trim() || `Session ${new Date().toLocaleString('en-GB')}`
+    const snapshot = {
+      id: `session-${Date.now()}`,
+      name,
+      savedAt: new Date().toISOString(),
+      data: {
+        tasks, teams, assignments, members, dayMembers, dayLeaders,
+        prepTasks, notes, pockets, primeRequests, charge, chargeHistory,
+      },
+    }
+    persistSessions([snapshot, ...sessions])
+    setSessionName('')
+    setSessionMsg(`Session “${name}” saved locally.`)
+  }
+
+  const restore = (session) => {
+    if (
+      !window.confirm(
+        `Restore the session “${session.name}”${
+          session.savedAt ? ` (${new Date(session.savedAt).toLocaleString('en-GB')})` : ''
+        }?\n\nThe current data of this profile will be replaced (cloud included). Save the current session first if needed.`
+      )
+    )
+      return
+    restoreSession(session.data)
+    setSessionMsg(`Session “${session.name}” restored.`)
+  }
+
+  const removeSession = (session) => {
+    persistSessions(sessions.filter((s) => s.id !== session.id))
+  }
 
   return (
     <div className="space-y-6">
@@ -46,6 +107,66 @@ export default function Export() {
           <Summary label="Teams" value={teams.length} />
           <Summary label="Members" value={teams.reduce((a, t) => a + t.members.length, 0)} />
         </div>
+      </div>
+
+      {/* Sessions locales */}
+      <div className="bg-white rounded-xl shadow p-4 sm:p-6">
+        <h2 className="text-xl font-semibold mb-1 flex items-center gap-2">
+          <Save className="h-5 w-5 text-sky-500" /> Local sessions
+        </h2>
+        <p className="text-sm text-slate-600 mb-4">
+          Save the current session (tasks, teams, members, preparation, notepad…) in
+          this browser and restore it later. Stored on this device only.
+        </p>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <input
+            value={sessionName}
+            onChange={(e) => setSessionName(e.target.value)}
+            placeholder={`Session ${new Date().toLocaleString('en-GB')}`}
+            className="flex-1 min-w-[220px] border border-slate-300 rounded-md px-3 py-2 text-sm"
+          />
+          <button
+            onClick={saveSession}
+            className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 flex items-center gap-2 text-sm font-semibold"
+          >
+            <Save className="h-4 w-4" /> Save current session
+          </button>
+        </div>
+        {sessionMsg && (
+          <p className="text-sm text-green-700 font-semibold mb-3">{sessionMsg}</p>
+        )}
+        {sessions.length === 0 ? (
+          <p className="text-sm text-slate-400 italic">No local session saved yet.</p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {sessions.map((s) => (
+              <li key={s.id} className="py-2 flex flex-wrap items-center gap-3">
+                <div className="flex-1 min-w-[200px]">
+                  <p className="font-semibold text-slate-800 text-sm">{s.name}</p>
+                  <p className="text-xs text-slate-400">
+                    {s.savedAt ? new Date(s.savedAt).toLocaleString('en-GB') : ''}
+                    {s.data
+                      ? ` · ${(s.data.teams || []).length} team(s) · ${(s.data.tasks || []).length} task(s) · ${(s.data.members || []).length} member(s)`
+                      : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={() => restore(s)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-sky-700 border border-sky-200 hover:bg-sky-50 rounded-full px-3 py-1"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" /> Restore
+                </button>
+                <button
+                  onClick={() => removeSession(s)}
+                  className="text-slate-400 hover:text-red-600"
+                  title="Delete this local session"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Danger zone */}
