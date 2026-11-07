@@ -102,17 +102,35 @@ export default function Export() {
         const parsed = JSON.parse(String(e.target.result || ''))
         const incoming = Array.isArray(parsed) ? parsed : parsed?.sessions
         if (!Array.isArray(incoming)) throw new Error('format')
+        const candidates = incoming.filter(
+          (s) => s && s.data && typeof s.data === 'object'
+        )
+        if (!candidates.length) throw new Error('format')
         const existing = new Set(sessions.map((s) => `${s.name}|${s.savedAt || ''}`))
-        const valid = incoming
-          .filter((s) => s && s.data && typeof s.data === 'object')
-          .filter((s) => !existing.has(`${s.name}|${s.savedAt || ''}`))
-          .map((s) => ({
+        const fresh = candidates.filter(
+          (s) => !existing.has(`${s.name}|${s.savedAt || ''}`)
+        )
+        if (!fresh.length) {
+          setSessionMsg(
+            'Nothing to import: these sessions are already saved on this device.'
+          )
+          if (importSessionsRef.current) importSessionsRef.current.value = ''
+          return
+        }
+        persistSessions([
+          ...fresh.map((s) => ({
             ...s,
             id: `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          }))
-        if (!valid.length) throw new Error('empty')
-        persistSessions([...valid, ...sessions])
-        setSessionMsg(`${valid.length} session(s) imported.`)
+          })),
+          ...sessions,
+        ])
+        setSessionMsg(
+          `${fresh.length} session(s) imported${
+            candidates.length - fresh.length
+              ? ` · ${candidates.length - fresh.length} already present`
+              : ''
+          }.`
+        )
       } catch {
         setSessionMsg('Invalid file: no AeroTeam session found.')
       }
