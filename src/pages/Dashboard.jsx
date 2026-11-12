@@ -106,18 +106,25 @@ export default function Dashboard() {
     const margin = 10
     const contentWidth = pageWidth - margin * 2
 
+    // En-tête : titre et liste des membres découpés sur plusieurs lignes
+    // (une équipe avec beaucoup de noms ne doit pas déborder de la page).
+    let headerY = 15
     doc.setFontSize(18)
     doc.setFont('helvetica', 'bold')
-    doc.text(team.name, margin, 15)
+    doc.splitTextToSize(team.name || 'Team', contentWidth).forEach((line) => {
+      doc.text(line, margin, headerY)
+      headerY += 7
+    })
     doc.setFontSize(11)
     doc.setFont('helvetica', 'normal')
-    doc.text(
-      `${teamTasks.length} task(s) · ${team.members.length} member(s) : ${
-        team.members.join(', ') || '—'
-      } · ${new Date().toLocaleDateString('en-GB')}`,
-      margin,
-      21
-    )
+    const headerLines = [
+      `${teamTasks.length} task(s) · ${team.members.length} member(s) · ${new Date().toLocaleDateString('en-GB')}`,
+      ...doc.splitTextToSize(`Members: ${team.members.join(', ') || '—'}`, contentWidth),
+    ]
+    headerLines.forEach((line) => {
+      doc.text(line, margin, headerY)
+      headerY += 5
+    })
 
     const groups = {}
     teamTasks.forEach((t) => {
@@ -128,7 +135,7 @@ export default function Dashboard() {
       groups[blk].zones[zone].push(t)
     })
 
-    let y = 28
+    let y = headerY + 4
     Object.entries(groups).forEach(([blk, info]) => {
       const zoneNames = Object.keys(info.zones).sort()
       const count = zoneNames.reduce((acc, z) => acc + info.zones[z].length, 0)
