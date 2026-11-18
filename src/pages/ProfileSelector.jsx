@@ -81,7 +81,7 @@ export default function ProfileSelector() {
         setFlying(false)
         setConnectError(res.error)
       }
-    }, 1900)
+    }, 1800)
   }
 
   const handleRegister = async () => {

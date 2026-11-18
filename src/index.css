@@ -142,27 +142,22 @@
   }
 }
 
-/* Connexion : le formulaire se plie en avion de papier et s'envole */
+/* Connexion : le formulaire se replie en avion de papier et s'envole */
 .login-card-fly {
-  animation: login-card-fold 1.1s cubic-bezier(0.55, 0, 0.75, 0.2) forwards;
-  transform-origin: 50% 42%;
+  animation: login-card-fold 0.5s cubic-bezier(0.45, 0, 0.7, 0.5) forwards;
+  transform-origin: 50% 50%;
 }
 @keyframes login-card-fold {
   0% {
-    transform: none;
+    transform: perspective(900px) rotateX(0) scale(1);
     opacity: 1;
   }
-  30% {
-    transform: perspective(900px) rotateX(14deg) scale(0.9, 0.8);
-    opacity: 1;
-  }
-  60% {
-    transform: perspective(900px) rotateX(46deg) rotateZ(-10deg) scale(0.55, 0.32);
-    opacity: 0.85;
+  55% {
+    transform: perspective(900px) rotateX(28deg) scale(0.55, 0.4);
+    opacity: 0.7;
   }
   100% {
-    transform: perspective(900px) rotateX(72deg) rotateZ(-24deg) scale(0.1, 0.04)
-      translate(26vw, -20vh);
+    transform: perspective(900px) rotateX(60deg) scale(0.06, 0.03);
     opacity: 0;
   }
 }
@@ -177,15 +172,19 @@
   pointer-events: none;
   opacity: 0;
   filter: drop-shadow(0 10px 18px rgba(5, 16, 57, 0.18));
-  animation: login-plane-fly 1.4s 0.45s cubic-bezier(0.3, 0.6, 0.35, 1) forwards;
+  animation: login-plane-fly 1.35s 0.32s cubic-bezier(0.3, 0.6, 0.35, 1) forwards;
 }
 @keyframes login-plane-fly {
   0% {
-    transform: translate(-8px, 34px) rotate(-14deg) scale(0.35);
+    transform: translate(0, 10px) rotate(-10deg) scale(0.15);
     opacity: 0;
   }
-  14% {
-    transform: translate(0, 4px) rotate(-8deg) scale(0.95);
+  10% {
+    transform: translate(0, 4px) rotate(-8deg) scale(0.7);
+    opacity: 1;
+  }
+  16% {
+    transform: translate(0, 0) rotate(-6deg) scale(1);
     opacity: 1;
   }
   55% {
@@ -204,7 +203,7 @@
   background: #ffffff;
   opacity: 0;
   pointer-events: none;
-  animation: login-exit-fade 0.5s 1.4s ease forwards;
+  animation: login-exit-fade 1.3s 0.45s ease-in forwards;
 }
 @keyframes login-exit-fade {
   to {
