@@ -10,6 +10,7 @@ export default function ProfileSelector() {
   const [loginIdent, setLoginIdent] = useState('')
   const [code, setCode] = useState('')
   const [connecting, setConnecting] = useState(false)
+  const [flying, setFlying] = useState(false)
   const [connectError, setConnectError] = useState('')
 
   const [regIdent, setRegIdent] = useState('')
@@ -30,11 +31,57 @@ export default function ProfileSelector() {
   }, [])
 
   const handleConnect = async () => {
+    if (connecting || flying) return
+    if (!code.trim() || !loginIdent.trim()) return
     setConnecting(true)
     setConnectError('')
-    const res = await connectProfile(loginIdent, code)
-    if (!res.ok) setConnectError(res.error)
+    // 1) Vérifie les identifiants sans ouvrir la session
+    let exists = null
+    try {
+      exists = await profileStore.profileExists(
+        loginIdent.trim().toLowerCase(),
+        code.trim()
+      )
+    } catch {
+      exists = null
+    }
+    if (exists?.locked) {
+      setConnectError('Too many sign-in attempts: try again in 15 minutes.')
+      setConnecting(false)
+      return
+    }
+    if (exists?.pending) {
+      setConnectError('This account is awaiting validation by an administrator.')
+      setConnecting(false)
+      return
+    }
+    if (!exists?.ok) {
+      setConnectError('Incorrect username or code.')
+      setConnecting(false)
+      return
+    }
     setConnecting(false)
+
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    // 2) Autorisation OK : le formulaire se plie en avion et s'envole,
+    //    puis la session est ouverte.
+    if (reduced) {
+      const res = await connectProfile(loginIdent, code)
+      if (!res.ok) setConnectError(res.error)
+      return
+    }
+    setFlying(true)
+    window.setTimeout(async () => {
+      const res = await connectProfile(loginIdent, code)
+      if (!res.ok) {
+        setFlying(false)
+        setConnectError(res.error)
+      }
+    }, 1900)
   }
 
   const handleRegister = async () => {
@@ -78,7 +125,11 @@ export default function ProfileSelector() {
   return (
     <div className="login-screen min-h-screen flex items-center justify-center p-4">
       <div className="login-grid" />
-      <div className="relative z-10 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-lg p-6">
+      <div
+        className={`relative z-10 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-lg p-6 ${
+          flying ? 'login-card-fly' : ''
+        }`}
+      >
         <div className="flex items-center gap-3 mb-2">
           <Plane className="h-8 w-8 text-sky-500" />
           <h1 className="text-2xl font-bold text-slate-900">AeroTeam</h1>
@@ -100,6 +151,7 @@ export default function ProfileSelector() {
                 value={loginIdent}
                 onChange={(e) => setLoginIdent(e.target.value)}
                   placeholder="Your sign-in username"
+                disabled={flying}
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
                 autoFocus
               />
@@ -109,13 +161,14 @@ export default function ProfileSelector() {
                 onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
                 type="password"
                 placeholder="Your personal code"
+                disabled={flying}
                 className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm font-mono"
               />
               {connectError && <p className="text-sm text-red-600">{connectError}</p>}
               {!connectError && error && <p className="text-sm text-red-600">{error}</p>}
               <button
                 onClick={handleConnect}
-                disabled={connecting || !code.trim() || !loginIdent.trim()}
+                disabled={connecting || flying || !code.trim() || !loginIdent.trim()}
                 className="w-full bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 disabled:opacity-50 text-sm font-semibold flex items-center justify-center gap-2"
               >
                 <LogIn className="h-4 w-4" /> {connecting ? 'Signing in…' : 'Sign in'}
@@ -221,6 +274,32 @@ export default function ProfileSelector() {
           </>
         )}
       </div>
+
+      {flying && (
+        <>
+          <div className="login-exit" aria-hidden="true" />
+          <div className="login-plane" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none">
+              <path
+                d="M62 2 L4 28 L28 36 Z"
+                fill="#f8fafc"
+                stroke="#cbd5e1"
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M62 2 L28 36 L36 60 Z"
+                fill="#dbeafe"
+                stroke="#cbd5e1"
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+              />
+              <path d="M62 2 L28 36" stroke="#94a3b8" strokeWidth="1.2" />
+            </svg>
+          </div>
+        </>
+      )}
+
       {typeof __APP_VERSION__ !== 'undefined' && (
         <p className="text-center text-[11px] text-slate-400 font-mono mt-4">
           version {__APP_VERSION__}
