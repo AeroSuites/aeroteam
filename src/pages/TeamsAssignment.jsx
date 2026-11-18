@@ -355,6 +355,27 @@ export default function TeamsAssignment() {
     setMoveTaskId(null)
   }
 
+  // Renomme une sous-tâche (zone) : toutes les lignes non-Found Fault de la
+  // zone, ou uniquement les Found Fault si le bloc est précisé.
+  const renameZone = (oldZone, block) => {
+    const next = window.prompt('New sub-task name:', oldZone)
+    if (next === null) return
+    const name = String(next).trim()
+    if (!name || name === oldZone) return
+    tasks
+      .filter((t) => {
+        const zone = t.workArea || 'Other'
+        const matchesZone =
+          zone === oldZone ||
+          (!t.workArea && (oldZone === 'No zone' || oldZone === 'No sub-task'))
+        if (!matchesZone) return false
+        const blk = t.taskType || 'AUTRE'
+        if (block) return blk === block
+        return blk !== 'CORR'
+      })
+      .forEach((t) => updateTask(t.id, { workArea: name }))
+  }
+
   const assignedCount = (teamId) =>
     Object.values(assignments).filter((ids) =>
       Array.isArray(ids) ? ids.includes(teamId) : ids === teamId
@@ -1477,6 +1498,15 @@ export default function TeamsAssignment() {
                     <span className="text-white/90 text-[11px] whitespace-nowrap">
                       {unassignedInGroup.length} unassigned
                     </span>
+                    {!group.isFF && (
+                      <button
+                        onClick={() => renameZone(group.label)}
+                        className="text-white/80 hover:text-white"
+                        title={`Rename sub-task ${group.label} (all its lines)`}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                     {teams.length > 0 && unassignedInGroup.length > 0 && (
                       <select
                         value=""
@@ -1600,6 +1630,13 @@ export default function TeamsAssignment() {
                                   <span className="text-white/90 text-[11px] whitespace-nowrap">
                                     {unassignedInZone.length} unassigned
                                   </span>
+                                  <button
+                                    onClick={() => renameZone(subZone, 'CORR')}
+                                    className="text-white/80 hover:text-white"
+                                    title={`Rename sub-task ${subZone} (all its Found Fault lines)`}
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </button>
                                   {teams.length > 0 && unassignedInZone.length > 0 && (
                                     <select
                                       defaultValue=""

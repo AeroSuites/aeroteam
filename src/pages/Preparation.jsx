@@ -400,6 +400,27 @@ export default function Preparation() {
     setMoveSelected({})
   }
 
+  // Renomme une sous-tâche (zone) : toutes les lignes non-Found Fault de la
+  // zone, ou uniquement les Found Fault si le bloc est précisé.
+  const renameZone = (oldZone, block) => {
+    const next = window.prompt('New sub-task name:', oldZone)
+    if (next === null) return
+    const name = String(next).trim()
+    if (!name || name === oldZone) return
+    prepTasks
+      .filter((t) => {
+        const zone = t.workArea || 'Other'
+        const matchesZone =
+          zone === oldZone ||
+          (!t.workArea && (oldZone === 'No zone' || oldZone === 'No sub-task'))
+        if (!matchesZone) return false
+        const blk = t.taskType || 'AUTRE'
+        if (block) return blk === block
+        return blk !== 'CORR'
+      })
+      .forEach((t) => updatePrepTask(t.id, { workArea: name }))
+  }
+
   const pocketTaskIds = (p) => (Array.isArray(p?.taskIds) ? p.taskIds : [])
 
   // { pocketId: nbTaches } pour un ensemble de tâches donné
@@ -1162,6 +1183,18 @@ export default function Preparation() {
                         <Plus className="h-3 w-3" />
                         <span className="text-[10px] font-bold whitespace-nowrap">sel.</span>
                       </button>
+                      {!group.isFF && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            renameZone(zone)
+                          }}
+                          className="bg-white/20 hover:bg-white/40 rounded-full p-1 text-white"
+                          title={`Rename sub-task ${zone} (all its lines)`}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                      )}
                       {zoneBlocks.map((blk) => {
                         const n = zoneTasks.filter((t) => t.taskType === blk).length
                         const total = prepTasks.filter((t) => t.taskType === blk).length
@@ -1301,6 +1334,16 @@ export default function Preparation() {
                                                 )
                                               }
                                             />
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation()
+                                                renameZone(subZone, 'CORR')
+                                              }}
+                                              className="text-white/80 hover:text-white"
+                                              title={`Rename sub-task ${subZone} (all its Found Fault lines)`}
+                                            >
+                                              <Pencil className="h-4 w-4" />
+                                            </button>
                                             <button
                                               onClick={(e) => {
                                                 e.stopPropagation()
