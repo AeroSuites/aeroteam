@@ -344,7 +344,9 @@ describe('dossier MPC (MPC-160 / MPC-143 / MPC-170)', () => {
     expect(isMpcDossierTitle('MPC-160 CHECK FUSELAGE')).toBe(true)
     expect(isMpcDossierTitle('MPC 143 inspection')).toBe(true)
     expect(isMpcDossierTitle('MPC170 - galley')).toBe(true)
-    expect(isMpcDossierTitle('MPC CHECK A-->C1/ WASTE')).toBe(false)
+    expect(isMpcDossierTitle('MPC CHECK A-->C1/ WASTE')).toBe(true)
+    expect(isMpcDossierTitle('MPC CHECK A-->C1/ WATER SYSTEM')).toBe(true)
+    expect(isMpcDossierTitle('MPC CHECK A-->C1/ BULK CARGO COMPT')).toBe(false)
     expect(isMpcDossierTitle('MPC-1600')).toBe(false)
   })
 
@@ -362,12 +364,16 @@ describe('dossier MPC (MPC-160 / MPC-143 / MPC-170)', () => {
       ['1', 'MPC-160 CHECK FUSELAGE', 'TRFX900AAA', 'ACC_PNLS', 'ACTV', '', 'DOCKING'],
       ['2', 'MPC-143 CHECK', 'TRFX900BBB', 'ACC_PNLS', 'ACTV', 'JIC', 'CABIN'],
       ['3', 'MPC-1600 task', 'TRFX900CCC', 'ACC_PNLS', 'ACTV', '', 'CABIN'],
+      ['4', 'MPC CHECK A-->C1/ WASTE', 'TRFX900DDD', 'ACC_PNLS', 'ACTV', 'MPC', 'CAB WASTE'],
+      ['5', 'MPC CHECK A-->C1/ BULK CARGO COMPT', 'TRFX900EEE', 'ACC_PNLS', 'ACTV', 'MPC', 'CAB WASTE'],
     ]
     const parsed = parseExcelRows(rows, columns)
-    expect(parsed.map((t) => t.seq)).toEqual(['1', '2'])
+    expect(parsed.map((t) => t.seq)).toEqual(['1', '2', '4'])
     expect(parsed[0].taskType).toBe('MPC')
     expect(parsed[0].workArea).toBe('DOCKING')
     expect(parsed[1].taskType).toBe('JIC')
+    expect(parsed[2].taskType).toBe('MPC')
+    expect(parsed[2].workArea).toBe('CAB WASTE')
   })
 })
 

@@ -454,11 +454,16 @@ export function detectColumns(headers) {
   return detected
 }
 
-// Références du dossier MPC (MPC-160 / MPC-143 / MPC-170 dans le titre) :
-// ces lignes sont toujours intégrées (le filtre Skills ne s'y applique pas) et
-// classées dans le bloc MPC si le fichier ne fournit pas de bloc.
+// Références du dossier MPC : MPC-160 / MPC-143 / MPC-170 dans le titre, et
+// par sécurité les lignes « MPC CHECK … WATER SYSTEM » / « MPC CHECK … WASTE »
+// (le bon skill est normalement fourni, mais un raté peut arriver). Ces lignes
+// sont toujours intégrées (le filtre Skills ne s'y applique pas) et classées
+// dans le bloc MPC si le fichier ne fournit pas de bloc.
 export function isMpcDossierTitle(text) {
-  return /\bMPC[\s\-_]*(160|143|170)(?!\d)/i.test(String(text || ''))
+  const s = String(text || '')
+  if (/\bMPC[\s\-_]*(160|143|170)(?!\d)/i.test(s)) return true
+  if (/\bMPC\s*CHECK\b/i.test(s) && /(WATER\s*SYSTEM|\bWASTE\b)/i.test(s)) return true
+  return false
 }
 
 // Filtre les lignes selon les règles d'import
