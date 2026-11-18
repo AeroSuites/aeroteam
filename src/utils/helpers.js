@@ -466,6 +466,25 @@ export function isMpcDossierTitle(text) {
   return false
 }
 
+// Décode le contenu d'un fichier CSV en détectant l'encodage : UTF-8 avec ou
+// sans BOM, sinon Windows-1252 (CSV français). Évite les mojibakes
+// (« ADDITIONAL WORK â€“ … » → « ADDITIONAL WORK – … »).
+export function decodeCsvBuffer(buffer) {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer)
+  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    return new TextDecoder('utf-8').decode(bytes.subarray(3))
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    try {
+      return new TextDecoder('windows-1252').decode(bytes)
+    } catch {
+      return new TextDecoder('utf-8').decode(bytes)
+    }
+  }
+}
+
 // Filtre les lignes selon les règles d'import
 export function filterRow(row, columns, options = {}) {
   const get = (field) => {

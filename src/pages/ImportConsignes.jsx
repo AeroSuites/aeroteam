@@ -13,6 +13,7 @@ import {
   parseExcelRows,
   dedupeAndMerge,
   findRowsWithoutSkill,
+  decodeCsvBuffer,
   getCategoryColor,
   getCategoryLabel,
   getZoneColor,
@@ -300,7 +301,9 @@ export default function ImportConsignes() {
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target.result)
-        const workbook = XLSX.read(data, { type: 'array' })
+        const workbook = /\.csv$/i.test(file.name)
+          ? XLSX.read(decodeCsvBuffer(data), { type: 'string' })
+          : XLSX.read(data, { type: 'array' })
         const sheet = workbook.Sheets[workbook.SheetNames[0]]
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 })
         if (!rows || rows.length < 2) {

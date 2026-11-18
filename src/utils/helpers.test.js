@@ -23,6 +23,7 @@ import {
   findRowsWithoutSkill,
   findWrongSkillFoundFault,
   isMpcDossierTitle,
+  decodeCsvBuffer,
 } from './helpers'
 
 describe('taskContentKey / filterNewPrepTasks', () => {
@@ -374,6 +375,25 @@ describe('dossier MPC (MPC-160 / MPC-143 / MPC-170)', () => {
     expect(parsed[1].taskType).toBe('JIC')
     expect(parsed[2].taskType).toBe('MPC')
     expect(parsed[2].workArea).toBe('CAB WASTE')
+  })
+})
+
+describe('decodeCsvBuffer', () => {
+  it('décode l’UTF-8 sans BOM (tiret et accents corrects)', () => {
+    const text = 'ADDITIONAL WORK – COAXIAL\nDÉCALCIFICATION'
+    const bytes = new TextEncoder().encode(text)
+    expect(decodeCsvBuffer(bytes)).toBe(text)
+  })
+
+  it('retire le BOM UTF-8', () => {
+    const body = new TextEncoder().encode('Tâche')
+    const bytes = new Uint8Array([0xef, 0xbb, 0xbf, ...body])
+    expect(decodeCsvBuffer(bytes)).toBe('Tâche')
+  })
+
+  it('bascule en Windows-1252 quand l’UTF-8 est invalide', () => {
+    const bytes = new Uint8Array([0x44, 0xe9, 0x63, 0x61, 0x6c]) // D é c a l
+    expect(decodeCsvBuffer(bytes)).toBe('Décal')
   })
 })
 

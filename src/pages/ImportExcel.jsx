@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import { groupTasksTree } from '../components/TaskTreeSelect'
 import MissingSkillsAlert from '../components/MissingSkillsAlert'
 import WrongSkillAlert from '../components/WrongSkillAlert'
-import { detectColumns, parseExcelRows, findRowsWithoutSkill, findWrongSkillFoundFault, getCategoryColor, getCategoryLabel, taskContentKey, CATEGORIES } from '../utils/helpers'
+import { detectColumns, parseExcelRows, findRowsWithoutSkill, findWrongSkillFoundFault, getCategoryColor, getCategoryLabel, taskContentKey, decodeCsvBuffer, CATEGORIES } from '../utils/helpers'
 import {
   Upload,
   FileSpreadsheet,
@@ -79,7 +79,9 @@ export default function ImportExcel() {
       reader.onload = (e) => {
         try {
           const data = new Uint8Array(e.target.result)
-          const workbook = XLSX.read(data, { type: 'array' })
+          const workbook = /\.csv$/i.test(file.name)
+            ? XLSX.read(decodeCsvBuffer(data), { type: 'string' })
+            : XLSX.read(data, { type: 'array' })
           const sheet = workbook.Sheets[workbook.SheetNames[0]]
           const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 })
           if (!rows || rows.length < 2) {
