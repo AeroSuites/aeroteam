@@ -6,7 +6,7 @@ import NoteCell from '../components/NoteCell'
 import ConsignesAvions from '../components/ConsignesAvions'
 import TrfxLink from '../components/TrfxLink'
 import { getCategoryColor, getZoneColor, getCategoryLabel, assignmentTeams, isAssignedTo, priorityToken, priorityTokens, cleanTaskText, consigneDay, logicalToday, TEAM_COLORS, PRIMES_ENABLED } from '../utils/helpers'
-import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X, Send, FileText, ListChecks, Plus, Pencil, Star, BookUser, Upload, Search, Eraser } from 'lucide-react'
+import { Users, ClipboardList, Undo2, ChevronDown, ChevronRight, Wand2, Trash2, Lock, LockOpen, X, Send, FileText, ListChecks, Plus, Pencil, Star, BookUser, Upload, Search, Eraser, ArrowRightLeft } from 'lucide-react'
 import SendChargeToAgent from '../components/SendChargeToAgent'
 
 const DAY_NAMES = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
@@ -45,6 +45,11 @@ export default function TeamsAssignment() {
   const [memberPickerFor, setMemberPickerFor] = useState(null)
   const [openAddMember, setOpenAddMember] = useState([])
   const [addMemberSearch, setAddMemberSearch] = useState({})
+  // Déplacement d'une ligne : bloc / sous-tâche
+  const [moveTaskId, setMoveTaskId] = useState(null)
+  const [moveBlk, setMoveBlk] = useState('')
+  const [moveZone, setMoveZone] = useState('')
+  const [moveZoneNew, setMoveZoneNew] = useState(false)
 
   // Équipes pouvant recevoir des tâches à la répartition automatique
   const autoTeams = useMemo(() => teams.filter((t) => !t.locked), [teams])
@@ -328,6 +333,26 @@ export default function TeamsAssignment() {
     const name = String(next).trim()
     if (!name) return
     updateTask(task.id, { description: name })
+  }
+
+  // Déplace une ligne vers un autre bloc / une autre sous-tâche
+  const openMove = (task) => {
+    setMoveTaskId(task.id)
+    setMoveBlk(task.taskType || 'JIC')
+    setMoveZone(task.workArea || '')
+    setMoveZoneNew(false)
+  }
+
+  const applyMove = () => {
+    if (!moveTaskId) return
+    const zone = moveZone.trim()
+    updateTask(moveTaskId, {
+      taskType: moveBlk,
+      workArea: zone,
+      category: moveBlk,
+      zone,
+    })
+    setMoveTaskId(null)
   }
 
   const assignedCount = (teamId) =>
@@ -1651,6 +1676,13 @@ export default function TeamsAssignment() {
                                             >
                                               <Pencil className="h-3.5 w-3.5" />
                                             </button>
+                                            <button
+                                              onClick={() => openMove(task)}
+                                              className="shrink-0 text-slate-400 hover:text-sky-700"
+                                              title="Move this line (block / sub-task)"
+                                            >
+                                              <ArrowRightLeft className="h-3.5 w-3.5" />
+                                            </button>
                                             {priorityToken(`${task.description || ''} ${task.taskBarcode || ''}`) && (
                                               <span
                                                 className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff0000]/10 text-[#ff0000] border border-[#ff0000]/40 whitespace-nowrap"
@@ -2039,6 +2071,13 @@ export default function TeamsAssignment() {
                                       >
                                         <Pencil className="h-3 w-3" />
                                       </button>
+                                      <button
+                                        onClick={() => openMove(t)}
+                                        className="shrink-0 text-slate-400 hover:text-sky-700"
+                                        title="Move this line (block / sub-task)"
+                                      >
+                                        <ArrowRightLeft className="h-3 w-3" />
+                                      </button>
                                       {(t.taskDescription || t.taskSteps) && (
                                         <button
                                           onClick={() => setDescTask(t)}
@@ -2086,6 +2125,104 @@ export default function TeamsAssignment() {
       </>
       ) : (
         <LeaderPrimesForm />
+      )}
+
+      {moveTaskId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setMoveTaskId(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 flex items-start justify-between gap-3 bg-slate-900 text-white rounded-t-xl">
+              <div className="min-w-0">
+                <h2 className="font-bold truncate">Move line</h2>
+                <p className="text-xs text-slate-300 truncate">
+                  {(() => {
+                    const t = tasks.find((x) => x.id === moveTaskId)
+                    return t ? `N° ${t.seq || '—'} · ${t.description}` : ''
+                  })()}
+                </p>
+              </div>
+              <button
+                onClick={() => setMoveTaskId(null)}
+                className="text-slate-300 hover:text-white shrink-0"
+                title="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <label className="block text-sm font-medium text-slate-700">
+                Block
+                <select
+                  value={moveBlk}
+                  onChange={(e) => setMoveBlk(e.target.value)}
+                  className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
+                >
+                  {['JIC', 'CORR', 'MPC', 'ADHOC', 'EO', 'AUTRE'].map((b) => (
+                    <option key={b} value={b}>
+                      {getCategoryLabel(b)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-sm font-medium text-slate-700">
+                Sub-task / zone
+                <select
+                  value={moveZoneNew ? '__new__' : moveZone}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    if (v === '__new__') {
+                      setMoveZoneNew(true)
+                      setMoveZone('')
+                    } else {
+                      setMoveZoneNew(false)
+                      setMoveZone(v)
+                    }
+                  }}
+                  className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white"
+                >
+                  <option value="">— Choose a sub-task —</option>
+                  {zones.map((z) => (
+                    <option key={z} value={z}>
+                      {z}
+                    </option>
+                  ))}
+                  <option value="__new__">➕ New sub-task…</option>
+                </select>
+              </label>
+              {moveZoneNew && (
+                <label className="block text-sm font-medium text-slate-700">
+                  New sub-task name
+                  <input
+                    autoFocus
+                    value={moveZone}
+                    onChange={(e) => setMoveZone(e.target.value)}
+                    placeholder="E.g. CAB SECURITY"
+                    className="mt-1 w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
+                  />
+                </label>
+              )}
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setMoveTaskId(null)}
+                  className="px-4 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={applyMove}
+                  className="bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 text-sm font-semibold"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {descTask && (

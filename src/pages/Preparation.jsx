@@ -46,6 +46,7 @@ import {
   Search,
   FileText,
   ListChecks,
+  ArrowRightLeft,
 } from 'lucide-react'
 
 export default function Preparation() {
@@ -1492,7 +1493,7 @@ export default function Preparation() {
                                       className="text-slate-400 hover:text-sky-600"
                                       title="Move this line (block / sub-task)"
                                     >
-                                      <Pencil className="h-4 w-4" />
+                                      <ArrowRightLeft className="h-4 w-4" />
                                     </button>
                                     <button
                                       onClick={() => reintegrerTasks([task])}
