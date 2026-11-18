@@ -22,6 +22,7 @@ import {
   logicalToday,
   findRowsWithoutSkill,
   findWrongSkillFoundFault,
+  isMpcDossierTitle,
 } from './helpers'
 
 describe('taskContentKey / filterNewPrepTasks', () => {
@@ -335,6 +336,38 @@ describe('priorityTokens', () => {
     expect(priorityTokens('*** IDT ***')).toEqual(['IDT'])
     expect(priorityTokens('TLI / NSRE 123')).toEqual(['TLI', 'NSRE'])
     expect(priorityTokens('remplacement standard')).toEqual([])
+  })
+})
+
+describe('dossier MPC (MPC-160 / MPC-143 / MPC-170)', () => {
+  it('détecte les références dans le titre', () => {
+    expect(isMpcDossierTitle('MPC-160 CHECK FUSELAGE')).toBe(true)
+    expect(isMpcDossierTitle('MPC 143 inspection')).toBe(true)
+    expect(isMpcDossierTitle('MPC170 - galley')).toBe(true)
+    expect(isMpcDossierTitle('MPC CHECK A-->C1/ WASTE')).toBe(false)
+    expect(isMpcDossierTitle('MPC-1600')).toBe(false)
+  })
+
+  it('intègre ces lignes malgré un skill hors CABB et classe en MPC si le fichier n’a pas de bloc', () => {
+    const columns = {
+      seq: 0,
+      description: 1,
+      taskBarcode: 2,
+      skills: 3,
+      mtxStatus: 4,
+      taskType: 5,
+      workArea: 6,
+    }
+    const rows = [
+      ['1', 'MPC-160 CHECK FUSELAGE', 'TRFX900AAA', 'ACC_PNLS', 'ACTV', '', 'DOCKING'],
+      ['2', 'MPC-143 CHECK', 'TRFX900BBB', 'ACC_PNLS', 'ACTV', 'JIC', 'CABIN'],
+      ['3', 'MPC-1600 task', 'TRFX900CCC', 'ACC_PNLS', 'ACTV', '', 'CABIN'],
+    ]
+    const parsed = parseExcelRows(rows, columns)
+    expect(parsed.map((t) => t.seq)).toEqual(['1', '2'])
+    expect(parsed[0].taskType).toBe('MPC')
+    expect(parsed[0].workArea).toBe('DOCKING')
+    expect(parsed[1].taskType).toBe('JIC')
   })
 })
 

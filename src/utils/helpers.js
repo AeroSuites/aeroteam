@@ -454,6 +454,13 @@ export function detectColumns(headers) {
   return detected
 }
 
+// Références du dossier MPC (MPC-160 / MPC-143 / MPC-170 dans le titre) :
+// ces lignes sont toujours intégrées (le filtre Skills ne s'y applique pas) et
+// classées dans le bloc MPC si le fichier ne fournit pas de bloc.
+export function isMpcDossierTitle(text) {
+  return /\bMPC[\s\-_]*(160|143|170)(?!\d)/i.test(String(text || ''))
+}
+
 // Filtre les lignes selon les règles d'import
 export function filterRow(row, columns, options = {}) {
   const get = (field) => {
@@ -462,8 +469,13 @@ export function filterRow(row, columns, options = {}) {
   }
 
   // Filtre Skill (colonne F) — contournable pour l'intégration manuelle des
-  // lignes sans skill après saisie du skill manquant.
-  if (IMPORT_FILTERS.skills.enabled && !options.skipSkillFilter) {
+  // lignes sans skill après saisie du skill manquant, et toujours ignoré pour
+  // les lignes du dossier MPC (MPC-160 / MPC-143 / MPC-170).
+  if (
+    IMPORT_FILTERS.skills.enabled &&
+    !options.skipSkillFilter &&
+    !isMpcDossierTitle(get('description'))
+  ) {
     const skill = get('skills')
     if (!IMPORT_FILTERS.skills.match(skill)) return false
   }
@@ -545,6 +557,13 @@ export function parseExcelRows(rows, columns, options = {}) {
       zone: get('workArea') ? String(get('workArea')) : undefined,
       avion: get('registration') ? String(get('registration')) : undefined,
       category: get('taskType') ? String(get('taskType')) : undefined,
+    }
+
+    // Dossier MPC : bloc MPC par défaut si le fichier ne fournit pas de bloc
+    // (la sous-tâche Work_Area du fichier est conservée telle quelle).
+    if (isMpcDossierTitle(description) && !task.taskType) {
+      task.taskType = 'MPC'
+      if (!task.category) task.category = 'MPC'
     }
 
     result.push(task)
