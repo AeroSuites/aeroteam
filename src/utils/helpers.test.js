@@ -345,6 +345,7 @@ describe('dossier MPC (MPC-160 / MPC-143 / MPC-170)', () => {
     expect(isMpcDossierTitle('MPC-160 CHECK FUSELAGE')).toBe(true)
     expect(isMpcDossierTitle('MPC 143 inspection')).toBe(true)
     expect(isMpcDossierTitle('MPC170 - galley')).toBe(true)
+    expect(isMpcDossierTitle('MPC-147 DOOR ADJUSTMENT')).toBe(true)
     expect(isMpcDossierTitle('MPC CHECK A-->C1/ WASTE')).toBe(true)
     expect(isMpcDossierTitle('MPC CHECK A-->C1/ WATER SYSTEM')).toBe(true)
     expect(isMpcDossierTitle('MPC CHECK A-->C1/ BULK CARGO COMPT')).toBe(false)
