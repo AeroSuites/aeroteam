@@ -214,6 +214,16 @@ export async function leaderClearCharge(leaderCode, agentId) {
   return data
 }
 
+// Partage des statuts entre agents d'un même binôme (même charge envoyée)
+export async function agentShareChargeStatus(agentCode, entries) {
+  const { data, error } = await supabase.rpc('agent_share_charge_status', {
+    p_agent_code: agentCode,
+    p_tasks: entries,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function adminRefuseProfile(adminCode, profileCode) {
   const { data, error } = await supabase.rpc('admin_refuse_profile', {
     p_admin_code: adminCode,

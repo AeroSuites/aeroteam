@@ -641,30 +641,74 @@ export function AppProvider({ children }) {
     pocketActions({ setPockets })
   const { addNote, updateNote, removeNote } = noteActions({ setNotes })
 
-  // Mise à jour d'une ligne de la charge agent (statut / note) — sauvegardée avec le profil
-  const updateChargeTask = useCallback((taskId, updates) => {
-    setCharge((prev) =>
-      prev && Array.isArray(prev.tasks)
-        ? {
-            ...prev,
-            tasks: prev.tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t)),
-          }
-        : prev
-    )
+  // Partage des statuts entre agents d'un même binôme (même charge envoyée)
+  const shareChargeStatus = useCallback(async (entries) => {
+    if (!entries?.length) return
+    try {
+      await profileStore.agentShareChargeStatus(codeRef.current, entries)
+    } catch {
+      // hors ligne : le statut reste local, le prochain changement réessaiera
+    }
   }, [])
 
-  const updateChargeTasks = useCallback((ids, updates) => {
-    const set = new Set(ids || [])
-    if (!set.size) return
-    setCharge((prev) =>
-      prev && Array.isArray(prev.tasks)
-        ? {
-            ...prev,
-            tasks: prev.tasks.map((t) => (set.has(t.id) ? { ...t, ...updates } : t)),
-          }
-        : prev
-    )
-  }, [])
+  // Mise à jour d'une ligne de la charge agent (statut / note) — sauvegardée avec le profil.
+  // Un changement de statut est partagé avec les autres agents du même binôme.
+  const updateChargeTask = useCallback(
+    (taskId, updates) => {
+      const target =
+        charge && Array.isArray(charge.tasks)
+          ? charge.tasks.find((t) => t.id === taskId)
+          : null
+      setCharge((prev) =>
+        prev && Array.isArray(prev.tasks)
+          ? {
+              ...prev,
+              tasks: prev.tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t)),
+            }
+          : prev
+      )
+      if (
+        target &&
+        updates?.mtxStatus &&
+        activeProfile?.type === 'agent' &&
+        String(updates.mtxStatus) !== String(target.mtxStatus || '')
+      ) {
+        shareChargeStatus([
+          {
+            key: taskContentKey({ ...target, ...updates }),
+            mtxStatus: updates.mtxStatus,
+          },
+        ])
+      }
+    },
+    [charge, activeProfile, shareChargeStatus]
+  )
+
+  const updateChargeTasks = useCallback(
+    (ids, updates) => {
+      const set = new Set(ids || [])
+      if (!set.size) return
+      const targets = (charge?.tasks || []).filter((t) => set.has(t.id))
+      setCharge((prev) =>
+        prev && Array.isArray(prev.tasks)
+          ? {
+              ...prev,
+              tasks: prev.tasks.map((t) => (set.has(t.id) ? { ...t, ...updates } : t)),
+            }
+          : prev
+      )
+      if (updates?.mtxStatus && activeProfile?.type === 'agent') {
+        const entries = targets
+          .filter((t) => String(t.mtxStatus || '') !== String(updates.mtxStatus))
+          .map((t) => ({
+            key: taskContentKey({ ...t, ...updates }),
+            mtxStatus: updates.mtxStatus,
+          }))
+        if (entries.length) shareChargeStatus(entries)
+      }
+    },
+    [charge, activeProfile, shareChargeStatus]
+  )
 
   // Suivi (leader) : avancement des agents qui ont reçu une charge
   useEffect(() => {
@@ -722,7 +766,13 @@ export function AppProvider({ children }) {
     const statusByKey = {}
     agentsProgress.forEach((a) => {
       ;(a.tasks || []).forEach((t) => {
-        if (t.mtxStatus) statusByKey[taskContentKey(t)] = t.mtxStatus
+        if (!t.mtxStatus) return
+        const key = taskContentKey(t)
+        const cur = statusByKey[key]
+        // Binômes : le COMPLETE est prioritaire (si un agent a terminé la
+        // ligne, le leader la voit COMPLETE) ; sinon le dernier rapport gagne.
+        if (cur === 'COMPLETE' && t.mtxStatus !== 'COMPLETE') return
+        statusByKey[key] = t.mtxStatus
       })
     })
     if (!Object.keys(statusByKey).length) return
