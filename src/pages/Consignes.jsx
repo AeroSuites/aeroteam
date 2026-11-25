@@ -3,7 +3,7 @@ import DOMPurify from 'dompurify'
 import * as profileStore from '../lib/profileStore'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
-import { hashCodeKey, currentWeekLabel, getCategoryLabel, isAssignedTo, logicalToday } from '../utils/helpers'
+import { hashCodeKey, currentWeekLabel, isAssignedTo, logicalToday } from '../utils/helpers'
 import RichEditor from '../components/RichEditor'
 import ConsignesAvions from '../components/ConsignesAvions'
 import {
@@ -156,32 +156,16 @@ export default function Consignes() {
       chosen
       .map((p) => {
         const lines = pocketLines(p)
-        // Plus de seuil : seuls les numéros de lignes (Lxxx) sont générés,
-        // regroupés par bloc et sur une seule ligne par bloc.
-        const blockCounts = {}
-        const blockNums = {}
-        lines.forEach((t) => {
-          const b = t.taskType || 'AUTRE'
-          blockCounts[b] = (blockCounts[b] || 0) + 1
-          if (!blockNums[b]) blockNums[b] = []
-          if (t.seq !== undefined && t.seq !== '') {
-            blockNums[b].push(`L${escapeHtml(t.seq)}`)
-          }
-        })
-        const items = Object.keys(blockCounts)
-          .map((b) => {
-            const nums = blockNums[b].join(', ')
-            return `<li><strong>${escapeHtml(getCategoryLabel(b))}</strong> (${
-              blockCounts[b]
-            } lines): ${nums}</li>`
-          })
-          .join('')
+        // Simplicité : le titre de la pochette puis uniquement les numéros de
+        // lignes (Lxxx), tous sur une seule ligne (sans libellé de bloc).
+        const nums = lines
+          .filter((t) => t.seq !== undefined && t.seq !== '')
+          .map((t) => `L${escapeHtml(t.seq)}`)
+          .join(', ')
         return (
           `<p><strong>📁 ${escapeHtml(p.name)}</strong> (${lines.length} line(s))</p>` +
           '<p>&nbsp;</p>' +
-          '<ul>' +
-          items +
-          '</ul>' +
+          `<p>${nums}</p>` +
           '<p>&nbsp;</p>'
         )
       })
