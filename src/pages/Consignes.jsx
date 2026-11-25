@@ -156,52 +156,25 @@ export default function Consignes() {
       chosen
       .map((p) => {
         const lines = pocketLines(p)
+        // Plus de seuil : seuls les numéros de lignes (Lxxx) sont générés,
+        // regroupés par bloc et sur une seule ligne par bloc.
         const blockCounts = {}
-        const zoneCounts = {}
+        const blockNums = {}
         lines.forEach((t) => {
           const b = t.taskType || 'AUTRE'
-          const z = t.workArea || 'Other'
           blockCounts[b] = (blockCounts[b] || 0) + 1
-          zoneCounts[z] = (zoneCounts[z] || 0) + 1
+          if (!blockNums[b]) blockNums[b] = []
+          if (t.seq !== undefined && t.seq !== '') {
+            blockNums[b].push(`L${escapeHtml(t.seq)}`)
+          }
         })
-        const compactBlocks = new Set(
-          Object.keys(blockCounts).filter((b) => blockCounts[b] > 5)
-        )
-        const compactZones = new Set(Object.keys(zoneCounts).filter((z) => zoneCounts[z] > 5))
-        const emitted = new Set()
-        const items = lines
-          .map((t) => {
-            const b = t.taskType || 'AUTRE'
-            const z = t.workArea || 'Other'
-            if (compactBlocks.has(b)) {
-              const key = `bloc:${b}`
-              if (emitted.has(key)) return ''
-              emitted.add(key)
-              const nums = lines
-                .filter((x) => (x.taskType || 'AUTRE') === b)
-                .map((x) => escapeHtml(x.seq))
-                .filter(Boolean)
-                .join(', ')
-              return `<li><strong>${escapeHtml(getCategoryLabel(b))}</strong> (${blockCounts[b]} lines): N° ${nums}</li>`
-            }
-            if (compactZones.has(z)) {
-              const key = `zone:${z}`
-              if (emitted.has(key)) return ''
-              emitted.add(key)
-              const nums = lines
-                .filter((x) => (x.workArea || 'Other') === z)
-                .map((x) => escapeHtml(x.seq))
-                .filter(Boolean)
-                .join(', ')
-              return `<li><strong>📍 ${escapeHtml(z)}</strong> (${zoneCounts[z]} lines): N° ${nums}</li>`
-            }
-            const parts = []
-            if (t.seq !== undefined && t.seq !== '') parts.push(`N° ${escapeHtml(t.seq)}`)
-            if (t.description) parts.push(escapeHtml(t.description))
-            if (t.workArea) parts.push(`(${escapeHtml(t.workArea)})`)
-            return `<li>${parts.join(' — ')}</li>`
+        const items = Object.keys(blockCounts)
+          .map((b) => {
+            const nums = blockNums[b].join(', ')
+            return `<li><strong>${escapeHtml(getCategoryLabel(b))}</strong> (${
+              blockCounts[b]
+            } lines): ${nums}</li>`
           })
-          .filter(Boolean)
           .join('')
         return (
           `<p><strong>📁 ${escapeHtml(p.name)}</strong> (${lines.length} line(s))</p>` +
