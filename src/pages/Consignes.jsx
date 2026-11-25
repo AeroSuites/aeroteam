@@ -163,7 +163,7 @@ export default function Consignes() {
           .map((t) => `L${escapeHtml(t.seq)}`)
           .join(', ')
         return (
-          `<p><strong>📁 ${escapeHtml(p.name)}</strong> (${lines.length} line(s))</p>` +
+          `<p><strong>📁 ${escapeHtml(p.name)}</strong></p>` +
           '<p>&nbsp;</p>' +
           `<p>${nums}</p>` +
           '<p>&nbsp;</p>'
