@@ -60,8 +60,12 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
     agentByKey[taskContentKey(t)] = t
   })
   const agentTotal = (agentInfo?.tasks || []).length
+  // Lignes terminées : COMPLETE côté agent OU côté leader (même clé de contenu)
+  const leaderDoneKeys = new Set(
+    teamTasks.filter((t) => t.mtxStatus === 'COMPLETE').map(taskContentKey)
+  )
   const agentDone = (agentInfo?.tasks || []).filter(
-    (t) => t.mtxStatus === 'COMPLETE'
+    (t) => t.mtxStatus === 'COMPLETE' || leaderDoneKeys.has(taskContentKey(t))
   ).length
 
   return (
@@ -239,7 +243,8 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                 {agentInfo && agentByKey[taskContentKey(t)] && (
                                   <span
                                     className={`shrink-0 h-2.5 w-2.5 rounded-full ${
-                                      agentByKey[taskContentKey(t)].mtxStatus === 'COMPLETE'
+                                      agentByKey[taskContentKey(t)].mtxStatus === 'COMPLETE' ||
+                                      t.mtxStatus === 'COMPLETE'
                                         ? 'bg-emerald-500'
                                         : agentByKey[taskContentKey(t)].mtxStatus === 'PAUSE'
                                         ? 'bg-amber-500'
@@ -247,6 +252,10 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
                                     }`}
                                     title={`Agent ${agentInfo.name}: ${
                                       agentByKey[taskContentKey(t)].mtxStatus || 'ACTV'
+                                    }${
+                                      t.mtxStatus === 'COMPLETE'
+                                        ? ' · marked COMPLETE by the leader'
+                                        : ''
                                     }`}
                                   />
                                 )}
