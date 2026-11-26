@@ -19,6 +19,7 @@ export default function ManualTaskForm({
   const [trfx, setTrfx] = useState('')
   const [status, setStatus] = useState('ACTV')
   const [subTask, setSubTask] = useState('')
+  const [subTaskNew, setSubTaskNew] = useState(false)
   const [registration, setRegistration] = useState('')
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
@@ -33,6 +34,7 @@ export default function ManualTaskForm({
     setTrfx('')
     setStatus('ACTV')
     setSubTask('')
+    setSubTaskNew(false)
     setRegistration('')
     setNote('')
     setError('')
@@ -75,6 +77,7 @@ export default function ManualTaskForm({
     setTrfx('')
     setStatus('ACTV')
     setSubTask('')
+    setSubTaskNew(false)
     setRegistration('')
     setNote('')
     setError('')
@@ -159,19 +162,35 @@ export default function ManualTaskForm({
         </label>
         <label className="text-xs font-medium text-slate-600 sm:col-span-2">
           Sub-task
-          <input
-            value={subTask}
-            onChange={(e) => setSubTask(e.target.value)}
-            placeholder="Choose an existing one or type a new one"
-            list="manual-task-subtasks"
-            className={`${inputClass} mt-1`}
-            title="Sub-task / line zone — a new value creates its own grouping"
-          />
-          <datalist id="manual-task-subtasks">
+          <select
+            value={subTaskNew ? '__new__' : subTask}
+            onChange={(e) => {
+              const v = e.target.value
+              if (v === '__new__') {
+                setSubTaskNew(true)
+                setSubTask('')
+              } else {
+                setSubTaskNew(false)
+                setSubTask(v)
+              }
+            }}
+            className={`${inputClass} mt-1 bg-white`}
+            title="Sub-task / line zone — choose an existing one or create a new one"
+          >
+            <option value="">— Choose a sub-task —</option>
             {zoneOptions.map((z) => (
-              <option key={z} value={z} />
+              <option key={z} value={z}>{z}</option>
             ))}
-          </datalist>
+            <option value="__new__">➕ New sub-task…</option>
+          </select>
+          {subTaskNew && (
+            <input
+              value={subTask}
+              onChange={(e) => setSubTask(e.target.value)}
+              placeholder="New sub-task name"
+              className={`${inputClass} mt-1`}
+            />
+          )}
         </label>
         <label className="text-xs font-medium text-slate-600">
           Aircraft
