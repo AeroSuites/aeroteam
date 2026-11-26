@@ -59,13 +59,13 @@ function TeamCard({ team, tasks, assignments, onExportPdf, onPrint, agentsProgre
   ;(agentInfo?.tasks || []).forEach((t) => {
     agentByKey[taskContentKey(t)] = t
   })
-  const agentTotal = (agentInfo?.tasks || []).length
-  // Lignes terminées : COMPLETE côté agent OU côté leader (même clé de contenu)
-  const leaderDoneKeys = new Set(
-    teamTasks.filter((t) => t.mtxStatus === 'COMPLETE').map(taskContentKey)
-  )
-  const agentDone = (agentInfo?.tasks || []).filter(
-    (t) => t.mtxStatus === 'COMPLETE' || leaderDoneKeys.has(taskContentKey(t))
+  // Avancement affiché = lignes ACTUELLES de l'équipe (le total de la copie
+  // de l'agent peut être différent si la charge a évolué depuis l'envoi).
+  const agentTotal = teamTasks.length
+  const agentDone = teamTasks.filter(
+    (t) =>
+      t.mtxStatus === 'COMPLETE' ||
+      agentByKey[taskContentKey(t)]?.mtxStatus === 'COMPLETE'
   ).length
 
   return (
