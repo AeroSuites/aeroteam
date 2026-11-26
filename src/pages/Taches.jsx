@@ -4,7 +4,7 @@ import { getZoneColor, getCategoryColor, getCategoryLabel, isAssignedTo, assignm
 import ManualTaskForm from '../components/ManualTaskForm'
 import NoteCell from '../components/NoteCell'
 import TrfxLink from '../components/TrfxLink'
-import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check, FileText, Pencil, AlertTriangle } from 'lucide-react'
+import { Search, Trash2, ChevronDown, ChevronRight, CheckCircle2, RotateCcw, Plus, ListChecks, X, Pause, Play, Check, FileText, Pencil, AlertTriangle, ArrowRightLeft } from 'lucide-react'
 
 export default function Taches() {
   const {
@@ -988,9 +988,9 @@ export default function Taches() {
                                   setEditMoveZone(task.workArea || '')
                                 }}
                                 className="text-slate-400 hover:text-sky-600"
-                                title="Edit the block / sub-task (move the line)"
+                                title="Move this line (block / sub-task)"
                               >
-                                <Pencil className="h-3.5 w-3.5" />
+                                <ArrowRightLeft className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => {
